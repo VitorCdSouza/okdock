@@ -25,7 +25,7 @@ type service struct {
 	ContainerName   string            `yaml:"container_name"`
 	Restart         string            `yaml:"restart,omitempty"`
 	StopGracePeriod string            `yaml:"stop_grace_period,omitempty"`
-	Ports           []string          `yaml:"ports,omitempty"`
+	Ports           []quoted          `yaml:"ports,omitempty"`
 	Environment     map[string]string `yaml:"environment,omitempty"`
 	EnvFile         []string          `yaml:"env_file,omitempty"`
 	Volumes         []string          `yaml:"volumes,omitempty"`
@@ -33,6 +33,12 @@ type service struct {
 	Labels          map[string]string `yaml:"labels,omitempty"`
 	StdinOpen       bool              `yaml:"stdin_open,omitempty"`
 	Tty             bool              `yaml:"tty,omitempty"`
+}
+
+type quoted string
+
+func (q quoted) MarshalYAML() (any, error) {
+	return &yaml.Node{Kind: yaml.ScalarNode, Style: yaml.DoubleQuotedStyle, Value: string(q)}, nil
 }
 
 type deploy struct {
@@ -76,9 +82,9 @@ func Render(spec instance.Spec) ([]byte, error) {
 		env = nil
 	}
 
-	ports := make([]string, 0, len(spec.Ports))
+	ports := make([]quoted, 0, len(spec.Ports))
 	for _, p := range spec.Ports {
-		ports = append(ports, p.String())
+		ports = append(ports, quoted(p.String()))
 	}
 
 	volumes := make([]string, 0, len(spec.Mounts))

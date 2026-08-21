@@ -120,6 +120,16 @@ func TestRenderPortsAndLimits(t *testing.T) {
 	}
 }
 
+func TestRenderQuotesPorts(t *testing.T) {
+	raw, err := Render(spec())
+	if err != nil {
+		t.Fatalf("Render: %v", err)
+	}
+	if !strings.Contains(string(raw), `"25565:25565/tcp"`) {
+		t.Errorf("portas deviam sair entre aspas:\n%s", raw)
+	}
+}
+
 func TestRenderRejectsBadName(t *testing.T) {
 	s := spec()
 	s.Name = "Nome Com Espaço"
