@@ -11,7 +11,7 @@ Tudo vive em [`api/internal/catalog/providers.go`](../api/internal/catalog/provi
 | Jogo | Imagem | RAM padrão / mínima | Portas |
 |---|---|---|---|
 | Minecraft (Java) | `itzg/minecraft-server:java21` | 4g / 2g | 25565/tcp |
-| Terraria | `ryshe/terraria:tshock-1.4.5.6-6.1.0` | 2g / 512m | 7777/tcp |
+| Terraria (TShock) | `ryshe/terraria:tshock-1.4.5.6-6.1.0` | 2g / 512m | 7777/tcp |
 | Terraria (vanilla) | `ryshe/terraria:vanilla-1.4.5.7` | 2g / 512m | 7777/tcp |
 | Imagem custom | qualquer | 2g / 256m | você define |
 
@@ -48,7 +48,7 @@ regular:
 | Provedor | Padrão |
 |---|---|
 | Minecraft (Java) | `^itzg/minecraft-server(:\|$)` |
-| Terraria | `^ryshe/terraria:tshock-` |
+| Terraria (TShock) | `^ryshe/terraria:tshock-` |
 | Terraria (vanilla) | `^ryshe/terraria:vanilla-` |
 | Imagem custom | vazio — aceita qualquer uma |
 

@@ -56,7 +56,7 @@ var providers = []Provider{
 	{
 		ID:               "ryshe/terraria",
 		Game:             "terraria",
-		GameLabel:        "Terraria",
+		GameLabel:        "Terraria (TShock)",
 		Short:            "TR",
 		Image:            "ryshe/terraria:tshock-1.4.5.6-6.1.0",
 		ImagePattern:     `^ryshe/terraria:tshock-`,

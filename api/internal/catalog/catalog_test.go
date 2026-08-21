@@ -312,3 +312,26 @@ func TestImagePatternsCompileAndMatchTheirOwnDefault(t *testing.T) {
 		}
 	}
 }
+
+func TestProviderForImageFindsTheRightVariant(t *testing.T) {
+	p, ok := ProviderForImage("ryshe/terraria:vanilla-1.4.5.7")
+	if !ok || p.ID != "ryshe/terraria-vanilla" {
+		t.Fatalf("ProviderForImage = %q, %v", p.ID, ok)
+	}
+	p, ok = ProviderForImage("ryshe/terraria:tshock-1.4.5.6-6.1.0")
+	if !ok || p.ID != "ryshe/terraria" {
+		t.Fatalf("ProviderForImage = %q, %v", p.ID, ok)
+	}
+	if p, ok := ProviderForImage("nginx:alpine"); ok {
+		t.Errorf("imagem fora do catálogo não devia casar com %q", p.ID)
+	}
+}
+
+func TestTerrariaLabelsNameTheVariant(t *testing.T) {
+	for _, id := range []string{"ryshe/terraria", "ryshe/terraria-vanilla"} {
+		p, _ := Get(id)
+		if !strings.Contains(p.GameLabel, "(") {
+			t.Errorf("%s: o rótulo %q não diz qual variante é", id, p.GameLabel)
+		}
+	}
+}

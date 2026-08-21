@@ -228,6 +228,18 @@ func (p Provider) AcceptsImage(image string) bool {
 	return re.(*regexp.Regexp).MatchString(image)
 }
 
+func ProviderForImage(image string) (Provider, bool) {
+	for _, p := range providers {
+		if p.ID == CustomProviderID || p.ImagePattern == "" {
+			continue
+		}
+		if p.AcceptsImage(image) {
+			return p, true
+		}
+	}
+	return Provider{}, false
+}
+
 type ValidationError struct {
 	Problems []string
 }

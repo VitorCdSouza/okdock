@@ -421,10 +421,17 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 		return instance.Spec{}, errors.New("a imagem custom precisa de um nome de imagem")
 	}
 	if !prov.AcceptsImage(image) {
+		if owner, ok := catalog.ProviderForImage(image); ok {
+			return instance.Spec{}, &catalog.ValidationError{Problems: []string{
+				fmt.Sprintf("image: quem configura %q é o provedor %q, não %q", image, owner.GameLabel, prov.GameLabel),
+				fmt.Sprintf("crie a instância escolhendo %q na lista, sem mexer no campo Imagem", owner.GameLabel),
+				"as duas variantes têm bootstrap diferente: não basta trocar a tag",
+			}}
+		}
 		return instance.Spec{}, &catalog.ValidationError{Problems: []string{
-			fmt.Sprintf("image: %q não é uma imagem que %s sabe configurar", image, prov.GameLabel),
-			fmt.Sprintf("%s espera uma imagem que case com %s", prov.GameLabel, prov.ImagePattern),
-			"para rodar outra imagem, crie a instância com o provedor \"Imagem custom\", onde você define as variáveis à mão",
+			fmt.Sprintf("image: %s não sabe configurar %q", prov.GameLabel, image),
+			fmt.Sprintf("ele espera uma imagem que case com %s — trocar a tag para outra versão funciona", prov.ImagePattern),
+			"para uma imagem fora do catálogo, use o provedor \"Imagem custom\", onde você define as variáveis à mão",
 		}}
 	}
 
