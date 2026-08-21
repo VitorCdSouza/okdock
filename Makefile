@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 API   := api
 WEB   := web
+DATA  ?= $(PWD)/.data
 DIST  := $(API)/internal/webui/dist
 
 .DEFAULT_GOAL := help
@@ -10,14 +11,27 @@ help: ## Lista os alvos
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) \
 	  | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
+.PHONY: dev
+dev: ## Sobe API e web juntos num terminal só; Ctrl-C derruba os dois
+	@echo "  API  http://localhost:8080"
+	@echo "  web  http://localhost:4200   <- abra este"
+	@echo "  dados em $(DATA)"
+	@echo "  (use localhost, nao 127.0.0.1: o ng serve escuta so em IPv6)"
+	@echo
+	@trap 'trap - INT TERM EXIT; kill 0' INT TERM EXIT; \
+	  ( cd $(API) && GAMEDOCK_ROOT=$(DATA) GAMEDOCK_ALLOW_ORIGIN=http://localhost:4200 \
+	      go run ./cmd/gamedock 2>&1 | sed -u 's/^/[api] /' ) & \
+	  ( cd $(WEB) && npm start 2>&1 | sed -u 's/^/[web] /' ) & \
+	  wait
+
 .PHONY: dev-api
-dev-api: ## Sobe a API em :8080, liberando CORS para o ng serve
-	cd $(API) && GAMEDOCK_ROOT=$${GAMEDOCK_ROOT:-$(PWD)/.data} \
+dev-api: ## Só a API, em :8080
+	cd $(API) && GAMEDOCK_ROOT=$(DATA) \
 	  GAMEDOCK_ALLOW_ORIGIN=http://localhost:4200 \
 	  go run ./cmd/gamedock
 
 .PHONY: dev-web
-dev-web: ## Sobe o Angular em :4200, com /api indo para a API local
+dev-web: ## Só o Angular, em :4200
 	cd $(WEB) && npm start
 
 .PHONY: build

@@ -24,12 +24,16 @@ CI garantem que mexer no Angular não roda o CI do Go.
 
 ## Rodando em desenvolvimento
 
-Dois terminais:
-
 ```bash
-make dev-api    # :8080, com CORS liberado para o ng serve
-make dev-web    # :4200, com /api indo para a API local
+make dev
 ```
+
+Sobe a API em `:8080` e o Angular em `:4200` no mesmo terminal, com a saída dos
+dois prefixada por `[api]` e `[web]`. Ctrl-C derruba os dois. Abra
+**http://localhost:4200** — use `localhost`, e não `127.0.0.1`: o `ng serve`
+escuta só em IPv6.
+
+Se preferir um terminal para cada, `make dev-api` e `make dev-web` continuam lá.
 
 A API grava as instâncias em `./.data` por padrão nesse modo, então dá para
 mexer sem tocar em `/srv/games`.
