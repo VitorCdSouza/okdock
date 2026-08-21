@@ -75,6 +75,11 @@ export class NewInstance {
     return '';
   });
 
+  readonly hint = computed(() => {
+    if (!this.provider()) return '';
+    return `gera ${this.name() || '<nome>'}/docker-compose.yml`;
+  });
+
   portKey(container: number, protocol: string): string {
     return `${container}/${protocol}`;
   }

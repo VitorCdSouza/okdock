@@ -1,0 +1,32 @@
+name: docker
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: gamedock:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: painel responde
+        run: |
+          docker run -d --name gamedock -p 8080:8080 gamedock:ci
+          for i in $(seq 1 30); do
+            if curl -fs http://localhost:8080/api/v1/health; then ok=1; break; fi
+            sleep 1
+          done
+          [ -n "$ok" ] || { docker logs gamedock; exit 1; }
+          curl -fs http://localhost:8080/api/v1/providers | grep -q 'itzg/minecraft-server'
+          curl -fs http://localhost:8080/ | grep -q '<app-root>'

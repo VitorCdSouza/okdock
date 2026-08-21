@@ -1,0 +1,17 @@
+name: gamedock
+
+services:
+  gamedock:
+    build: .
+    image: gamedock:local
+    container_name: gamedock
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /srv/games:/srv/games
+    environment:
+      GAMEDOCK_ROOT: /srv/games
+      GAMEDOCK_MEMORY_RESERVE: 2g
+      GAMEDOCK_LOG_LEVEL: info

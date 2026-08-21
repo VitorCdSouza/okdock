@@ -113,9 +113,7 @@
   </div>
 
   <footer>
-    <span class="hint mono">
-      @if (provider()) { gera {{ name() || '<nome>' }}/docker-compose.yml }
-    </span>
+    <span class="hint mono">{{ hint() }}</span>
     <div class="actions">
       @if (step() > 1) {
         <button class="btn" (click)="back()" [disabled]="busy()">Voltar</button>

@@ -1,0 +1,193 @@
+<div class="backdrop" (click)="close.emit()"></div>
+
+@if (instance(); as inst) {
+  <div class="dialog" role="dialog" [attr.aria-label]="'Instância ' + inst.name">
+    <header>
+      <span class="badge">{{ provider()?.short ?? '··' }}</span>
+
+      <div class="ident">
+        <div class="title-row">
+          <span class="name">{{ inst.name }}</span>
+          <span class="chip mono"
+                [style.background]="chip().bg"
+                [style.border-color]="chip().line"
+                [style.color]="chip().fg">
+            <span class="dot" [style.background]="chip().fg"></span>{{ chip().label }}
+          </span>
+          @if (statsLine()) { <span class="stats mono">{{ statsLine() }}</span> }
+        </div>
+        <div class="sub mono">{{ subtitle() }}</div>
+      </div>
+
+      <div class="actions">
+        @if (inst.state === 'error') {
+          <button class="btn btn-sm" (click)="clearError()" [disabled]="busy()">limpar erro</button>
+        }
+        @if (inst.state === 'archived') {
+          <button class="btn btn-sm btn-go" (click)="unarchive()" [disabled]="busy()">Restaurar</button>
+        } @else if (isUp()) {
+          <button class="btn btn-sm" (click)="restart()" [disabled]="busy()">↻ Reiniciar</button>
+          <button class="btn btn-sm btn-danger" (click)="stop()" [disabled]="busy()">■ Parar</button>
+        } @else {
+          <button class="btn btn-sm btn-go" (click)="start()" [disabled]="busy()">▶ Iniciar</button>
+        }
+        <button class="btn btn-sm" (click)="close.emit()" aria-label="Fechar">✕</button>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button [class.on]="tab() === 'config'" (click)="select('config')">Configurações</button>
+      <button [class.on]="tab() === 'recursos'" (click)="select('recursos')">Recursos e rede</button>
+      <button [class.on]="tab() === 'console'" (click)="select('console')">Console</button>
+      <button [class.on]="tab() === 'compose'" (click)="select('compose')">compose.yml</button>
+    </nav>
+
+    @if (error(); as err) {
+      <div class="alert bad">
+        <strong>{{ err.message }}</strong>
+        @if (err.problems.length) {
+          <ul>@for (p of err.problems; track p) { <li class="mono">{{ p }}</li> }</ul>
+        }
+      </div>
+    }
+
+    <div class="body" [class.split]="tab() === 'config' || tab() === 'recursos'">
+      <div class="main">
+        @switch (tab()) {
+          @case ('config') {
+            @if (provider(); as p) {
+              <div class="section-title">
+                CAMPOS DO PROVEDOR
+                <span class="badge-count mono">{{ p.id }} · {{ (p.fields ?? []).length }} vars</span>
+              </div>
+              <gd-provider-form [provider]="p" [(values)]="values"
+                                [problems]="error()?.problems ?? []" />
+            } @else {
+              <p class="none">Provedor <span class="mono">{{ inst.providerId }}</span> não está mais no
+                 catálogo. Edite pelo <span class="mono">docker-compose.yml</span>.</p>
+            }
+          }
+
+          @case ('recursos') {
+            <div class="section-title">RECURSOS E REDE</div>
+            <div class="grid">
+              <div class="field">
+                <label for="mem">Limite de RAM</label>
+                <input id="mem" class="mono" [ngModel]="memoryLimit()"
+                       (ngModelChange)="memoryLimit.set($event); refreshPreview()">
+                <span class="help">teto do container. O heap da JVM vai nos campos do provedor.</span>
+              </div>
+              <div class="field">
+                <label for="cpus">CPUs</label>
+                <input id="cpus" type="number" step="0.5" min="0.5" class="mono" [ngModel]="cpus()"
+                       (ngModelChange)="cpus.set($event); refreshPreview()">
+              </div>
+              @for (p of inst.ports; track p.container + '/' + p.protocol) {
+                <div class="field">
+                  <label>Porta host — {{ p.label || 'jogo' }}
+                    <span class="alias mono">{{ p.container }}/{{ p.protocol }}</span>
+                  </label>
+                  <input type="number" class="mono" [value]="p.host"
+                         (input)="setPort(p.container, p.protocol, $any($event.target).value)">
+                </div>
+              }
+            </div>
+
+            <div class="section-title" style="margin-top:8px">VOLUMES</div>
+            <ul class="mounts mono">
+              @for (m of inst.mounts; track m.container) {
+                <li>
+                  <span class="host">{{ m.host }}</span>
+                  <span class="arrow">→</span>
+                  <span>{{ m.container }}</span>
+                  @if (m.data) { <span class="tag">mundo</span> }
+                </li>
+              }
+            </ul>
+
+            <div class="danger-zone">
+              <div class="section-title">ZONA DE RISCO</div>
+              @if (!confirmingDelete()) {
+                <div class="row">
+                  <div>
+                    <div class="dz-title">Remover instância</div>
+                    <div class="dz-sub">Derruba o container e apaga os arquivos gerados.</div>
+                  </div>
+                  <div class="dz-actions">
+                    @if (!inst.archived) {
+                      <button class="btn btn-sm" (click)="archive()" [disabled]="busy()">Arquivar</button>
+                    }
+                    <button class="btn btn-sm btn-danger" (click)="confirmingDelete.set(true)">Remover…</button>
+                  </div>
+                </div>
+              } @else {
+                <div class="confirm">
+                  <p>
+                    Vou remover <strong class="mono">{{ inst.name }}</strong>.
+                    O mundo em <span class="mono">{{ inst.dir }}</span> é preservado por padrão.
+                  </p>
+                  <label class="check danger">
+                    <input type="checkbox" [checked]="deleteData()"
+                           (change)="deleteData.set($any($event.target).checked)">
+                    <span>apagar também os dados do mundo — <strong>isto não tem volta</strong></span>
+                  </label>
+                  <div class="dz-actions">
+                    <button class="btn btn-sm" (click)="confirmingDelete.set(false)">Cancelar</button>
+                    <button class="btn btn-sm btn-danger" (click)="remove()" [disabled]="busy()">
+                      {{ deleteData() ? 'Remover e apagar o mundo' : 'Remover, manter o mundo' }}
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          @case ('console') {
+            <div class="console mono">
+              @if (logLines().length === 0) {
+                <div class="dim">sem saída ainda — a instância precisa estar de pé.</div>
+              }
+              @for (line of logLines(); track $index) {
+                <div class="line">{{ line }}</div>
+              }
+            </div>
+          }
+
+          @case ('compose') {
+            <p class="lead">
+              Este é o arquivo como está no disco. Editar à mão funciona — o painel relê.
+              Mas <strong>Salvar e recriar</strong> sobrescreve.
+            </p>
+            <pre class="code mono">{{ rawCompose() || 'carregando…' }}</pre>
+          }
+        }
+      </div>
+
+      @if (tab() === 'config' || tab() === 'recursos') {
+        <aside class="side">
+          <div class="side-head">
+            <span class="section-title">COMPOSE GERADO</span>
+          </div>
+          <pre class="code mono">{{ preview() }}</pre>
+
+          @if (recreate().length) {
+            <div class="alert warn">
+              <strong>{{ recreate().length }}</strong>
+              {{ recreate().length === 1 ? 'mudança exige' : 'mudanças exigem' }} recriar o container.
+              O mundo nos volumes é preservado.
+              <ul>@for (r of recreate(); track r) { <li class="mono">{{ r }}</li> }</ul>
+            </div>
+          }
+
+          <div class="side-foot">
+            <button class="btn btn-primary" (click)="save()" [disabled]="busy()">
+              {{ recreate().length ? 'Salvar e recriar' : 'Salvar' }}
+            </button>
+            <button class="btn" (click)="discard()" [disabled]="busy()">Descartar</button>
+          </div>
+          <div class="created mono">{{ createdLabel() }}</div>
+        </aside>
+      }
+    </div>
+  </div>
+}
