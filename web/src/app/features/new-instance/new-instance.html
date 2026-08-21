@@ -1,0 +1,131 @@
+<div class="backdrop" (click)="close.emit()"></div>
+
+<div class="dialog" role="dialog" aria-label="Nova instância">
+  <header>
+    <div>
+      <h2>Nova instância</h2>
+      <div class="steps mono">
+        <span [class.on]="step() === 1">1 jogo</span>
+        <span class="arrow">›</span>
+        <span [class.on]="step() === 2">2 imagem &amp; config</span>
+        <span class="arrow">›</span>
+        <span [class.on]="step() === 3">3 revisar compose</span>
+      </div>
+    </div>
+    <button class="btn btn-sm" (click)="close.emit()" aria-label="Fechar">✕</button>
+  </header>
+
+  <div class="body">
+    @if (error(); as err) {
+      <div class="alert bad">
+        <strong>{{ err.message }}</strong>
+        @if (err.problems.length) {
+          <ul>
+            @for (p of err.problems; track p) { <li class="mono">{{ p }}</li> }
+          </ul>
+        }
+      </div>
+    }
+
+    @switch (step()) {
+      @case (1) {
+        <p class="lead">Os campos de configuração vêm do provedor da imagem — cada uma expõe os seus.</p>
+        <div class="providers">
+          @for (p of providers(); track p.id) {
+            <button class="provider" [class.on]="provider()?.id === p.id" (click)="pick(p)">
+              <div class="head">
+                <span class="short">{{ p.short }}</span>
+                <span class="game">{{ p.gameLabel }}</span>
+              </div>
+              <div class="id mono">{{ p.id }}</div>
+              <div class="desc">{{ p.description }}</div>
+              <div class="meta mono">
+                {{ (p.fields ?? []).length }} campos · RAM mínima {{ p.minMemory }}
+              </div>
+            </button>
+          }
+        </div>
+      }
+
+      @case (2) {
+        @if (provider(); as p) {
+          <section>
+            <div class="grid-2">
+              <div class="field" [class.has-error]="!!nameError()">
+                <label for="inst-name">Nome da instância <span class="req">*</span></label>
+                <input id="inst-name" class="mono" [ngModel]="name()"
+                       (ngModelChange)="name.set($event)" placeholder="smp-familia" autofocus>
+                @if (nameError()) {
+                  <span class="err">{{ nameError() }}</span>
+                } @else {
+                  <span class="help">vira o diretório, o projeto compose e o nome do container</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="inst-image">Imagem</label>
+                <input id="inst-image" class="mono" [ngModel]="image()" (ngModelChange)="image.set($event)">
+              </div>
+
+              <div class="field">
+                <label for="inst-mem">Limite de RAM do container</label>
+                <input id="inst-mem" class="mono" [ngModel]="memoryLimit()"
+                       (ngModelChange)="memoryLimit.set($event)" placeholder="4g">
+                <span class="help">teto do container, não o heap da JVM. Mínimo desta imagem: {{ p.minMemory }}</span>
+              </div>
+
+              @for (port of ports(); track portKey(port.container, port.protocol)) {
+                <div class="field">
+                  <label>Porta host — {{ port.label }} <span class="alias mono">{{ port.container }}/{{ port.protocol }}</span></label>
+                  <input type="number" class="mono" [value]="port.host"
+                         (input)="setPort(port.container, port.protocol, $any($event.target).value)">
+                </div>
+              }
+            </div>
+          </section>
+
+          @if (budgetWarning()) {
+            <div class="alert warn">{{ budgetWarning() }}</div>
+          }
+
+          <section>
+            <div class="section-title">CAMPOS DO PROVEDOR
+              <span class="badge-count mono">{{ p.id }} · {{ (p.fields ?? []).length }} vars</span>
+            </div>
+            <gd-provider-form [provider]="p" [(values)]="values" [problems]="error()?.problems ?? []" />
+          </section>
+        }
+      }
+
+      @case (3) {
+        <p class="lead">
+          Isto vai para <span class="mono">{{ name() }}/docker-compose.yml</span>.
+          Senhas ficam no <span class="mono">.env</span> ao lado, fora deste arquivo.
+        </p>
+        <pre class="compose mono">{{ compose() }}</pre>
+        <label class="check">
+          <input type="checkbox" [checked]="startAfterCreate()"
+                 (change)="startAfterCreate.set($any($event.target).checked)">
+          <span>subir a instância logo depois de criar (baixa a imagem primeiro)</span>
+        </label>
+      }
+    }
+  </div>
+
+  <footer>
+    <span class="hint mono">
+      @if (provider()) { gera {{ name() || '<nome>' }}/docker-compose.yml }
+    </span>
+    <div class="actions">
+      @if (step() > 1) {
+        <button class="btn" (click)="back()" [disabled]="busy()">Voltar</button>
+      }
+      <button class="btn btn-primary" (click)="next()" [disabled]="!canAdvance() || busy()">
+        @if (busy()) { aguarde… }
+        @else if (step() === 3) { Criar instância }
+        @else if (step() === 2) { Revisar compose → }
+        @else { Continuar → }
+      </button>
+    </div>
+  </footer>
+</div>

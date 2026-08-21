@@ -1,0 +1,54 @@
+<article class="card" [style.border-color]="instance().state === 'error' ? 'var(--bad-line)' : null"
+         (click)="open.emit(instance())" tabindex="0"
+         (keydown.enter)="open.emit(instance())">
+  <header>
+    <span class="badge" [style.background]="colors().bg" [style.color]="colors().fg">{{ short() }}</span>
+    <div class="ident">
+      <div class="name">{{ instance().name }}</div>
+      <div class="sub mono">{{ instance().image }}</div>
+    </div>
+  </header>
+
+  @if (tags().length) {
+    <div class="tags">
+      @for (t of tags(); track t) {
+        <span class="tag">{{ t }}</span>
+      }
+    </div>
+  }
+
+  @if (instance().operation && !instance().operation!.error) {
+    <div class="panel">
+      <div class="progress-label mono">{{ instance().operation!.message }}</div>
+      <div class="bar">
+        <div class="fill" [style.width.%]="instance().operation!.percent ?? 100"
+             [style.background]="dot()"
+             [class.indeterminate]="instance().operation!.percent === undefined"></div>
+      </div>
+    </div>
+  }
+
+  @if (instance().state === 'error' && instance().status) {
+    <div class="panel log mono">{{ instance().status }}</div>
+  }
+
+  @if (instance().stats) {
+    <div class="panel stats mono">
+      <span>{{ cpuUsage() }} CPU</span>
+      <span class="sep">|</span>
+      <span>{{ memUsage() }}</span>
+      <span class="sep">|</span>
+      <span>{{ instance().cpus }} vCPU</span>
+    </div>
+  }
+
+  <footer>
+    <span class="meta mono" [style.color]="metaColor()">{{ meta() }}</span>
+    <button class="btn btn-sm"
+            [class.btn-go]="action().kind === 'go'"
+            [class.btn-danger]="action().kind === 'bad'"
+            (click)="act.emit({ instance: instance(), verb: action().verb }); $event.stopPropagation()">
+      {{ action().label }}
+    </button>
+  </footer>
+</article>

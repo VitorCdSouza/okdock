@@ -1,0 +1,123 @@
+package dockerx
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"strings"
+	"sync"
+)
+
+type Fake struct {
+	mu sync.Mutex
+
+	Containers    map[string][]Container
+	LogText       map[string]string
+	StatsByName   map[string]Stats
+	FailUp        map[string]error
+	FailPull      map[string]error
+	FailDown      map[string]error
+	ServerVersion string
+
+	Calls []string
+}
+
+func NewFake() *Fake {
+	return &Fake{
+		Containers:    map[string][]Container{},
+		LogText:       map[string]string{},
+		StatsByName:   map[string]Stats{},
+		FailUp:        map[string]error{},
+		FailPull:      map[string]error{},
+		FailDown:      map[string]error{},
+		ServerVersion: "27.1.0",
+	}
+}
+
+func (f *Fake) record(op, dir string) {
+	f.Calls = append(f.Calls, op+":"+dir)
+}
+
+func (f *Fake) Up(_ context.Context, dir string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.record("up", dir)
+	if err := f.FailUp[dir]; err != nil {
+		return err
+	}
+	name := nameFromDir(dir)
+	f.Containers[dir] = []Container{{
+		Name: name, Service: name, State: "running", Status: "Up 1 second", Health: "",
+	}}
+	return nil
+}
+
+func (f *Fake) Down(_ context.Context, dir string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.record("down", dir)
+	if err := f.FailDown[dir]; err != nil {
+		return err
+	}
+	delete(f.Containers, dir)
+	return nil
+}
+
+func (f *Fake) Restart(_ context.Context, dir string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.record("restart", dir)
+	return nil
+}
+
+func (f *Fake) Pull(_ context.Context, dir string, progress func(string)) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.record("pull", dir)
+	if progress != nil {
+		progress("Pulling " + nameFromDir(dir))
+	}
+	return f.FailPull[dir]
+}
+
+func (f *Fake) PS(_ context.Context, dir string) ([]Container, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.record("ps", dir)
+	return f.Containers[dir], nil
+}
+
+func (f *Fake) Logs(_ context.Context, dir string, _ int, _ bool) (io.ReadCloser, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.record("logs", dir)
+	return io.NopCloser(strings.NewReader(f.LogText[dir])), nil
+}
+
+func (f *Fake) Stats(_ context.Context, names []string) ([]Stats, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	var out []Stats
+	for _, n := range names {
+		if s, ok := f.StatsByName[n]; ok {
+			out = append(out, s)
+		}
+	}
+	return out, nil
+}
+
+func (f *Fake) Version(_ context.Context) (string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.ServerVersion == "" {
+		return "", fmt.Errorf("Cannot connect to the Docker daemon at unix:///var/run/docker.sock")
+	}
+	return f.ServerVersion, nil
+}
+
+func nameFromDir(dir string) string {
+	if i := strings.LastIndex(dir, "/"); i >= 0 {
+		return dir[i+1:]
+	}
+	return dir
+}

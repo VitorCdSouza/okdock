@@ -1,0 +1,38 @@
+@if (store.loading()) {
+  <div class="empty">carregando instâncias…</div>
+} @else if (store.instances().length === 0) {
+  <div class="empty">
+    <p>Nenhuma instância ainda.</p>
+    <p>Cada instância vira um diretório com <span class="mono">docker-compose.yml</span> próprio,
+       administrável pelo terminal mesmo com o painel fora do ar.</p>
+    <button class="btn btn-primary" (click)="create.emit()">+ Criar a primeira</button>
+  </div>
+} @else if (total() === 0) {
+  <div class="empty">Nenhuma instância bate com o filtro.</div>
+} @else {
+  <div class="board">
+    @for (col of columns(); track col.state) {
+      @if (visible(col.state, col.cards.length)) {
+        <section class="column">
+          <header>
+            <span class="dot" [style.background]="col.dot"></span>
+            <span class="title">{{ col.title }}</span>
+            <span class="count mono">{{ col.cards.length }}</span>
+          </header>
+
+          @for (card of col.cards; track card.name) {
+            <gd-instance-card
+              [instance]="card"
+              [short]="short(card)"
+              (open)="open.emit($event)"
+              (act)="onAction($event)" />
+          }
+
+          @if (col.state === 'stopped') {
+            <button class="add" (click)="create.emit()" title="Nova instância">＋</button>
+          }
+        </section>
+      }
+    }
+  </div>
+}

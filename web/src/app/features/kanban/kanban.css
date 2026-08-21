@@ -1,0 +1,36 @@
+.board {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(230px, 1fr);
+  gap: 12px;
+  padding: 16px 20px 26px;
+  align-items: start;
+  overflow-x: auto;
+  min-height: 0;
+}
+
+.column { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+.column > header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 2px 2px 0;
+}
+.dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.title { font: 600 11px var(--sans); color: var(--fg-soft); letter-spacing: .04em; }
+.count { font: 500 10.5px var(--mono); color: var(--fg-dim); }
+
+.add {
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r);
+  padding: 10px;
+  text-align: center;
+  font: 400 10.5px var(--mono);
+  color: var(--fg-faint);
+  width: 100%;
+}
+.add:hover { border-color: var(--accent-line); color: var(--accent); }
+
+.empty p { margin: 0 0 10px; }
+.empty .btn { margin-top: 10px; }

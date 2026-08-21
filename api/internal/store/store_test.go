@@ -1,0 +1,224 @@
+package store
+
+import (
+	"errors"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/VitorCdSouza/gamedock/api/internal/instance"
+)
+
+func newStore(t *testing.T) *Store {
+	t.Helper()
+	s, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	return s
+}
+
+func spec(name string) instance.Spec {
+	return instance.Spec{
+		Name:             name,
+		ProviderID:       "itzg/minecraft-server",
+		Game:             "minecraft-java",
+		Image:            "itzg/minecraft-server:java21",
+		Env:              map[string]string{"EULA": "true", "SENHA": "hunter2"},
+		SecretKeys:       []string{"SENHA"},
+		Ports:            []instance.PortBinding{{Host: 25565, Container: 25565, Protocol: "tcp"}},
+		Mounts:           []instance.Mount{{Host: "./data", Container: "/data", Data: true}},
+		MemoryLimit:      "4g",
+		CPUs:             2,
+		Restart:          "unless-stopped",
+		StopGraceSeconds: 120,
+	}
+}
+
+func TestCreateWritesTheThreeFiles(t *testing.T) {
+	s := newStore(t)
+	if err := s.Create(spec("smp")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	for _, f := range []string{"docker-compose.yml", ".env", ".gamedock.json"} {
+		if _, err := os.Stat(filepath.Join(s.Dir("smp"), f)); err != nil {
+			t.Errorf("faltou %s: %v", f, err)
+		}
+	}
+	if info, err := os.Stat(filepath.Join(s.Dir("smp"), "data")); err != nil || !info.IsDir() {
+		t.Errorf("diretório de dados não foi criado: %v", err)
+	}
+}
+
+func TestEnvFileIsNotWorldReadable(t *testing.T) {
+	s := newStore(t)
+	if err := s.Create(spec("smp")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	info, err := os.Stat(filepath.Join(s.Dir("smp"), ".env"))
+	if err != nil {
+		t.Fatalf("stat .env: %v", err)
+	}
+	if perm := info.Mode().Perm(); perm&0o077 != 0 {
+		t.Errorf(".env com permissão %v; esperava no máximo 0600", perm)
+	}
+}
+
+func TestCreateRefusesToOverwrite(t *testing.T) {
+	s := newStore(t)
+	if err := s.Create(spec("smp")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	err := s.Create(spec("smp"))
+	if !errors.Is(err, ErrExists) {
+		t.Fatalf("esperava ErrExists, veio %v", err)
+	}
+}
+
+func TestCreateRollsBackOnRenderFailure(t *testing.T) {
+	s := newStore(t)
+	bad := spec("smp")
+	bad.Image = ""
+
+	if err := s.Create(bad); err == nil {
+		t.Fatal("esperava erro de render")
+	}
+	if s.Exists("smp") {
+		t.Error("diretório meio criado ficou para trás")
+	}
+}
+
+func TestRoundTrip(t *testing.T) {
+	s := newStore(t)
+	orig := spec("smp")
+	if err := s.Create(orig); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	got, err := s.Get("smp")
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if got.Image != orig.Image || got.MemoryLimit != orig.MemoryLimit {
+		t.Errorf("spec mudou na ida e volta: %+v", got)
+	}
+	if got.Env["SENHA"] != "hunter2" {
+		t.Errorf("segredo não sobreviveu ao .gamedock.json: %v", got.Env)
+	}
+	if got.CreatedAt.IsZero() {
+		t.Error("CreatedAt não foi preenchido")
+	}
+}
+
+func TestUpdateKeepsCreatedAt(t *testing.T) {
+	s := newStore(t)
+	if err := s.Create(spec("smp")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	before, _ := s.Get("smp")
+
+	next := spec("smp")
+	next.MemoryLimit = "8g"
+	if err := s.Update(next); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	after, _ := s.Get("smp")
+
+	if !after.CreatedAt.Equal(before.CreatedAt) {
+		t.Errorf("CreatedAt mudou no update: %v -> %v", before.CreatedAt, after.CreatedAt)
+	}
+	if after.MemoryLimit != "8g" {
+		t.Errorf("update não pegou: %q", after.MemoryLimit)
+	}
+}
+
+func TestUpdateRemovesEnvFileWhenSecretsGone(t *testing.T) {
+	s := newStore(t)
+	if err := s.Create(spec("smp")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	next := spec("smp")
+	delete(next.Env, "SENHA")
+	next.SecretKeys = nil
+	if err := s.Update(next); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(s.Dir("smp"), ".env")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf(".env devia ter sido removido, err=%v", err)
+	}
+}
+
+func TestGetMissing(t *testing.T) {
+	s := newStore(t)
+	if _, err := s.Get("nao-existe"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("esperava ErrNotFound, veio %v", err)
+	}
+}
+
+func TestListSkipsForeignDirectories(t *testing.T) {
+	s := newStore(t)
+	if err := s.Create(spec("smp")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Join(s.Root, "coisa-do-usuario"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	list, err := s.List()
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(list) != 1 || list[0].Name != "smp" {
+		t.Errorf("List = %v", list)
+	}
+}
+
+func TestDeleteKeepData(t *testing.T) {
+	s := newStore(t)
+	if err := s.Create(spec("smp")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	world := filepath.Join(s.Dir("smp"), "data", "level.dat")
+	if err := os.WriteFile(world, []byte("mundo"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := s.Delete("smp", true); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+	if _, err := os.Stat(world); err != nil {
+		t.Errorf("keepData devia preservar o mundo: %v", err)
+	}
+	if _, err := s.Get("smp"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("instância devia sumir da listagem: %v", err)
+	}
+}
+
+func TestDeleteEverything(t *testing.T) {
+	s := newStore(t)
+	if err := s.Create(spec("smp")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if err := s.Delete("smp", false); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+	if _, err := os.Stat(s.Dir("smp")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("diretório devia ter sumido: %v", err)
+	}
+}
+
+func TestNameFollowsDirectory(t *testing.T) {
+	s := newStore(t)
+	if err := s.Create(spec("smp")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if err := os.Rename(s.Dir("smp"), s.Dir("smp-novo")); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.Get("smp-novo")
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if got.Name != "smp-novo" {
+		t.Errorf("Name = %q, queria smp-novo", got.Name)
+	}
+}

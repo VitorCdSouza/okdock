@@ -1,0 +1,813 @@
+package manager
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"sort"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/VitorCdSouza/gamedock/api/internal/catalog"
+	"github.com/VitorCdSouza/gamedock/api/internal/compose"
+	"github.com/VitorCdSouza/gamedock/api/internal/dockerx"
+	"github.com/VitorCdSouza/gamedock/api/internal/instance"
+	"github.com/VitorCdSouza/gamedock/api/internal/store"
+	"github.com/VitorCdSouza/gamedock/api/internal/system"
+)
+
+type Options struct {
+	Store         *store.Store
+	Docker        dockerx.Runner
+	System        system.Reader
+	MemoryReserve int64
+	Now           func() time.Time
+}
+
+const DefaultMemoryReserve = 2 << 30
+
+type Manager struct {
+	store   *store.Store
+	docker  dockerx.Runner
+	sys     system.Reader
+	reserve int64
+	now     func() time.Time
+
+	mu  sync.Mutex
+	ops map[string]*instance.Operation
+
+	hub *Hub
+}
+
+func New(o Options) *Manager {
+	reserve := o.MemoryReserve
+	if reserve == 0 {
+		reserve = DefaultMemoryReserve
+	}
+	now := o.Now
+	if now == nil {
+		now = func() time.Time { return time.Now().UTC() }
+	}
+	return &Manager{
+		store:   o.Store,
+		docker:  o.Docker,
+		sys:     o.System,
+		reserve: reserve,
+		now:     now,
+		ops:     map[string]*instance.Operation{},
+		hub:     NewHub(),
+	}
+}
+
+func (m *Manager) Events() *Hub { return m.hub }
+
+func (m *Manager) List(ctx context.Context) ([]instance.Instance, error) {
+	specs, err := m.store.List()
+	if err != nil {
+		return nil, err
+	}
+	out := make([]instance.Instance, 0, len(specs))
+	running := make([]string, 0, len(specs))
+	for _, spec := range specs {
+		inst := m.hydrate(ctx, spec)
+		if inst.State == instance.StateRunning || inst.State == instance.StateStarting {
+			running = append(running, spec.Name)
+		}
+		out = append(out, inst)
+	}
+	m.attachStats(ctx, out, running)
+	return out, nil
+}
+
+func (m *Manager) Get(ctx context.Context, name string) (instance.Instance, error) {
+	spec, err := m.store.Get(name)
+	if err != nil {
+		return instance.Instance{}, err
+	}
+	list := []instance.Instance{m.hydrate(ctx, spec)}
+	if isUp(list[0].State) {
+		m.attachStats(ctx, list, []string{name})
+	}
+	return list[0], nil
+}
+
+func (m *Manager) hydrate(ctx context.Context, spec instance.Spec) instance.Instance {
+	inst := instance.Instance{Spec: spec, Dir: m.store.Dir(spec.Name)}
+	inst.Operation = m.operation(spec.Name)
+
+	containers, err := m.docker.PS(ctx, inst.Dir)
+	if err != nil {
+		inst.State = instance.StateError
+		inst.Status = err.Error()
+		return inst
+	}
+	inst.State, inst.Status, inst.Health, inst.ExitCode = deriveState(spec, containers, inst.Operation)
+	return inst
+}
+
+func deriveState(spec instance.Spec, containers []dockerx.Container, op *instance.Operation) (instance.State, string, string, *int) {
+	if op != nil {
+		if op.Error != "" {
+			return instance.StateError, op.Error, "", nil
+		}
+		switch op.Kind {
+		case OpProvision:
+			return instance.StateProvisioning, op.Message, "", nil
+		case OpUpdate:
+			return instance.StateUpdating, op.Message, "", nil
+		case OpStart:
+			return instance.StateStarting, op.Message, "", nil
+		}
+	}
+	if spec.Archived {
+		return instance.StateArchived, "arquivada", "", nil
+	}
+	if len(containers) == 0 {
+		return instance.StateStopped, "", "", nil
+	}
+	c := containers[0]
+	switch c.State {
+	case "running":
+		switch c.Health {
+		case "starting":
+			return instance.StateStarting, c.Status, c.Health, nil
+		case "unhealthy":
+			return instance.StateError, c.Status, c.Health, nil
+		default:
+			return instance.StateRunning, c.Status, c.Health, nil
+		}
+	case "restarting":
+		return instance.StateStarting, c.Status, c.Health, nil
+	case "created":
+		return instance.StateProvisioning, c.Status, c.Health, nil
+	case "paused":
+		return instance.StateStopped, c.Status, c.Health, nil
+	case "exited", "dead":
+		code := c.ExitCode
+		if code != 0 {
+			return instance.StateError, c.Status, c.Health, &code
+		}
+		return instance.StateStopped, c.Status, c.Health, &code
+	default:
+		return instance.StateStopped, c.Status, c.Health, nil
+	}
+}
+
+func (m *Manager) attachStats(ctx context.Context, list []instance.Instance, names []string) {
+	if len(names) == 0 {
+		return
+	}
+	stats, err := m.docker.Stats(ctx, names)
+	if err != nil || len(stats) == 0 {
+		return
+	}
+	byName := make(map[string]dockerx.Stats, len(stats))
+	for _, s := range stats {
+		byName[s.Name] = s
+	}
+	for i := range list {
+		if s, ok := byName[list[i].Name]; ok {
+			list[i].Stats = &instance.Stats{
+				CPUPercent:  s.CPUPercent,
+				MemoryBytes: s.MemoryBytes,
+				MemoryLimit: s.MemoryLimit,
+			}
+		}
+	}
+}
+
+func (m *Manager) System(ctx context.Context) (SystemInfo, error) {
+	info, err := m.sys.Read(m.store.Root)
+	if err != nil {
+		return SystemInfo{}, err
+	}
+	out := SystemInfo{Info: info, MemoryReserve: m.reserve}
+	out.MemoryBudget = info.MemoryTotal - m.reserve
+
+	if v, err := m.docker.Version(ctx); err == nil {
+		out.DockerVersion = v
+	} else {
+		out.DockerError = err.Error()
+	}
+
+	list, err := m.List(ctx)
+	if err == nil {
+		for _, i := range list {
+			n, _ := instance.ParseMemory(i.MemoryLimit)
+			out.MemoryPlanned += n
+			if isUp(i.State) {
+				out.MemoryCommitted += n
+			}
+		}
+		out.InstanceCount = len(list)
+	}
+	return out, nil
+}
+
+type SystemInfo struct {
+	system.Info
+	DockerVersion   string `json:"dockerVersion,omitempty"`
+	DockerError     string `json:"dockerError,omitempty"`
+	MemoryReserve   int64  `json:"memoryReserve"`
+	MemoryBudget    int64  `json:"memoryBudget"`
+	MemoryCommitted int64  `json:"memoryCommitted"`
+	MemoryPlanned   int64  `json:"memoryPlanned"`
+	InstanceCount   int    `json:"instanceCount"`
+}
+
+func isUp(s instance.State) bool {
+	switch s {
+	case instance.StateRunning, instance.StateStarting, instance.StateProvisioning, instance.StateUpdating:
+		return true
+	}
+	return false
+}
+
+const (
+	OpProvision = "provision"
+	OpUpdate    = "update"
+	OpStart     = "start"
+	OpStop      = "stop"
+)
+
+func (m *Manager) operation(name string) *instance.Operation {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	op, ok := m.ops[name]
+	if !ok {
+		return nil
+	}
+	cp := *op
+	return &cp
+}
+
+func (m *Manager) beginOp(name, kind, msg string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if cur, ok := m.ops[name]; ok && cur.Error == "" {
+		return fmt.Errorf("%q já está em %s", name, cur.Kind)
+	}
+	m.ops[name] = &instance.Operation{Kind: kind, Message: msg, StartedAt: m.now()}
+	return nil
+}
+
+func (m *Manager) progress(name, msg string, pct *int) {
+	m.mu.Lock()
+	if op, ok := m.ops[name]; ok {
+		op.Message = msg
+		op.Percent = pct
+	}
+	m.mu.Unlock()
+	m.hub.Publish(Event{Type: "instance.progress", Instance: name, Message: msg})
+}
+
+func (m *Manager) endOp(name string, err error) {
+	m.mu.Lock()
+	if err != nil {
+		if op, ok := m.ops[name]; ok {
+			op.Error = err.Error()
+		}
+	} else {
+		delete(m.ops, name)
+	}
+	m.mu.Unlock()
+
+	ev := Event{Type: "instance.changed", Instance: name}
+	if err != nil {
+		ev.Type = "instance.failed"
+		ev.Message = err.Error()
+	}
+	m.hub.Publish(ev)
+}
+
+func (m *Manager) ClearError(name string) {
+	m.mu.Lock()
+	if op, ok := m.ops[name]; ok && op.Error != "" {
+		delete(m.ops, name)
+	}
+	m.mu.Unlock()
+	m.hub.Publish(Event{Type: "instance.changed", Instance: name})
+}
+
+type ErrBudget struct {
+	Requested, Committed, Budget int64
+	Instance                     string
+}
+
+func (e *ErrBudget) Error() string {
+	return fmt.Sprintf(
+		"%s pede %s, mas só há %s livres no orçamento de %s (as instâncias de pé já usam %s)",
+		e.Instance,
+		instance.FormatMemory(e.Requested),
+		instance.FormatMemory(max64(0, e.Budget-e.Committed)),
+		instance.FormatMemory(e.Budget),
+		instance.FormatMemory(e.Committed),
+	)
+}
+
+func max64(a, b int64) int64 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+type ErrPortTaken struct {
+	Port  int
+	Proto string
+	Owner string
+}
+
+func (e *ErrPortTaken) Error() string {
+	return fmt.Sprintf("porta %d/%s já é usada por %s", e.Port, e.Proto, e.Owner)
+}
+
+func (m *Manager) checkBudget(ctx context.Context, spec instance.Spec) error {
+	want, err := instance.ParseMemory(spec.MemoryLimit)
+	if err != nil {
+		return err
+	}
+	if want == 0 {
+		return nil
+	}
+	info, err := m.sys.Read(m.store.Root)
+	if err != nil {
+		return err
+	}
+	budget := info.MemoryTotal - m.reserve
+
+	var committed int64
+	list, err := m.List(ctx)
+	if err != nil {
+		return err
+	}
+	for _, i := range list {
+		if i.Name == spec.Name || !isUp(i.State) {
+			continue
+		}
+		n, _ := instance.ParseMemory(i.MemoryLimit)
+		committed += n
+	}
+	if committed+want > budget {
+		return &ErrBudget{Requested: want, Committed: committed, Budget: budget, Instance: spec.Name}
+	}
+	return nil
+}
+
+func (m *Manager) checkPorts(spec instance.Spec) error {
+	specs, err := m.store.List()
+	if err != nil {
+		return err
+	}
+	taken := map[string]string{}
+	for _, other := range specs {
+		if other.Name == spec.Name {
+			continue
+		}
+		for _, p := range other.Ports {
+			taken[fmt.Sprintf("%d/%s", p.Host, p.Protocol)] = other.Name
+		}
+	}
+	seen := map[string]bool{}
+	for _, p := range spec.Ports {
+		key := fmt.Sprintf("%d/%s", p.Host, p.Protocol)
+		if owner, ok := taken[key]; ok {
+			return &ErrPortTaken{Port: p.Host, Proto: p.Protocol, Owner: owner}
+		}
+		if seen[key] {
+			return &ErrPortTaken{Port: p.Host, Proto: p.Protocol, Owner: spec.Name}
+		}
+		seen[key] = true
+	}
+	return nil
+}
+
+func (m *Manager) SuggestPort(base int, proto string) int {
+	specs, err := m.store.List()
+	if err != nil {
+		return base
+	}
+	taken := map[int]bool{}
+	for _, s := range specs {
+		for _, p := range s.Ports {
+			if p.Protocol == proto {
+				taken[p.Host] = true
+			}
+		}
+	}
+	for port := base; port < base+200 && port < 65536; port++ {
+		if !taken[port] {
+			return port
+		}
+	}
+	return base
+}
+
+func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
+	if err := instance.ValidateName(req.Name); err != nil {
+		return instance.Spec{}, err
+	}
+	prov, ok := catalog.Get(req.ProviderID)
+	if !ok {
+		return instance.Spec{}, fmt.Errorf("provedor desconhecido: %q", req.ProviderID)
+	}
+
+	image := strings.TrimSpace(req.Image)
+	if image == "" {
+		image = prov.Image
+	}
+	if image == "" {
+		return instance.Spec{}, errors.New("a imagem custom precisa de um nome de imagem")
+	}
+
+	env, err := prov.Validate(req.Values)
+	if err != nil {
+		return instance.Spec{}, err
+	}
+
+	secretKeys := req.SecretKeys
+	if prov.ID != catalog.CustomProviderID {
+		secretKeys = nil
+		for _, f := range prov.Fields {
+			if f.Secret {
+				secretKeys = append(secretKeys, f.Key)
+			}
+		}
+	}
+	sort.Strings(secretKeys)
+
+	ports := req.Ports
+	if len(ports) == 0 {
+		for _, p := range prov.Ports {
+			if p.Optional {
+				continue
+			}
+			ports = append(ports, instance.PortBinding{
+				Host:      m.SuggestPort(p.DefaultHost, p.Protocol),
+				Container: p.Container,
+				Protocol:  p.Protocol,
+				Label:     p.Label,
+			})
+		}
+	}
+	for i, p := range ports {
+		if p.Host < 1 || p.Host > 65535 || p.Container < 1 || p.Container > 65535 {
+			return instance.Spec{}, fmt.Errorf("porta inválida: %s", p)
+		}
+		if p.Protocol != "tcp" && p.Protocol != "udp" {
+			ports[i].Protocol = "tcp"
+		}
+	}
+
+	mounts := req.Mounts
+	if len(mounts) == 0 {
+		for _, v := range prov.Volumes {
+			mounts = append(mounts, instance.Mount{Host: v.Host, Container: v.Container, Data: v.Data})
+		}
+	}
+
+	memLimit := strings.TrimSpace(req.MemoryLimit)
+	if memLimit == "" {
+		memLimit = prov.DefaultMemory
+	}
+	want, err := instance.ParseMemory(memLimit)
+	if err != nil {
+		return instance.Spec{}, err
+	}
+	if min, err := instance.ParseMemory(prov.MinMemory); err == nil && min > 0 && want < min {
+		return instance.Spec{}, fmt.Errorf(
+			"%s pede pelo menos %s de RAM; %s não sobe (a imagem morre com exit 137)",
+			prov.GameLabel, prov.MinMemory, memLimit)
+	}
+
+	cpus := req.CPUs
+	if cpus <= 0 {
+		cpus = prov.DefaultCPUs
+	}
+	restart := req.Restart
+	if restart == "" {
+		restart = "unless-stopped"
+	}
+
+	return instance.Spec{
+		Name:             req.Name,
+		ProviderID:       prov.ID,
+		Game:             prov.Game,
+		Image:            image,
+		Env:              env,
+		SecretKeys:       secretKeys,
+		Ports:            ports,
+		Mounts:           mounts,
+		MemoryLimit:      instance.FormatMemory(want),
+		CPUs:             cpus,
+		Restart:          restart,
+		StopGraceSeconds: prov.StopGraceSeconds,
+		UpdatedAt:        m.now(),
+	}, nil
+}
+
+type SpecRequest struct {
+	Name        string                 `json:"name"`
+	ProviderID  string                 `json:"providerId"`
+	Image       string                 `json:"image,omitempty"`
+	Values      map[string]string      `json:"values"`
+	Ports       []instance.PortBinding `json:"ports,omitempty"`
+	Mounts      []instance.Mount       `json:"mounts,omitempty"`
+	MemoryLimit string                 `json:"memoryLimit,omitempty"`
+	CPUs        float64                `json:"cpus,omitempty"`
+	Restart     string                 `json:"restart,omitempty"`
+	SecretKeys  []string               `json:"secretKeys,omitempty"`
+	Start       bool                   `json:"start,omitempty"`
+}
+
+func (m *Manager) PreviewCompose(req SpecRequest) ([]byte, error) {
+	spec, err := m.BuildSpec(req)
+	if err != nil {
+		return nil, err
+	}
+	return compose.Render(spec)
+}
+
+func (m *Manager) Create(ctx context.Context, req SpecRequest) (instance.Spec, error) {
+	spec, err := m.BuildSpec(req)
+	if err != nil {
+		return instance.Spec{}, err
+	}
+	if m.store.Exists(spec.Name) {
+		return instance.Spec{}, fmt.Errorf("%q: %w", spec.Name, store.ErrExists)
+	}
+	if err := m.checkPorts(spec); err != nil {
+		return instance.Spec{}, err
+	}
+	if req.Start {
+		if err := m.checkBudget(ctx, spec); err != nil {
+			return instance.Spec{}, err
+		}
+	}
+	if err := m.store.Create(spec); err != nil {
+		return instance.Spec{}, err
+	}
+	m.hub.Publish(Event{Type: "instance.created", Instance: spec.Name})
+
+	if req.Start {
+		if err := m.beginOp(spec.Name, OpProvision, "preparando"); err != nil {
+			return spec, err
+		}
+		go m.provision(spec.Name)
+	}
+	return spec, nil
+}
+
+func (m *Manager) provision(name string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	defer cancel()
+
+	dir := m.store.Dir(name)
+	err := m.docker.Pull(ctx, dir, func(line string) {
+		m.progress(name, line, nil)
+	})
+	if err == nil {
+		m.progress(name, "criando container", nil)
+		err = m.docker.Up(ctx, dir)
+	}
+	m.endOp(name, err)
+}
+
+func (m *Manager) Update(ctx context.Context, name string, req SpecRequest) (instance.Spec, error) {
+	old, err := m.store.Get(name)
+	if err != nil {
+		return instance.Spec{}, err
+	}
+	req.Name = name
+	if req.ProviderID == "" {
+		req.ProviderID = old.ProviderID
+	}
+	spec, err := m.BuildSpec(req)
+	if err != nil {
+		return instance.Spec{}, err
+	}
+	spec.Archived = old.Archived
+	if err := m.checkPorts(spec); err != nil {
+		return instance.Spec{}, err
+	}
+
+	inst, err := m.Get(ctx, name)
+	if err != nil {
+		return instance.Spec{}, err
+	}
+	wasUp := isUp(inst.State)
+	if wasUp {
+		if err := m.checkBudget(ctx, spec); err != nil {
+			return instance.Spec{}, err
+		}
+	}
+	if err := m.store.Update(spec); err != nil {
+		return instance.Spec{}, err
+	}
+
+	if wasUp && NeedsRecreate(old, spec) {
+		if err := m.beginOp(name, OpUpdate, "recriando container"); err != nil {
+			return spec, err
+		}
+		go m.recreate(name)
+	} else {
+		m.hub.Publish(Event{Type: "instance.changed", Instance: name})
+	}
+	return spec, nil
+}
+
+func (m *Manager) recreate(name string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
+	defer cancel()
+
+	dir := m.store.Dir(name)
+	m.progress(name, "parando", nil)
+	err := m.docker.Down(ctx, dir)
+	if err == nil {
+		m.progress(name, "subindo com a config nova", nil)
+		err = m.docker.Up(ctx, dir)
+	}
+	m.endOp(name, err)
+}
+
+func NeedsRecreate(old, new instance.Spec) bool {
+	if old.Image != new.Image ||
+		old.MemoryLimit != new.MemoryLimit ||
+		old.CPUs != new.CPUs ||
+		old.Restart != new.Restart ||
+		old.StopGraceSeconds != new.StopGraceSeconds {
+		return true
+	}
+	if len(old.Env) != len(new.Env) {
+		return true
+	}
+	for k, v := range new.Env {
+		if old.Env[k] != v {
+			return true
+		}
+	}
+	if len(old.Ports) != len(new.Ports) {
+		return true
+	}
+	for i := range new.Ports {
+		if old.Ports[i] != new.Ports[i] {
+			return true
+		}
+	}
+	if len(old.Mounts) != len(new.Mounts) {
+		return true
+	}
+	for i := range new.Mounts {
+		if old.Mounts[i] != new.Mounts[i] {
+			return true
+		}
+	}
+	return false
+}
+
+func RecreateFields(old, new instance.Spec) []string {
+	var out []string
+	if old.Image != new.Image {
+		out = append(out, "imagem")
+	}
+	if old.MemoryLimit != new.MemoryLimit {
+		out = append(out, "limite de RAM")
+	}
+	if old.CPUs != new.CPUs {
+		out = append(out, "CPUs")
+	}
+	if old.Restart != new.Restart {
+		out = append(out, "política de restart")
+	}
+	for k, v := range new.Env {
+		if old.Env[k] != v {
+			out = append(out, k)
+		}
+	}
+	for k := range old.Env {
+		if _, ok := new.Env[k]; !ok {
+			out = append(out, k+" (removida)")
+		}
+	}
+	if len(old.Ports) != len(new.Ports) {
+		out = append(out, "portas")
+	} else {
+		for i := range new.Ports {
+			if old.Ports[i] != new.Ports[i] {
+				out = append(out, "portas")
+				break
+			}
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+func (m *Manager) Start(ctx context.Context, name string) error {
+	spec, err := m.store.Get(name)
+	if err != nil {
+		return err
+	}
+	if spec.Archived {
+		return fmt.Errorf("%q está arquivada; restaure antes de subir", name)
+	}
+	if err := m.checkBudget(ctx, spec); err != nil {
+		return err
+	}
+	if err := m.beginOp(name, OpStart, "subindo"); err != nil {
+		return err
+	}
+	go func() {
+		c, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+		defer cancel()
+		m.endOp(name, m.docker.Up(c, m.store.Dir(name)))
+	}()
+	return nil
+}
+
+func (m *Manager) Stop(ctx context.Context, name string) error {
+	if _, err := m.store.Get(name); err != nil {
+		return err
+	}
+	if err := m.beginOp(name, OpStop, "parando"); err != nil {
+		return err
+	}
+	go func() {
+		c, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		defer cancel()
+		m.endOp(name, m.docker.Down(c, m.store.Dir(name)))
+	}()
+	return nil
+}
+
+func (m *Manager) Restart(ctx context.Context, name string) error {
+	if _, err := m.store.Get(name); err != nil {
+		return err
+	}
+	if err := m.beginOp(name, OpStart, "reiniciando"); err != nil {
+		return err
+	}
+	go func() {
+		c, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		defer cancel()
+		m.endOp(name, m.docker.Restart(c, m.store.Dir(name)))
+	}()
+	return nil
+}
+
+func (m *Manager) SetArchived(ctx context.Context, name string, archived bool) error {
+	spec, err := m.store.Get(name)
+	if err != nil {
+		return err
+	}
+	if archived {
+		if err := m.docker.Down(ctx, m.store.Dir(name)); err != nil {
+			return err
+		}
+	}
+	spec.Archived = archived
+	if err := m.store.Update(spec); err != nil {
+		return err
+	}
+	m.hub.Publish(Event{Type: "instance.changed", Instance: name})
+	return nil
+}
+
+func (m *Manager) Delete(ctx context.Context, name string, keepData bool) error {
+	if _, err := m.store.Get(name); err != nil {
+		return err
+	}
+	if err := m.docker.Down(ctx, m.store.Dir(name)); err != nil {
+		var de *dockerx.Error
+		if !errors.As(err, &de) {
+			return err
+		}
+	}
+	if err := m.store.Delete(name, keepData); err != nil {
+		return err
+	}
+	m.mu.Lock()
+	delete(m.ops, name)
+	m.mu.Unlock()
+	m.hub.Publish(Event{Type: "instance.deleted", Instance: name})
+	return nil
+}
+
+func (m *Manager) Logs(ctx context.Context, name string, tail int, follow bool) (readCloser, error) {
+	if _, err := m.store.Get(name); err != nil {
+		return nil, err
+	}
+	return m.docker.Logs(ctx, m.store.Dir(name), tail, follow)
+}
+
+type readCloser = interface {
+	Read([]byte) (int, error)
+	Close() error
+}
+
+func (m *Manager) Compose(name string) ([]byte, error) {
+	return m.store.ReadCompose(name)
+}
+
+func (m *Manager) Store() *store.Store { return m.store }

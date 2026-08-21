@@ -1,0 +1,191 @@
+package compose
+
+import (
+	"bytes"
+	"fmt"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+
+	"gopkg.in/yaml.v3"
+
+	"github.com/VitorCdSouza/gamedock/api/internal/instance"
+)
+
+const Label = "gamedock"
+
+type file struct {
+	Name     string             `yaml:"name"`
+	Services map[string]service `yaml:"services"`
+}
+
+type service struct {
+	Image           string            `yaml:"image"`
+	ContainerName   string            `yaml:"container_name"`
+	Restart         string            `yaml:"restart,omitempty"`
+	StopGracePeriod string            `yaml:"stop_grace_period,omitempty"`
+	Ports           []string          `yaml:"ports,omitempty"`
+	Environment     map[string]string `yaml:"environment,omitempty"`
+	EnvFile         []string          `yaml:"env_file,omitempty"`
+	Volumes         []string          `yaml:"volumes,omitempty"`
+	Deploy          *deploy           `yaml:"deploy,omitempty"`
+	Labels          map[string]string `yaml:"labels,omitempty"`
+	StdinOpen       bool              `yaml:"stdin_open,omitempty"`
+	Tty             bool              `yaml:"tty,omitempty"`
+}
+
+type deploy struct {
+	Resources resources `yaml:"resources"`
+}
+
+type resources struct {
+	Limits limits `yaml:"limits"`
+}
+
+type limits struct {
+	Memory string `yaml:"memory,omitempty"`
+	CPUs   string `yaml:"cpus,omitempty"`
+}
+
+func Render(spec instance.Spec) ([]byte, error) {
+	if err := instance.ValidateName(spec.Name); err != nil {
+		return nil, err
+	}
+	if strings.TrimSpace(spec.Image) == "" {
+		return nil, fmt.Errorf("instância %s: imagem vazia", spec.Name)
+	}
+
+	secret := make(map[string]bool, len(spec.SecretKeys))
+	for _, k := range spec.SecretKeys {
+		secret[k] = true
+	}
+
+	env := make(map[string]string)
+	hasSecret := false
+	for k, v := range spec.Env {
+		if secret[k] {
+			if strings.TrimSpace(v) != "" {
+				hasSecret = true
+			}
+			continue
+		}
+		env[k] = v
+	}
+	if len(env) == 0 {
+		env = nil
+	}
+
+	ports := make([]string, 0, len(spec.Ports))
+	for _, p := range spec.Ports {
+		ports = append(ports, p.String())
+	}
+
+	volumes := make([]string, 0, len(spec.Mounts))
+	for _, m := range spec.Mounts {
+		volumes = append(volumes, m.Host+":"+m.Container)
+	}
+
+	svc := service{
+		Image:         spec.Image,
+		ContainerName: spec.Name,
+		Restart:       spec.Restart,
+		Ports:         ports,
+		Environment:   env,
+		Volumes:       volumes,
+		Labels: map[string]string{
+			Label + ".managed":  "true",
+			Label + ".provider": spec.ProviderID,
+			Label + ".game":     spec.Game,
+		},
+		StdinOpen: true,
+		Tty:       true,
+	}
+	if hasSecret {
+		svc.EnvFile = []string{".env"}
+	}
+	if spec.StopGraceSeconds > 0 {
+		svc.StopGracePeriod = strconv.Itoa(spec.StopGraceSeconds) + "s"
+	}
+	if spec.MemoryLimit != "" || spec.CPUs > 0 {
+		d := &deploy{}
+		d.Resources.Limits.Memory = spec.MemoryLimit
+		if spec.CPUs > 0 {
+			d.Resources.Limits.CPUs = strconv.FormatFloat(spec.CPUs, 'f', -1, 64)
+		}
+		svc.Deploy = d
+	}
+
+	doc := file{
+		Name:     spec.Name,
+		Services: map[string]service{spec.Name: svc},
+	}
+
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "# Gerado pelo GameDock em %s.\n", spec.UpdatedAt.Format(time.RFC3339))
+	buf.WriteString("# Editar à mão funciona — o painel relê este arquivo. Mas\n")
+	buf.WriteString("# \"Salvar e recriar\" no painel sobrescreve o que estiver aqui.\n")
+	if hasSecret {
+		buf.WriteString("# Senhas ficam no .env ao lado, que não é versionado.\n")
+	}
+
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	if err := enc.Encode(doc); err != nil {
+		return nil, fmt.Errorf("serializando compose de %s: %w", spec.Name, err)
+	}
+	if err := enc.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func RenderEnv(spec instance.Spec) []byte {
+	secret := make(map[string]bool, len(spec.SecretKeys))
+	for _, k := range spec.SecretKeys {
+		secret[k] = true
+	}
+	keys := make([]string, 0, len(spec.SecretKeys))
+	for k, v := range spec.Env {
+		if secret[k] && strings.TrimSpace(v) != "" {
+			keys = append(keys, k)
+		}
+	}
+	if len(keys) == 0 {
+		return nil
+	}
+	sort.Strings(keys)
+
+	var buf bytes.Buffer
+	buf.WriteString("# Gerado pelo GameDock. Contém senhas — não versione este arquivo.\n")
+	for _, k := range keys {
+		fmt.Fprintf(&buf, "%s=%s\n", k, escapeEnv(spec.Env[k]))
+	}
+	return buf.Bytes()
+}
+
+func escapeEnv(v string) string {
+	if v == "" {
+		return ""
+	}
+	if !strings.ContainsAny(v, " \t\"'$#\n\r\\") {
+		return v
+	}
+	var b strings.Builder
+	b.WriteByte('"')
+	for _, r := range v {
+		switch r {
+		case '"', '\\', '$':
+			b.WriteByte('\\')
+			b.WriteRune(r)
+		case '\n':
+			b.WriteString(`\n`)
+		case '\r':
+			b.WriteString(`\r`)
+		default:
+			b.WriteRune(r)
+		}
+	}
+	b.WriteByte('"')
+	return b.String()
+}
