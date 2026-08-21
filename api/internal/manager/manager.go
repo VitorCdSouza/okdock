@@ -750,6 +750,59 @@ func (m *Manager) Start(ctx context.Context, name string) error {
 	return nil
 }
 
+func (m *Manager) UpdateImage(ctx context.Context, name string) error {
+	spec, err := m.store.Get(name)
+	if err != nil {
+		return err
+	}
+	if spec.Archived {
+		return fmt.Errorf("%q está arquivada; restaure antes de atualizar", name)
+	}
+	if err := m.beginOp(name, OpUpdate, "procurando atualização"); err != nil {
+		return err
+	}
+	go m.pullAndRecreate(name, spec)
+	return nil
+}
+
+func (m *Manager) pullAndRecreate(name string, spec instance.Spec) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	defer cancel()
+
+	dir := m.store.Dir(name)
+	before, _ := m.docker.ImageID(ctx, spec.Image)
+
+	err := m.docker.Pull(ctx, dir, func(line string) {
+		m.progress(name, line, nil)
+	})
+	if err != nil {
+		m.endOp(name, err)
+		return
+	}
+
+	after, _ := m.docker.ImageID(ctx, spec.Image)
+	if before != "" && before == after {
+		m.endOp(name, nil)
+		m.hub.Publish(Event{
+			Type:     "instance.uptodate",
+			Instance: name,
+			Message:  fmt.Sprintf("%s já está na imagem mais nova", name),
+		})
+		return
+	}
+
+	m.progress(name, "recriando com a imagem nova", nil)
+	err = m.docker.Up(ctx, dir)
+	m.endOp(name, err)
+	if err == nil {
+		m.hub.Publish(Event{
+			Type:     "instance.updated",
+			Instance: name,
+			Message:  fmt.Sprintf("%s foi atualizada; o mundo nos volumes foi preservado", name),
+		})
+	}
+}
+
 func (m *Manager) Stop(ctx context.Context, name string) error {
 	if _, err := m.store.Get(name); err != nil {
 		return err

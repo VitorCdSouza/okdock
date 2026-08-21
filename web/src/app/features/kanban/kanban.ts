@@ -59,12 +59,47 @@ export class Kanban {
 
   readonly total = computed(() => this.store.filtered().length);
 
+  readonly dropHot = signal(false);
+
+  onDragChange(name: string | null): void {
+    this.store.dragging.set(name);
+    if (!name) this.dropHot.set(false);
+  }
+
+  onDropOver(event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    this.dropHot.set(true);
+  }
+
+  onDropLeave(): void {
+    this.dropHot.set(false);
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.dropHot.set(false);
+    const name = event.dataTransfer?.getData('text/plain') || this.store.dragging();
+    this.store.dragging.set(null);
+    if (!name) return;
+    this.api.updateImage(name).subscribe({ error: () => {} });
+  }
+
   short(i: Instance): string {
     return this.store.provider(i.providerId)?.short ?? '··';
   }
 
   visible(state: State, count: number): boolean {
-    return count > 0 || state === 'stopped' || state === 'running' || state === 'error';
+    if (count > 0) return true;
+    switch (state) {
+      case 'stopped':
+      case 'running':
+      case 'updating':
+      case 'error':
+        return true;
+      default:
+        return false;
+    }
   }
 
   onAction({ instance, verb }: { instance: Instance; verb: ActionVerb }): void {

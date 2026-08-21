@@ -1,6 +1,7 @@
 <article class="card" [style.border-color]="instance().state === 'error' ? 'var(--bad-line)' : null"
-         (click)="open.emit(instance())" tabindex="0"
-         (keydown.enter)="open.emit(instance())">
+         draggable="true"
+         (dragstart)="onDragStart($event)"
+         (dragend)="onDragEnd()">
   <header>
     <span class="badge" [style.background]="colors().bg" [style.color]="colors().fg">{{ short() }}</span>
     <div class="ident">
@@ -14,6 +15,7 @@
               [attr.aria-label]="'Opções de ' + instance().name">⋯</button>
       @if (menuOpen()) {
         <div class="menu" role="menu" (click)="$event.stopPropagation()">
+          <button role="menuitem" (click)="pickEdit($event)">Editar</button>
           <button role="menuitem" class="destructive" (click)="pickRemove($event)">Excluir</button>
         </div>
       }
@@ -58,7 +60,7 @@
     <button class="btn btn-sm"
             [class.btn-go]="action().kind === 'go'"
             [class.btn-danger]="action().kind === 'bad'"
-            (click)="act.emit({ instance: instance(), verb: action().verb }); $event.stopPropagation()">
+            (click)="act.emit({ instance: instance(), verb: action().verb })">
       {{ action().label }}
     </button>
   </footer>

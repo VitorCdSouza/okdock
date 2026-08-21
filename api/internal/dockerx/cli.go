@@ -278,6 +278,14 @@ func parseSize(s string) int64 {
 	return 0
 }
 
+func (c CLI) ImageID(ctx context.Context, ref string) (string, error) {
+	out, err := c.run(ctx, shortTimeout, "image", "inspect", ref, "--format", "{{.Id}}")
+	if err != nil {
+		return "", nil
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
 func (c CLI) Version(ctx context.Context) (string, error) {
 	out, err := c.run(ctx, shortTimeout, "version", "--format", "{{.Server.Version}}")
 	if err != nil {

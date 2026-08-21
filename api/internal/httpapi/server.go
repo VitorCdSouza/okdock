@@ -55,6 +55,7 @@ func (s *Server) routes() {
 	m.HandleFunc("POST /api/v1/instances/{name}/start", s.action(s.mgr.Start))
 	m.HandleFunc("POST /api/v1/instances/{name}/stop", s.action(s.mgr.Stop))
 	m.HandleFunc("POST /api/v1/instances/{name}/restart", s.action(s.mgr.Restart))
+	m.HandleFunc("POST /api/v1/instances/{name}/update-image", s.action(s.mgr.UpdateImage))
 	m.HandleFunc("POST /api/v1/instances/{name}/archive", s.setArchived(true))
 	m.HandleFunc("POST /api/v1/instances/{name}/unarchive", s.setArchived(false))
 	m.HandleFunc("POST /api/v1/instances/{name}/clear-error", s.clearError)

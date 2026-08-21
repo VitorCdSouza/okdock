@@ -7,9 +7,10 @@
   flex-direction: column;
   gap: 9px;
   min-width: 0;
-  cursor: pointer;
+  cursor: grab;
 }
-.card:hover, .card:focus-visible { border-color: var(--line-hover); outline: none; }
+.card:hover { border-color: var(--line-hover); }
+.card:active { cursor: grabbing; }
 
 header { display: flex; gap: 9px; align-items: flex-start; }
 

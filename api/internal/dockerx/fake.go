@@ -11,26 +11,30 @@ import (
 type Fake struct {
 	mu sync.Mutex
 
-	Containers    map[string][]Container
-	LogText       map[string]string
-	StatsByName   map[string]Stats
-	FailUp        map[string]error
-	FailPull      map[string]error
-	FailDown      map[string]error
-	ServerVersion string
+	Containers     map[string][]Container
+	LogText        map[string]string
+	StatsByName    map[string]Stats
+	FailUp         map[string]error
+	FailPull       map[string]error
+	FailDown       map[string]error
+	ServerVersion  string
+	ImageIDs       map[string]string
+	PulledImageIDs map[string]string
 
 	Calls []string
 }
 
 func NewFake() *Fake {
 	return &Fake{
-		Containers:    map[string][]Container{},
-		LogText:       map[string]string{},
-		StatsByName:   map[string]Stats{},
-		FailUp:        map[string]error{},
-		FailPull:      map[string]error{},
-		FailDown:      map[string]error{},
-		ServerVersion: "27.1.0",
+		Containers:     map[string][]Container{},
+		LogText:        map[string]string{},
+		StatsByName:    map[string]Stats{},
+		FailUp:         map[string]error{},
+		FailPull:       map[string]error{},
+		FailDown:       map[string]error{},
+		ImageIDs:       map[string]string{},
+		PulledImageIDs: map[string]string{},
+		ServerVersion:  "27.1.0",
 	}
 }
 
@@ -77,7 +81,13 @@ func (f *Fake) Pull(_ context.Context, dir string, progress func(string)) error 
 	if progress != nil {
 		progress("Pulling " + nameFromDir(dir))
 	}
-	return f.FailPull[dir]
+	if err := f.FailPull[dir]; err != nil {
+		return err
+	}
+	for ref, id := range f.PulledImageIDs {
+		f.ImageIDs[ref] = id
+	}
+	return nil
 }
 
 func (f *Fake) PS(_ context.Context, dir string) ([]Container, error) {
@@ -104,6 +114,12 @@ func (f *Fake) Stats(_ context.Context, names []string) ([]Stats, error) {
 		}
 	}
 	return out, nil
+}
+
+func (f *Fake) ImageID(_ context.Context, ref string) (string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.ImageIDs[ref], nil
 }
 
 func (f *Fake) Version(_ context.Context) (string, error) {

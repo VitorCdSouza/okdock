@@ -466,3 +466,100 @@ func TestSlowSubscriberDoesNotBlockPublish(t *testing.T) {
 		t.Fatal("Publish travou num assinante lento")
 	}
 }
+
+func TestUpdateImageRecreatesOnlyWhenTheImageChanged(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	r := req("smp", "4g")
+	r.Start = true
+	if _, err := m.Create(context.Background(), r); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	waitFor(t, "subir", func() bool {
+		i, _ := m.Get(context.Background(), "smp")
+		return i.State == instance.StateRunning
+	})
+
+	image := "itzg/minecraft-server:java21"
+	fake.ImageIDs[image] = "sha256:antiga"
+	fake.PulledImageIDs[image] = "sha256:antiga"
+	before := len(fake.Calls)
+
+	if err := m.UpdateImage(context.Background(), "smp"); err != nil {
+		t.Fatalf("UpdateImage: %v", err)
+	}
+	waitFor(t, "checagem terminar", func() bool {
+		i, _ := m.Get(context.Background(), "smp")
+		return i.Operation == nil
+	})
+
+	for _, c := range fake.Calls[before:] {
+		if strings.HasPrefix(c, "up:") {
+			t.Errorf("recriou sem imagem nova; chamadas: %v", fake.Calls[before:])
+		}
+	}
+
+	fake.PulledImageIDs[image] = "sha256:nova"
+	before = len(fake.Calls)
+	if err := m.UpdateImage(context.Background(), "smp"); err != nil {
+		t.Fatalf("UpdateImage: %v", err)
+	}
+	waitFor(t, "recriar", func() bool {
+		i, _ := m.Get(context.Background(), "smp")
+		return i.Operation == nil
+	})
+
+	var recreated bool
+	for _, c := range fake.Calls[before:] {
+		if strings.HasPrefix(c, "up:") {
+			recreated = true
+		}
+	}
+	if !recreated {
+		t.Errorf("imagem nova devia recriar o container; chamadas: %v", fake.Calls[before:])
+	}
+}
+
+func TestUpdateImagePublishesWhatHappened(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	if _, err := m.Create(context.Background(), req("smp", "4g")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	image := "itzg/minecraft-server:java21"
+	fake.ImageIDs[image] = "sha256:antiga"
+	fake.PulledImageIDs[image] = "sha256:antiga"
+
+	events, cancel := m.Events().Subscribe()
+	defer cancel()
+
+	if err := m.UpdateImage(context.Background(), "smp"); err != nil {
+		t.Fatalf("UpdateImage: %v", err)
+	}
+
+	deadline := time.After(3 * time.Second)
+	for {
+		select {
+		case ev := <-events:
+			if ev.Type == "instance.uptodate" && ev.Instance == "smp" {
+				if !strings.Contains(ev.Message, "mais nova") {
+					t.Errorf("mensagem pouco clara: %q", ev.Message)
+				}
+				return
+			}
+		case <-deadline:
+			t.Fatal("nenhum evento dizendo que já estava atualizada")
+		}
+	}
+}
+
+func TestUpdateImageRefusesArchived(t *testing.T) {
+	m, _ := newManager(t, 16*gb)
+	if _, err := m.Create(context.Background(), req("smp", "4g")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if err := m.SetArchived(context.Background(), "smp", true); err != nil {
+		t.Fatalf("SetArchived: %v", err)
+	}
+	if err := m.UpdateImage(context.Background(), "smp"); err == nil {
+		t.Error("instância arquivada não devia ser atualizada sem restaurar")
+	}
+}

@@ -181,6 +181,12 @@ de propósito. `204`.
 - `POST /instances/{name}/start` — confere o orçamento de RAM antes
 - `POST /instances/{name}/stop`
 - `POST /instances/{name}/restart`
+- `POST /instances/{name}/update-image` — procura imagem nova e recria **só se
+  houver**. Comparar o digest local antes e depois do `pull` é o que evita
+  derrubar um servidor cheio de jogadores para nada; a saída de texto do `pull`
+  muda entre versões do docker e não serve para isso. O resultado chega por
+  evento (`instance.updated` ou `instance.uptodate`), porque "nada a fazer" não
+  muda a listagem e sem aviso a ação pareceria não ter acontecido.
 
 `204 No Content`:
 
@@ -205,8 +211,10 @@ data: {"type":"instance.changed","instance":"smp-familia"}
 ```
 
 Tipos: `instance.created`, `instance.changed`, `instance.deleted`,
-`instance.failed`, `instance.progress`. O evento avisa que algo mudou; o dado
-vem de `GET /instances`. Comentário `: ping` a cada 25 s segura a conexão.
+`instance.failed`, `instance.progress`, `instance.updated`,
+`instance.uptodate`. O evento avisa que algo mudou; o dado vem de
+`GET /instances`. Os dois últimos trazem `message` pronta para a tela, porque
+descrevem o desfecho de uma operação e não um estado consultável. Comentário `: ping` a cada 25 s segura a conexão.
 
 ### `GET /instances/{name}/logs?tail=300&follow=true`
 

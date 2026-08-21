@@ -10,6 +10,17 @@
 } @else if (total() === 0) {
   <div class="empty">Nenhuma instância bate com o filtro.</div>
 } @else {
+  @if (store.dragging()) {
+    <div class="dropzone" [class.hot]="dropHot()"
+         (dragover)="onDropOver($event)"
+         (dragleave)="onDropLeave()"
+         (drop)="onDrop($event)">
+      <span class="dz-icon">⟳</span>
+      <span class="dz-label">Atualizar</span>
+      <span class="dz-hint mono">solte aqui para procurar imagem nova · o mundo é preservado</span>
+    </div>
+  }
+
   <div class="board">
     @for (col of columns(); track col.state) {
       @if (visible(col.state, col.cards.length)) {
@@ -26,7 +37,8 @@
               [short]="short(card)"
               (open)="open.emit($event)"
               (act)="onAction($event)"
-              (remove)="askRemove($event)" />
+              (remove)="askRemove($event)"
+              (dragChange)="onDragChange($event)" />
           }
 
           @if (col.state === 'stopped') {

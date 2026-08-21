@@ -30,6 +30,7 @@ type Runner interface {
 	PS(ctx context.Context, dir string) ([]Container, error)
 	Logs(ctx context.Context, dir string, tail int, follow bool) (io.ReadCloser, error)
 	Stats(ctx context.Context, names []string) ([]Stats, error)
+	ImageID(ctx context.Context, ref string) (string, error)
 	Version(ctx context.Context) (string, error)
 }
 

@@ -75,7 +75,7 @@ export class App {
   onCreated(name: string): void {
     this.creating.set(false);
     this.store.reload();
-    this.detailFor.set(name);
+    this.store.notify(`${name} foi criada`);
   }
 
   setFilter(game: string | null): void {

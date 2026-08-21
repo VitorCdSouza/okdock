@@ -14,6 +14,7 @@ type Step = 1 | 2 | 3;
   templateUrl: './new-instance.html',
   styleUrl: './new-instance.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(document:keydown.escape)': 'close.emit()' },
 })
 export class NewInstance {
   private readonly api = inject(Api);

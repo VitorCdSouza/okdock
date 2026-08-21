@@ -51,6 +51,10 @@
   <gd-kanban (open)="openDetail($event)" (create)="creating.set(true)" />
 </main>
 
+@if (store.toast(); as message) {
+  <div class="toast" role="status">{{ message }}</div>
+}
+
 @if (detailFor(); as name) {
   <gd-instance-detail [name]="name" (close)="detailFor.set(null)" />
 }

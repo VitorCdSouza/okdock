@@ -35,6 +35,7 @@ export class InstanceCard {
   readonly open = output<Instance>();
   readonly act = output<{ instance: Instance; verb: ActionVerb }>();
   readonly remove = output<Instance>();
+  readonly dragChange = output<string | null>();
 
   readonly menuOpen = signal(false);
 
@@ -47,6 +48,22 @@ export class InstanceCard {
     event.stopPropagation();
     this.menuOpen.set(false);
     this.remove.emit(this.instance());
+  }
+
+  pickEdit(event: Event): void {
+    event.stopPropagation();
+    this.menuOpen.set(false);
+    this.open.emit(this.instance());
+  }
+
+  onDragStart(event: DragEvent): void {
+    event.dataTransfer?.setData('text/plain', this.instance().name);
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+    this.dragChange.emit(this.instance().name);
+  }
+
+  onDragEnd(): void {
+    this.dragChange.emit(null);
   }
 
   readonly colors = computed(() => GAME_COLORS[this.instance().game] ?? GAME_COLORS['custom']);

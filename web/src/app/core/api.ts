@@ -82,6 +82,10 @@ export class Api {
     return this.action(name, 'restart');
   }
 
+  updateImage(name: string) {
+    return this.action(name, 'update-image');
+  }
+
   archive(name: string) {
     return this.action(name, 'archive');
   }

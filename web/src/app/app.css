@@ -93,3 +93,19 @@ main { flex: 1; min-height: 0; overflow: auto; }
   .metrics { justify-content: flex-start; font-size: 10.5px; gap: 12px; }
   .note { display: none; }
 }
+
+.toast {
+  position: fixed;
+  z-index: 60;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  max-width: min(560px, calc(100vw - 40px));
+  padding: 10px 16px;
+  background: var(--bg-header);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .5);
+  font-size: 11.5px;
+  color: var(--fg-soft);
+}

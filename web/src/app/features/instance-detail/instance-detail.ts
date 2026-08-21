@@ -37,6 +37,7 @@ const STATE_CHIP: Record<State, { label: string; bg: string; line: string; fg: s
   templateUrl: './instance-detail.html',
   styleUrl: './instance-detail.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(document:keydown.escape)': 'close.emit()' },
 })
 export class InstanceDetail {
   private readonly api = inject(Api);

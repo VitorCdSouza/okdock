@@ -17,8 +17,18 @@ export class Store {
   readonly gameFilter = signal<string | null>(null);
   readonly search = signal('');
 
+  readonly dragging = signal<string | null>(null);
+  readonly toast = signal<string | null>(null);
+
   private reloadTimer?: ReturnType<typeof setTimeout>;
+  private toastTimer?: ReturnType<typeof setTimeout>;
   private started = false;
+
+  notify(message: string): void {
+    this.toast.set(message);
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => this.toast.set(null), 6000);
+  }
 
   readonly filtered = computed(() => {
     const term = this.search().trim().toLowerCase();
@@ -63,7 +73,12 @@ export class Store {
     this.reload();
 
     this.events.stream().subscribe({
-      next: () => this.scheduleReload(),
+      next: (ev) => {
+        if (ev.message && (ev.type === 'instance.uptodate' || ev.type === 'instance.updated')) {
+          this.notify(ev.message);
+        }
+        this.scheduleReload();
+      },
       error: () => setInterval(() => this.reload(), 5000),
     });
   }
