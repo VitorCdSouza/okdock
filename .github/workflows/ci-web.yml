@@ -25,3 +25,7 @@ jobs:
 
       - run: npm ci
       - run: npm run build
+
+      - run: npm test -- --watch=false --browsers=ChromeHeadless
+        env:
+          CHROME_BIN: /usr/bin/google-chrome

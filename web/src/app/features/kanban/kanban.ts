@@ -68,9 +68,7 @@ export class Kanban {
     return name ? this.store.instances().find((i) => i.name === name) : undefined;
   });
 
-  canDrop(target: State): boolean {
-    const inst = this.dragged();
-    if (!inst) return false;
+  allows(inst: Instance, target: State): boolean {
     switch (target) {
       case 'updating':
         return !inst.archived && inst.state !== 'updating';
@@ -79,6 +77,11 @@ export class Kanban {
       default:
         return false;
     }
+  }
+
+  canDrop(target: State): boolean {
+    const inst = this.dragged();
+    return !!inst && this.allows(inst, target);
   }
 
   private isUp(state: State): boolean {
@@ -104,9 +107,12 @@ export class Kanban {
   onDrop(event: DragEvent, target: State): void {
     event.preventDefault();
     this.dropTarget.set(null);
+
     const inst = this.dragged();
+    const allowed = !!inst && this.allows(inst, target);
+
     this.store.dragging.set(null);
-    if (!inst || !this.canDrop(target)) return;
+    if (!inst || !allowed) return;
     this.pendingAction.set({ instance: inst, target });
   }
 
