@@ -10,9 +10,41 @@ Tudo vive em [`api/internal/catalog/providers.go`](../api/internal/catalog/provi
 
 | Jogo | Imagem | RAM padrão / mínima | Portas |
 |---|---|---|---|
-| Minecraft (Java) | `itzg/minecraft-server` | 4g / 2g | 25565/tcp |
-| Terraria | `ryshe/terraria` | 2g / 512m | 7777/tcp |
+| Minecraft (Java) | `itzg/minecraft-server:java21` | 4g / 2g | 25565/tcp |
+| Terraria | `ryshe/terraria:tshock-1.4.5.6-6.1.0` | 2g / 512m | 7777/tcp |
+| Terraria (vanilla) | `ryshe/terraria:vanilla-1.4.5.7` | 2g / 512m | 7777/tcp |
 | Imagem custom | qualquer | 2g / 256m | você define |
+
+## As duas variantes de Terraria
+
+O cliente do Terraria recusa entrar num servidor de versão diferente: *"You are
+not using the same version as this server"*. Isso importa porque as duas
+imagens andam em velocidades diferentes.
+
+- **TShock** traz plugins, permissões e comandos de admin, mas leva semanas
+  para acompanhar um lançamento do Terraria.
+- **Vanilla** não tem nada disso e sai em dias.
+
+Quando o jogo atualiza e o cliente para de conectar, a saída é a variante
+vanilla — ou esperar o TShock.
+
+Os dois provedores existem separados porque **não são a mesma imagem com outra
+tag**: o `bootstrap.sh` é diferente. O da TShock aceita `WORLD_FILENAME` e cria
+o mundo se `-autocreate` estiver nos argumentos. O da vanilla **sai com erro**
+se `WORLD_FILENAME` estiver preenchido e o mundo não existir — lá o caminho do
+mundo vai por `-world`, e `WORLD_FILENAME` fica vazio. Trocar só a tag de uma
+instância TShock para vanilla não funciona; crie outra instância apontando para
+a mesma pasta de mundo.
+
+## Tags fixas
+
+As imagens de jogo usam tag de versão, nunca `:latest`. Tag móvel troca a
+versão do servidor sozinha no próximo recreate, e o sintoma aparece longe da
+causa: o jogador é quem descobre, ao não conseguir entrar. `TestGameImagesArePinned`
+falha se alguém reintroduzir uma.
+
+Atualizar de versão é trocar o campo **Imagem** da instância no painel e salvar
+— o mundo nos volumes é preservado.
 
 O provedor `custom` é o único que aceita variáveis fora do schema — é a saída
 para uma imagem que o catálogo ainda não descreve.

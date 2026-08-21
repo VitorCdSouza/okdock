@@ -222,3 +222,45 @@ func containsPair(list []string, flag, value string) bool {
 	}
 	return false
 }
+
+func TestTerrariaVanillaKeepsWorldOutOfEnvironment(t *testing.T) {
+	p, ok := Get("ryshe/terraria-vanilla")
+	if !ok {
+		t.Fatal("provedor vanilla sumiu do catálogo")
+	}
+	if _, exists := p.Field("WORLD_FILENAME"); exists {
+		t.Error("WORLD_FILENAME não pode existir neste provedor: preenchê-la impede o servidor de subir")
+	}
+	world, ok := p.Field("WORLD")
+	if !ok || !world.IsArg() || world.Flag != "-world" {
+		t.Errorf("o mundo precisa ir por -world: %+v", world)
+	}
+
+	values, err := p.Validate(nil)
+	if err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+	env, args := p.SplitValues(values)
+	if len(env) != 0 {
+		t.Errorf("esta imagem não se configura por ambiente, veio: %v", env)
+	}
+	if !containsPair(args, "-autocreate", "2") {
+		t.Errorf("sem -autocreate a imagem vanilla sai com erro em mundo novo: %v", args)
+	}
+}
+
+func TestGameImagesArePinned(t *testing.T) {
+	for _, p := range All() {
+		if p.ID == CustomProviderID {
+			continue
+		}
+		for _, moving := range []string{":latest", ":stable"} {
+			if strings.HasSuffix(p.Image, moving) {
+				t.Errorf("%s usa a tag móvel %q: fixe uma versão", p.ID, moving)
+			}
+		}
+		if !strings.Contains(p.Image, ":") {
+			t.Errorf("%s não tem tag na imagem %q", p.ID, p.Image)
+		}
+	}
+}
