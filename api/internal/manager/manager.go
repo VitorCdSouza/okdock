@@ -421,10 +421,11 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 		return instance.Spec{}, errors.New("a imagem custom precisa de um nome de imagem")
 	}
 
-	env, err := prov.Validate(req.Values)
+	validated, err := prov.Validate(req.Values)
 	if err != nil {
 		return instance.Spec{}, err
 	}
+	env, args := prov.SplitValues(validated)
 
 	secretKeys := req.SecretKeys
 	if prov.ID != catalog.CustomProviderID {
@@ -496,6 +497,7 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 		Game:             prov.Game,
 		Image:            image,
 		Env:              env,
+		Command:          args,
 		SecretKeys:       secretKeys,
 		Ports:            ports,
 		Mounts:           mounts,
@@ -638,6 +640,14 @@ func NeedsRecreate(old, new instance.Spec) bool {
 		old.Restart != new.Restart ||
 		old.StopGraceSeconds != new.StopGraceSeconds {
 		return true
+	}
+	if len(old.Command) != len(new.Command) {
+		return true
+	}
+	for i := range new.Command {
+		if old.Command[i] != new.Command[i] {
+			return true
+		}
 	}
 	if len(old.Env) != len(new.Env) {
 		return true

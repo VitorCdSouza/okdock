@@ -49,6 +49,7 @@ type Spec struct {
 	Image            string            `json:"image"`
 	Env              map[string]string `json:"env"`
 	SecretKeys       []string          `json:"secretKeys,omitempty"`
+	Command          []string          `json:"command,omitempty"`
 	Ports            []PortBinding     `json:"ports"`
 	Mounts           []Mount           `json:"mounts"`
 	MemoryLimit      string            `json:"memoryLimit"`

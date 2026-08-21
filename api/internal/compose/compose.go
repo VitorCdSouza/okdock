@@ -23,6 +23,7 @@ type file struct {
 type service struct {
 	Image           string            `yaml:"image"`
 	ContainerName   string            `yaml:"container_name"`
+	Command         []string          `yaml:"command,omitempty"`
 	Restart         string            `yaml:"restart,omitempty"`
 	StopGracePeriod string            `yaml:"stop_grace_period,omitempty"`
 	Ports           []quoted          `yaml:"ports,omitempty"`
@@ -95,6 +96,7 @@ func Render(spec instance.Spec) ([]byte, error) {
 	svc := service{
 		Image:         spec.Image,
 		ContainerName: spec.Name,
+		Command:       spec.Command,
 		Restart:       spec.Restart,
 		Ports:         ports,
 		Environment:   env,

@@ -25,18 +25,36 @@ para uma imagem que o catálogo ainda não descreve.
 
 ## Estado de verificação dos schemas
 
-Os schemas foram escritos a partir da documentação de cada imagem, mas nem
-todos foram exercitados contra um container de verdade. Antes de confiar num
-campo, confira contra o `Docs` do provedor:
+Em 21/08/2026 todas as imagens foram auditadas com
+`skopeo inspect --config docker://<imagem>`, que mostra o entrypoint e as
+variáveis que a imagem declara sem precisar baixá-la.
 
-- **Conferidos na prática:** `itzg/minecraft-server`.
-- **Da documentação, não testados:** os demais. Os mais prováveis de terem
-  divergido são **ARK** e **Satisfactory**, onde os nomes de variável mudaram
-  entre versões da imagem.
+- **Exercitados contra um container de verdade:** `itzg/minecraft-server` e
+  `ryshe/terraria`.
+- **Auditados por inspeção, não executados:** os demais. Todos os campos do
+  catálogo aparecem na documentação da imagem correspondente.
 
-Campo com nome errado não quebra o `up`: a variável simplesmente é ignorada
-pelo servidor de jogo, e o efeito é a configuração não pegar. Se um campo não
-surtir efeito, esse é o primeiro lugar a olhar.
+Duas correções vieram dessa auditoria:
+
+- **Terraria não se configura por ambiente.** O `bootstrap.sh` da imagem lê só
+  `WORLD_FILENAME`, `CONFIGPATH` e `LOGPATH`; o resto são flags do executável.
+  Sem `-autocreate`, com o mundo ainda inexistente, o servidor cai num menu
+  interativo e o container fica parado esperando alguém digitar. Foi o que
+  motivou o `Target: TargetArg`.
+- **Satisfactory não tem `AUTOSAVEINTERVAL`.** Trocado por `MAXTICKRATE` e
+  `MAXOBJECTS`, que a imagem declara.
+
+Um detalhe da auditoria vale registrar: **a lista de variáveis declaradas não é
+a lista completa de variáveis lidas.** Palworld, Valheim e Factorio leem várias
+que não estão no `ENV` da imagem, porque o script usa `${VAR:-default}` em vez
+de declarar. A inspeção prova o que existe, nunca o que não existe — só rodar
+prova isso.
+
+Campo com nome errado não quebra o `up`: a variável é ignorada e o efeito é a
+configuração não pegar. Se um campo não surtir efeito, esse é o primeiro lugar
+a olhar. Configuração que a imagem espera como **argumento** é diferente: ali o
+sintoma costuma ser o container subir e não fazer nada, como aconteceu com
+Terraria.
 
 Nada disso impede usar o jogo — o provedor `custom` sempre aceita a imagem com
 as variáveis digitadas à mão.
@@ -50,6 +68,17 @@ as variáveis digitadas à mão.
    validação** (um default fora do schema faria a instância nascer inválida sem
    o usuário ter tocado em nada).
 3. Nada muda no frontend.
+
+### Campo que vira argumento, e não variável
+
+`Target: TargetArg` mais `Flag: "-autocreate"` manda o valor para o `command:`
+do serviço em vez do ambiente. Campo booleano emite só a flag quando
+verdadeiro, sem valor. A ordem dos argumentos segue a ordem dos campos no
+provedor, e não a do mapa, para o compose gerado não mudar a cada renderização.
+
+Campo secreto que é argumento vira `${CHAVE}` no compose, e o valor vai para o
+`.env` — o `docker compose` interpola lendo o `.env` do diretório do projeto.
+Assim a senha não aparece no YAML nem quando é passada na linha de comando.
 
 Os campos que merecem atenção:
 

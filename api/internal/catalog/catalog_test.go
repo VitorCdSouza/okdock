@@ -119,3 +119,106 @@ func TestValidateRequiredMissing(t *testing.T) {
 		t.Errorf("erro não aponta o campo obrigatório: %v", err)
 	}
 }
+
+func TestArgFieldsDeclareAFlag(t *testing.T) {
+	for _, p := range All() {
+		for _, f := range p.Fields {
+			if f.IsArg() && f.Flag == "" {
+				t.Errorf("%s.%s é argumento mas não diz qual flag", p.ID, f.Key)
+			}
+			if !f.IsArg() && f.Flag != "" {
+				t.Errorf("%s.%s declara flag mas vai por ambiente", p.ID, f.Key)
+			}
+		}
+	}
+}
+
+func TestSplitValuesSeparatesEnvFromArgs(t *testing.T) {
+	p, _ := Get("ryshe/terraria")
+	values, err := p.Validate(map[string]string{"MAXPLAYERS": "12"})
+	if err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+	env, args := p.SplitValues(values)
+
+	if env["WORLD_FILENAME"] == "" {
+		t.Errorf("WORLD_FILENAME devia ir por ambiente: %v", env)
+	}
+	if _, ok := env["MAXPLAYERS"]; ok {
+		t.Errorf("MAXPLAYERS é argumento, não podia estar no ambiente: %v", env)
+	}
+	if !containsPair(args, "-maxplayers", "12") {
+		t.Errorf("args não têm -maxplayers 12: %v", args)
+	}
+	if !containsPair(args, "-autocreate", "2") {
+		t.Errorf("args não têm -autocreate: %v", args)
+	}
+}
+
+func TestSplitValuesBoolFlagCarriesNoValue(t *testing.T) {
+	p, _ := Get("ryshe/terraria")
+
+	values, _ := p.Validate(map[string]string{"SECURE": "true"})
+	_, args := p.SplitValues(values)
+	if !contains(args, "-secure") {
+		t.Errorf("flag booleana ligada devia aparecer: %v", args)
+	}
+	if containsPair(args, "-secure", "true") {
+		t.Errorf("flag booleana não leva valor: %v", args)
+	}
+
+	values, _ = p.Validate(map[string]string{"SECURE": "false"})
+	_, args = p.SplitValues(values)
+	if contains(args, "-secure") {
+		t.Errorf("flag booleana desligada não devia aparecer: %v", args)
+	}
+}
+
+func TestSecretArgBecomesInterpolationReference(t *testing.T) {
+	p, _ := Get("ryshe/terraria")
+	values, _ := p.Validate(map[string]string{"PASSWORD": "hunter2"})
+	env, args := p.SplitValues(values)
+
+	for _, a := range args {
+		if a == "hunter2" {
+			t.Fatalf("senha vazou para os argumentos: %v", args)
+		}
+	}
+	if !containsPair(args, "-password", "${PASSWORD}") {
+		t.Errorf("esperava a referência ${PASSWORD}: %v", args)
+	}
+	if env["PASSWORD"] != "hunter2" {
+		t.Errorf("o valor precisa continuar indo para o .env: %v", env)
+	}
+}
+
+func TestSplitValuesIsDeterministic(t *testing.T) {
+	p, _ := Get("ryshe/terraria")
+	values, _ := p.Validate(map[string]string{"MAXPLAYERS": "12", "MOTD": "oi"})
+
+	_, first := p.SplitValues(values)
+	for i := 0; i < 20; i++ {
+		_, again := p.SplitValues(values)
+		if strings.Join(first, " ") != strings.Join(again, " ") {
+			t.Fatalf("ordem dos argumentos mudou:\n%v\n%v", first, again)
+		}
+	}
+}
+
+func contains(list []string, want string) bool {
+	for _, v := range list {
+		if v == want {
+			return true
+		}
+	}
+	return false
+}
+
+func containsPair(list []string, flag, value string) bool {
+	for i := 0; i+1 < len(list); i++ {
+		if list[i] == flag && list[i+1] == value {
+			return true
+		}
+	}
+	return false
+}

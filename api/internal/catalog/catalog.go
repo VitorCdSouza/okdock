@@ -18,24 +18,35 @@ const (
 	FieldEnum     FieldType = "enum"
 )
 
+type FieldTarget string
+
+const (
+	TargetEnv FieldTarget = "env"
+	TargetArg FieldTarget = "arg"
+)
+
 type Option struct {
 	Value string `json:"value"`
 	Label string `json:"label"`
 }
 
 type Field struct {
-	Key      string    `json:"key"`
-	Label    string    `json:"label"`
-	Type     FieldType `json:"type"`
-	Default  string    `json:"default,omitempty"`
-	Required bool      `json:"required,omitempty"`
-	Secret   bool      `json:"secret,omitempty"`
-	Min      *float64  `json:"min,omitempty"`
-	Max      *float64  `json:"max,omitempty"`
-	Options  []Option  `json:"options,omitempty"`
-	Help     string    `json:"help,omitempty"`
-	Advanced bool      `json:"advanced,omitempty"`
+	Key      string      `json:"key"`
+	Label    string      `json:"label"`
+	Type     FieldType   `json:"type"`
+	Default  string      `json:"default,omitempty"`
+	Required bool        `json:"required,omitempty"`
+	Secret   bool        `json:"secret,omitempty"`
+	Min      *float64    `json:"min,omitempty"`
+	Max      *float64    `json:"max,omitempty"`
+	Options  []Option    `json:"options,omitempty"`
+	Help     string      `json:"help,omitempty"`
+	Advanced bool        `json:"advanced,omitempty"`
+	Target   FieldTarget `json:"target,omitempty"`
+	Flag     string      `json:"flag,omitempty"`
 }
+
+func (f Field) IsArg() bool { return f.Target == TargetArg }
 
 type Port struct {
 	Container   int    `json:"container"`
@@ -202,4 +213,43 @@ type ValidationError struct {
 
 func (e *ValidationError) Error() string {
 	return strings.Join(e.Problems, "; ")
+}
+
+func (p Provider) SplitValues(values map[string]string) (env map[string]string, args []string) {
+	env = make(map[string]string, len(values))
+	isArg := make(map[string]Field, len(p.Fields))
+	for _, f := range p.Fields {
+		if f.IsArg() {
+			isArg[f.Key] = f
+		}
+	}
+
+	for k, v := range values {
+		f, ok := isArg[k]
+		if !ok || f.Secret {
+			env[k] = v
+		}
+	}
+
+	for _, f := range p.Fields {
+		if !f.IsArg() {
+			continue
+		}
+		v := strings.TrimSpace(values[f.Key])
+		if v == "" {
+			continue
+		}
+		if f.Type == FieldBool {
+			if v == "true" {
+				args = append(args, f.Flag)
+			}
+			continue
+		}
+		if f.Secret {
+			args = append(args, f.Flag, "${"+f.Key+"}")
+			continue
+		}
+		args = append(args, f.Flag, v)
+	}
+	return env, args
 }
