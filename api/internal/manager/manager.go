@@ -420,6 +420,13 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 	if image == "" {
 		return instance.Spec{}, errors.New("a imagem custom precisa de um nome de imagem")
 	}
+	if !prov.AcceptsImage(image) {
+		return instance.Spec{}, &catalog.ValidationError{Problems: []string{
+			fmt.Sprintf("image: %q não é uma imagem que %s sabe configurar", image, prov.GameLabel),
+			fmt.Sprintf("%s espera uma imagem que case com %s", prov.GameLabel, prov.ImagePattern),
+			"para rodar outra imagem, crie a instância com o provedor \"Imagem custom\", onde você define as variáveis à mão",
+		}}
+	}
 
 	validated, err := prov.Validate(req.Values)
 	if err != nil {

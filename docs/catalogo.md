@@ -32,9 +32,30 @@ Os dois provedores existem separados porque **não são a mesma imagem com outra
 tag**: o `bootstrap.sh` é diferente. O da TShock aceita `WORLD_FILENAME` e cria
 o mundo se `-autocreate` estiver nos argumentos. O da vanilla **sai com erro**
 se `WORLD_FILENAME` estiver preenchido e o mundo não existir — lá o caminho do
-mundo vai por `-world`, e `WORLD_FILENAME` fica vazio. Trocar só a tag de uma
-instância TShock para vanilla não funciona; crie outra instância apontando para
-a mesma pasta de mundo.
+mundo vai por `-world`, e `WORLD_FILENAME` fica vazio.
+
+Trocar só a tag de uma instância TShock para vanilla, portanto, não funciona: o
+container morre no boot e, com `restart: unless-stopped`, entra em crashloop. O
+`ImagePattern` de cada provedor recusa essa combinação no momento de salvar,
+com uma mensagem que diz o que fazer. Para migrar de variante, crie outra
+instância apontando para a mesma pasta de mundo.
+
+## ImagePattern
+
+Cada provedor de jogo declara quais imagens sabe configurar, como expressão
+regular:
+
+| Provedor | Padrão |
+|---|---|
+| Minecraft (Java) | `^itzg/minecraft-server(:\|$)` |
+| Terraria | `^ryshe/terraria:tshock-` |
+| Terraria (vanilla) | `^ryshe/terraria:vanilla-` |
+| Imagem custom | vazio — aceita qualquer uma |
+
+O padrão precisa ser largo o bastante para deixar trocar de versão (é assim que
+se atualiza uma instância) e estreito o bastante para barrar outra variante. Os
+testes cobrem os dois lados, e checam que nenhum padrão rejeita a própria
+imagem padrão do provedor.
 
 ## Tags fixas
 

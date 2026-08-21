@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -261,6 +262,53 @@ func TestGameImagesArePinned(t *testing.T) {
 		}
 		if !strings.Contains(p.Image, ":") {
 			t.Errorf("%s não tem tag na imagem %q", p.ID, p.Image)
+		}
+	}
+}
+
+func TestAcceptsImageSeparatesTerrariaVariants(t *testing.T) {
+	tshock, _ := Get("ryshe/terraria")
+	vanilla, _ := Get("ryshe/terraria-vanilla")
+
+	if !tshock.AcceptsImage("ryshe/terraria:tshock-1.4.5.6-6.1.0") {
+		t.Error("provedor TShock devia aceitar a própria imagem")
+	}
+	if !vanilla.AcceptsImage("ryshe/terraria:vanilla-1.4.5.7") {
+		t.Error("provedor vanilla devia aceitar a própria imagem")
+	}
+	if tshock.AcceptsImage("ryshe/terraria:vanilla-1.4.5.7") {
+		t.Error("provedor TShock não pode aceitar a imagem vanilla")
+	}
+	if vanilla.AcceptsImage("ryshe/terraria:tshock-1.4.5.6-6.1.0") {
+		t.Error("provedor vanilla não pode aceitar a imagem TShock")
+	}
+}
+
+func TestAcceptsImageAllowsNewerTagsOfTheSameVariant(t *testing.T) {
+	p, _ := Get("ryshe/terraria-vanilla")
+	if !p.AcceptsImage("ryshe/terraria:vanilla-1.4.6.0") {
+		t.Error("versão nova da mesma variante devia ser aceita")
+	}
+}
+
+func TestCustomProviderAcceptsAnyImage(t *testing.T) {
+	p, _ := Get(CustomProviderID)
+	if !p.AcceptsImage("qualquer/coisa:1") {
+		t.Error("o provedor custom precisa aceitar qualquer imagem")
+	}
+}
+
+func TestImagePatternsCompileAndMatchTheirOwnDefault(t *testing.T) {
+	for _, p := range All() {
+		if p.ImagePattern == "" {
+			continue
+		}
+		if _, err := regexp.Compile(p.ImagePattern); err != nil {
+			t.Errorf("%s: padrão inválido %q: %v", p.ID, p.ImagePattern, err)
+			continue
+		}
+		if !p.AcceptsImage(p.Image) {
+			t.Errorf("%s: o padrão %q rejeita a imagem padrão %q", p.ID, p.ImagePattern, p.Image)
 		}
 	}
 }

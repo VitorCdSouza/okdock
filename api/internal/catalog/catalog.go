@@ -2,9 +2,11 @@ package catalog
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type FieldType string
@@ -75,6 +77,7 @@ type Provider struct {
 	DefaultMemory    string   `json:"defaultMemory"`
 	MinMemory        string   `json:"minMemory"`
 	DefaultCPUs      float64  `json:"defaultCpus"`
+	ImagePattern     string   `json:"imagePattern,omitempty"`
 	StopGraceSeconds int      `json:"stopGraceSeconds"`
 	Fields           []Field  `json:"fields"`
 }
@@ -205,6 +208,24 @@ func validateField(f Field, v string) (string, error) {
 	default:
 		return v, nil
 	}
+}
+
+var imagePatterns sync.Map
+
+func (p Provider) AcceptsImage(image string) bool {
+	if p.ImagePattern == "" {
+		return true
+	}
+	re, ok := imagePatterns.Load(p.ImagePattern)
+	if !ok {
+		compiled, err := regexp.Compile(p.ImagePattern)
+		if err != nil {
+			return true
+		}
+		imagePatterns.Store(p.ImagePattern, compiled)
+		re = compiled
+	}
+	return re.(*regexp.Regexp).MatchString(image)
 }
 
 type ValidationError struct {
