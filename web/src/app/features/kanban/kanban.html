@@ -10,26 +10,26 @@
 } @else if (total() === 0) {
   <div class="empty">Nenhuma instância bate com o filtro.</div>
 } @else {
-  @if (store.dragging()) {
-    <div class="dropzone" [class.hot]="dropHot()"
-         (dragover)="onDropOver($event)"
-         (dragleave)="onDropLeave()"
-         (drop)="onDrop($event)">
-      <span class="dz-icon">⟳</span>
-      <span class="dz-label">Atualizar</span>
-      <span class="dz-hint mono">solte aqui para procurar imagem nova · o mundo é preservado</span>
-    </div>
-  }
-
   <div class="board">
     @for (col of columns(); track col.state) {
       @if (visible(col.state, col.cards.length)) {
-        <section class="column">
+        <section class="column"
+                 [class.droppable]="canDrop(col.state)"
+                 [class.drop-over]="dropTarget() === col.state"
+                 (dragover)="onDragOver($event, col.state)"
+                 (dragleave)="onDragLeave(col.state)"
+                 (drop)="onDrop($event, col.state)">
           <header>
             <span class="dot" [style.background]="col.dot"></span>
             <span class="title">{{ col.title }}</span>
             <span class="count mono">{{ col.cards.length }}</span>
           </header>
+
+          @if (canDrop(col.state)) {
+            <div class="drop-hint mono">
+              {{ col.state === 'updating' ? 'soltar para procurar imagem nova' : 'soltar para parar' }}
+            </div>
+          }
 
           @for (card of col.cards; track card.name) {
             <gd-instance-card
@@ -69,6 +69,38 @@
       <button class="btn" (click)="cancelRemove()" [disabled]="deleting()">Cancelar</button>
       <button class="btn btn-danger" (click)="confirmRemove()" [disabled]="deleting()">
         {{ deleteData() ? 'Excluir e apagar o mundo' : 'Excluir, manter o mundo' }}
+      </button>
+    </div>
+  </div>
+}
+
+@if (pendingAction(); as pending) {
+  <div class="confirm-backdrop" (click)="cancelAction()"></div>
+  <div class="confirm action" role="alertdialog">
+    @if (pending.target === 'updating') {
+      <h3>Atualizar {{ pending.instance.name }}?</h3>
+      <p>
+        Procura uma imagem mais nova de <span class="mono">{{ pending.instance.image }}</span>.
+        O container só é recriado se houver — e o mundo nos volumes é preservado.
+      </p>
+      @if (pending.instance.state === 'running') {
+        <p class="warn">A instância está de pé: recriar derruba quem estiver jogando.</p>
+      }
+    } @else {
+      <h3>Parar {{ pending.instance.name }}?</h3>
+      <p>
+        Derruba o container. Os volumes ficam, então o mundo é preservado e ela
+        pode subir de novo depois.
+      </p>
+    }
+
+    <div class="confirm-actions">
+      <button class="btn" (click)="cancelAction()" [disabled]="acting()">Cancelar</button>
+      <button class="btn"
+              [class.btn-primary]="pending.target === 'updating'"
+              [class.btn-danger]="pending.target === 'stopped'"
+              (click)="confirmAction()" [disabled]="acting()">
+        {{ pending.target === 'updating' ? 'Procurar atualização' : 'Parar' }}
       </button>
     </div>
   </div>

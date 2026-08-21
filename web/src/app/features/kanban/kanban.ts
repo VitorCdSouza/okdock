@@ -59,30 +59,80 @@ export class Kanban {
 
   readonly total = computed(() => this.store.filtered().length);
 
-  readonly dropHot = signal(false);
+  readonly dropTarget = signal<State | null>(null);
+  readonly pendingAction = signal<{ instance: Instance; target: State } | null>(null);
+  readonly acting = signal(false);
+
+  private readonly dragged = computed(() => {
+    const name = this.store.dragging();
+    return name ? this.store.instances().find((i) => i.name === name) : undefined;
+  });
+
+  canDrop(target: State): boolean {
+    const inst = this.dragged();
+    if (!inst) return false;
+    switch (target) {
+      case 'updating':
+        return !inst.archived && inst.state !== 'updating';
+      case 'stopped':
+        return this.isUp(inst.state);
+      default:
+        return false;
+    }
+  }
+
+  private isUp(state: State): boolean {
+    return state === 'running' || state === 'starting' || state === 'provisioning' || state === 'updating';
+  }
 
   onDragChange(name: string | null): void {
     this.store.dragging.set(name);
-    if (!name) this.dropHot.set(false);
+    if (!name) this.dropTarget.set(null);
   }
 
-  onDropOver(event: DragEvent): void {
+  onDragOver(event: DragEvent, target: State): void {
+    if (!this.canDrop(target)) return;
     event.preventDefault();
     if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-    this.dropHot.set(true);
+    this.dropTarget.set(target);
   }
 
-  onDropLeave(): void {
-    this.dropHot.set(false);
+  onDragLeave(target: State): void {
+    if (this.dropTarget() === target) this.dropTarget.set(null);
   }
 
-  onDrop(event: DragEvent): void {
+  onDrop(event: DragEvent, target: State): void {
     event.preventDefault();
-    this.dropHot.set(false);
-    const name = event.dataTransfer?.getData('text/plain') || this.store.dragging();
+    this.dropTarget.set(null);
+    const inst = this.dragged();
     this.store.dragging.set(null);
-    if (!name) return;
-    this.api.updateImage(name).subscribe({ error: () => {} });
+    if (!inst || !this.canDrop(target)) return;
+    this.pendingAction.set({ instance: inst, target });
+  }
+
+  cancelAction(): void {
+    this.pendingAction.set(null);
+  }
+
+  confirmAction(): void {
+    const pending = this.pendingAction();
+    if (!pending) return;
+    this.acting.set(true);
+    const call =
+      pending.target === 'updating'
+        ? this.api.updateImage(pending.instance.name)
+        : this.api.stop(pending.instance.name);
+    call.subscribe({
+      next: () => {
+        this.acting.set(false);
+        this.pendingAction.set(null);
+        this.store.reload();
+      },
+      error: () => {
+        this.acting.set(false);
+        this.pendingAction.set(null);
+      },
+    });
   }
 
   short(i: Instance): string {
