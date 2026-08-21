@@ -11,13 +11,7 @@ Tudo vive em [`api/internal/catalog/providers.go`](../api/internal/catalog/provi
 | Jogo | Imagem | RAM padrão / mínima | Portas |
 |---|---|---|---|
 | Minecraft (Java) | `itzg/minecraft-server` | 4g / 2g | 25565/tcp |
-| Minecraft (Bedrock) | `itzg/minecraft-bedrock-server` | 2g / 1g | 19132/udp |
-| Palworld | `thijsvanloef/palworld-server-docker` | 12g / 8g | 8211/udp, 27015/udp, 25575/tcp |
-| Valheim | `lloesche/valheim-server` | 4g / 2g | 2456-2457/udp |
-| ARK | `hermsi/ark-server` | 8g / 6g | 7777-7778/udp, 27015/udp, 27020/tcp |
 | Terraria | `ryshe/terraria` | 2g / 512m | 7777/tcp |
-| Factorio | `factoriotools/factorio` | 4g / 1g | 34197/udp, 27015/tcp |
-| Satisfactory | `wolveix/satisfactory-server` | 12g / 8g | 7777/udp |
 | Imagem custom | qualquer | 2g / 256m | você define |
 
 O provedor `custom` é o único que aceita variáveis fora do schema — é a saída
@@ -25,39 +19,39 @@ para uma imagem que o catálogo ainda não descreve.
 
 ## Estado de verificação dos schemas
 
-Em 21/08/2026 todas as imagens foram auditadas com
-`skopeo inspect --config docker://<imagem>`, que mostra o entrypoint e as
-variáveis que a imagem declara sem precisar baixá-la.
+Os dois provedores de jogo foram exercitados contra um container de verdade em
+21/08/2026: criar instância pelo painel, subir, e confirmar que a configuração
+pegou. Minecraft gera o mundo e aceita conexão; Terraria idem, com
+`gamedock.wld` criado pelo `-autocreate`.
 
-- **Exercitados contra um container de verdade:** `itzg/minecraft-server` e
-  `ryshe/terraria`.
-- **Auditados por inspeção, não executados:** os demais. Todos os campos do
-  catálogo aparecem na documentação da imagem correspondente.
+O catálogo já teve outros seis jogos (Minecraft Bedrock, Palworld, Valheim,
+ARK, Factorio, Satisfactory), removidos em 21/08/2026 a pedido do usuário. Os
+schemas deles estão no histórico do git, em
+`internal/catalog/providers.go` antes do commit que os retirou — vale
+recuperá-los de lá em vez de reescrever do zero, mas **sem confiar neles**: só
+Minecraft e Terraria foram executados, e o caso do Terraria mostrou que o erro
+pode não ser um nome trocado e sim o mecanismo inteiro estar errado.
 
-Duas correções vieram dessa auditoria:
+Ao voltar com um provedor, o roteiro que funcionou foi:
 
-- **Terraria não se configura por ambiente.** O `bootstrap.sh` da imagem lê só
-  `WORLD_FILENAME`, `CONFIGPATH` e `LOGPATH`; o resto são flags do executável.
-  Sem `-autocreate`, com o mundo ainda inexistente, o servidor cai num menu
-  interativo e o container fica parado esperando alguém digitar. Foi o que
-  motivou o `Target: TargetArg`.
-- **Satisfactory não tem `AUTOSAVEINTERVAL`.** Trocado por `MAXTICKRATE` e
-  `MAXOBJECTS`, que a imagem declara.
+1. `skopeo inspect --config docker://<imagem>` — mostra entrypoint e variáveis
+   declaradas sem baixar a imagem.
+2. Ler o entrypoint (`docker run --rm --entrypoint cat <imagem> /caminho/do/script`)
+   — é o que revela se a imagem lê configuração do ambiente ou de argumentos.
+3. Subir uma instância e confirmar que a configuração surtiu efeito.
 
-Um detalhe da auditoria vale registrar: **a lista de variáveis declaradas não é
-a lista completa de variáveis lidas.** Palworld, Valheim e Factorio leem várias
-que não estão no `ENV` da imagem, porque o script usa `${VAR:-default}` em vez
-de declarar. A inspeção prova o que existe, nunca o que não existe — só rodar
-prova isso.
+O passo 1 sozinho engana: **a lista de variáveis declaradas não é a lista
+completa de variáveis lidas.** Muitas imagens usam `${VAR:-default}` no script
+sem declarar nada no `ENV`. A inspeção prova o que existe, nunca o que não
+existe.
 
 Campo com nome errado não quebra o `up`: a variável é ignorada e o efeito é a
-configuração não pegar. Se um campo não surtir efeito, esse é o primeiro lugar
-a olhar. Configuração que a imagem espera como **argumento** é diferente: ali o
-sintoma costuma ser o container subir e não fazer nada, como aconteceu com
-Terraria.
+configuração não pegar. Configuração que a imagem espera como **argumento** é
+pior: o sintoma é o container subir e não fazer nada, como aconteceu com
+Terraria antes do `TargetArg`.
 
-Nada disso impede usar o jogo — o provedor `custom` sempre aceita a imagem com
-as variáveis digitadas à mão.
+Nada disso impede usar um jogo fora do catálogo — o provedor `custom` sempre
+aceita a imagem com as variáveis digitadas à mão.
 
 ## Adicionando um provedor
 

@@ -59,8 +59,6 @@ export class InstanceDetail {
   readonly logLines = signal<string[]>([]);
   readonly busy = signal(false);
   readonly error = signal<GameDockError | null>(null);
-  readonly confirmingDelete = signal(false);
-  readonly deleteData = signal(false);
 
   readonly instance = computed<Instance | undefined>(() =>
     this.store.instances().find((i) => i.name === this.name()),
@@ -112,7 +110,6 @@ export class InstanceDetail {
         Object.fromEntries(i.ports.map((p) => [`${p.container}/${p.protocol}`, p.host])),
       );
       this.error.set(null);
-      this.confirmingDelete.set(false);
       this.refreshPreview();
     });
   }
@@ -206,21 +203,6 @@ export class InstanceDetail {
 
   clearError(): void {
     this.run(this.api.clearError(this.name()));
-  }
-
-  remove(): void {
-    this.busy.set(true);
-    this.api.remove(this.name(), !this.deleteData()).subscribe({
-      next: () => {
-        this.busy.set(false);
-        this.store.reload();
-        this.close.emit();
-      },
-      error: (err: GameDockError) => {
-        this.error.set(err);
-        this.busy.set(false);
-      },
-    });
   }
 
   private run(obs: { subscribe: (o: object) => unknown }): void {

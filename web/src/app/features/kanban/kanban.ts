@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, output, signal } from '@angular/core';
 
 import { Api } from '../../core/api';
 import { Store } from '../../core/state';
@@ -18,6 +18,36 @@ export class Kanban {
 
   readonly open = output<Instance>();
   readonly create = output<void>();
+
+  readonly pendingDelete = signal<Instance | null>(null);
+  readonly deleteData = signal(false);
+  readonly deleting = signal(false);
+
+  askRemove(instance: Instance): void {
+    this.deleteData.set(false);
+    this.pendingDelete.set(instance);
+  }
+
+  cancelRemove(): void {
+    this.pendingDelete.set(null);
+  }
+
+  confirmRemove(): void {
+    const target = this.pendingDelete();
+    if (!target) return;
+    this.deleting.set(true);
+    this.api.remove(target.name, !this.deleteData()).subscribe({
+      next: () => {
+        this.deleting.set(false);
+        this.pendingDelete.set(null);
+        this.store.reload();
+      },
+      error: () => {
+        this.deleting.set(false);
+        this.pendingDelete.set(null);
+      },
+    });
+  }
 
   readonly columns = computed(() =>
     this.store.states().map((state) => ({

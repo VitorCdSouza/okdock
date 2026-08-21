@@ -79,21 +79,26 @@ func TestBuildSpecUsesProviderDefaults(t *testing.T) {
 func TestBuildSpecMarksProviderSecrets(t *testing.T) {
 	m, _ := newManager(t, 32*gb)
 	spec, err := m.BuildSpec(SpecRequest{
-		Name:       "pal",
-		ProviderID: "thijsvanloef/palworld-server-docker",
-		Values:     map[string]string{"SERVER_PASSWORD": "abc"},
+		Name:       "terraria-1",
+		ProviderID: "ryshe/terraria",
+		Values:     map[string]string{"PASSWORD": "abc"},
 	})
 	if err != nil {
 		t.Fatalf("BuildSpec: %v", err)
 	}
 	found := false
 	for _, k := range spec.SecretKeys {
-		if k == "SERVER_PASSWORD" {
+		if k == "PASSWORD" {
 			found = true
 		}
 	}
 	if !found {
-		t.Errorf("SERVER_PASSWORD não foi marcada como segredo: %v", spec.SecretKeys)
+		t.Errorf("PASSWORD não foi marcada como segredo: %v", spec.SecretKeys)
+	}
+	for _, a := range spec.Command {
+		if a == "abc" {
+			t.Errorf("senha vazou para o comando: %v", spec.Command)
+		}
 	}
 }
 

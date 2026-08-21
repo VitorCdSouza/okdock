@@ -110,12 +110,12 @@ func TestValidateReportsEveryProblemAtOnce(t *testing.T) {
 }
 
 func TestValidateRequiredMissing(t *testing.T) {
-	p, _ := Get("lloesche/valheim-server")
-	_, err := p.Validate(map[string]string{})
+	p, _ := Get("itzg/minecraft-server")
+	_, err := p.Validate(map[string]string{"EULA": ""})
 	if err == nil {
-		t.Fatal("campo obrigatório sem valor devia falhar")
+		t.Fatal("campo obrigatório em branco devia falhar")
 	}
-	if !strings.Contains(err.Error(), "SERVER_PASS") {
+	if !strings.Contains(err.Error(), "EULA") {
 		t.Errorf("erro não aponta o campo obrigatório: %v", err)
 	}
 }

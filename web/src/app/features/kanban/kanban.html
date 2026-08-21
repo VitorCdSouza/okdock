@@ -25,7 +25,8 @@
               [instance]="card"
               [short]="short(card)"
               (open)="open.emit($event)"
-              (act)="onAction($event)" />
+              (act)="onAction($event)"
+              (remove)="askRemove($event)" />
           }
 
           @if (col.state === 'stopped') {
@@ -34,5 +35,29 @@
         </section>
       }
     }
+  </div>
+}
+
+@if (pendingDelete(); as target) {
+  <div class="confirm-backdrop" (click)="cancelRemove()"></div>
+  <div class="confirm" role="alertdialog" aria-label="Confirmar exclusão">
+    <h3>Excluir {{ target.name }}?</h3>
+    <p>
+      Derruba o container e apaga o <span class="mono">docker-compose.yml</span>.
+      O mundo em <span class="mono">{{ target.dir }}</span> fica no disco.
+    </p>
+
+    <label class="check">
+      <input type="checkbox" [checked]="deleteData()"
+             (change)="deleteData.set($any($event.target).checked)">
+      <span>apagar também o mundo — <strong>isto não tem volta</strong></span>
+    </label>
+
+    <div class="confirm-actions">
+      <button class="btn" (click)="cancelRemove()" [disabled]="deleting()">Cancelar</button>
+      <button class="btn btn-danger" (click)="confirmRemove()" [disabled]="deleting()">
+        {{ deleteData() ? 'Excluir e apagar o mundo' : 'Excluir, manter o mundo' }}
+      </button>
+    </div>
   </div>
 }

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
 import { Instance, STATE_META } from '../../core/models';
 import { bytes, since } from '../../core/format';
@@ -23,6 +23,10 @@ export type ActionVerb = 'start' | 'stop' | 'restart' | 'logs' | 'fix' | 'unarch
   templateUrl: './instance-card.html',
   styleUrl: './instance-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:click)': 'menuOpen.set(false)',
+    '(document:keydown.escape)': 'menuOpen.set(false)',
+  },
 })
 export class InstanceCard {
   readonly instance = input.required<Instance>();
@@ -30,6 +34,20 @@ export class InstanceCard {
 
   readonly open = output<Instance>();
   readonly act = output<{ instance: Instance; verb: ActionVerb }>();
+  readonly remove = output<Instance>();
+
+  readonly menuOpen = signal(false);
+
+  toggleMenu(event: Event): void {
+    event.stopPropagation();
+    this.menuOpen.update((v) => !v);
+  }
+
+  pickRemove(event: Event): void {
+    event.stopPropagation();
+    this.menuOpen.set(false);
+    this.remove.emit(this.instance());
+  }
 
   readonly colors = computed(() => GAME_COLORS[this.instance().game] ?? GAME_COLORS['custom']);
   readonly dot = computed(() => STATE_META[this.instance().state].dot);

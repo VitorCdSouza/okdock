@@ -7,6 +7,17 @@
       <div class="name">{{ instance().name }}</div>
       <div class="sub mono">{{ instance().image }}</div>
     </div>
+
+    <div class="menu-wrap">
+      <button class="menu-btn" (click)="toggleMenu($event)"
+              [attr.aria-expanded]="menuOpen()"
+              [attr.aria-label]="'Opções de ' + instance().name">⋯</button>
+      @if (menuOpen()) {
+        <div class="menu" role="menu" (click)="$event.stopPropagation()">
+          <button role="menuitem" class="destructive" (click)="pickRemove($event)">Excluir</button>
+        </div>
+      }
+    </div>
   </header>
 
   @if (tags().length) {

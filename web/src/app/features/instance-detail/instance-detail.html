@@ -105,39 +105,18 @@
               }
             </ul>
 
-            <div class="danger-zone">
-              <div class="section-title">ZONA DE RISCO</div>
-              @if (!confirmingDelete()) {
-                <div class="row">
-                  <div>
-                    <div class="dz-title">Remover instância</div>
-                    <div class="dz-sub">Derruba o container e apaga os arquivos gerados.</div>
-                  </div>
-                  <div class="dz-actions">
-                    @if (!inst.archived) {
-                      <button class="btn btn-sm" (click)="archive()" [disabled]="busy()">Arquivar</button>
-                    }
-                    <button class="btn btn-sm btn-danger" (click)="confirmingDelete.set(true)">Remover…</button>
-                  </div>
+            <div class="lifecycle">
+              <div>
+                <div class="lc-title">{{ inst.archived ? 'Instância arquivada' : 'Arquivar instância' }}</div>
+                <div class="lc-sub">
+                  Derruba o container e some do quadro, mantendo os volumes.
+                  Para excluir de vez, use o menu <span class="mono">⋯</span> no card.
                 </div>
+              </div>
+              @if (inst.archived) {
+                <button class="btn btn-sm btn-go" (click)="unarchive()" [disabled]="busy()">Restaurar</button>
               } @else {
-                <div class="confirm">
-                  <p>
-                    Vou remover <strong class="mono">{{ inst.name }}</strong>.
-                    O mundo em <span class="mono">{{ inst.dir }}</span> é preservado por padrão.
-                  </p>
-                  <label class="check danger">
-                    <input type="checkbox" [checked]="deleteData()"
-                           (change)="deleteData.set($any($event.target).checked)">
-                    <span>apagar também os dados do mundo — <strong>isto não tem volta</strong></span>
-                  </label>
-                  <div class="dz-actions">
-                    <button class="btn btn-sm" (click)="confirmingDelete.set(false)">Cancelar</button>
-                    <button class="btn btn-sm btn-danger" (click)="remove()" [disabled]="busy()">
-                      {{ deleteData() ? 'Remover e apagar o mundo' : 'Remover, manter o mundo' }}
-                    </button>
-                  </div>
-                </div>
+                <button class="btn btn-sm" (click)="archive()" [disabled]="busy()">Arquivar</button>
               }
             </div>
           }

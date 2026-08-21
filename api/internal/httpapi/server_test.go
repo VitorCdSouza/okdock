@@ -3,8 +3,12 @@ package httpapi
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -63,8 +67,14 @@ func TestListProviders(t *testing.T) {
 	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
-	if len(got) < 8 {
-		t.Errorf("catálogo veio com %d provedores", len(got))
+	ids := make(map[string]bool, len(got))
+	for _, p := range got {
+		ids[p["id"].(string)] = true
+	}
+	for _, want := range []string{"itzg/minecraft-server", "ryshe/terraria", "custom"} {
+		if !ids[want] {
+			t.Errorf("catálogo sem %q: %v", want, ids)
+		}
 	}
 }
 
@@ -185,11 +195,39 @@ func TestDeleteKeepsDataByDefault(t *testing.T) {
 		ProviderID: "itzg/minecraft-server",
 		Values:     map[string]string{"EULA": "true"},
 	})
+	world := filepath.Join(s.mgr.Store().Dir("smp"), "data", "level.dat")
+	if err := os.WriteFile(world, []byte("mundo"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
 	if got := do(t, s, "DELETE", "/api/v1/instances/smp", nil).Code; got != http.StatusNoContent {
 		t.Fatalf("status = %d", got)
 	}
 	if got := do(t, s, "GET", "/api/v1/instances/smp", nil).Code; got != 404 {
 		t.Errorf("instância devia ter sumido, status = %d", got)
+	}
+	if _, err := os.Stat(world); err != nil {
+		t.Errorf("o mundo devia ter sido preservado: %v", err)
+	}
+}
+
+func TestDeleteWithKeepDataFalseRemovesTheWorld(t *testing.T) {
+	s := newServer(t)
+	do(t, s, "POST", "/api/v1/instances", manager.SpecRequest{
+		Name:       "smp",
+		ProviderID: "itzg/minecraft-server",
+		Values:     map[string]string{"EULA": "true"},
+	})
+	dir := s.mgr.Store().Dir("smp")
+	if err := os.WriteFile(filepath.Join(dir, "data", "level.dat"), []byte("mundo"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := do(t, s, "DELETE", "/api/v1/instances/smp?keepData=false", nil).Code; got != http.StatusNoContent {
+		t.Fatalf("status = %d", got)
+	}
+	if _, err := os.Stat(dir); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("diretório devia ter sumido, err = %v", err)
 	}
 }
 
