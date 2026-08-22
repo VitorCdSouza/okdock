@@ -86,6 +86,18 @@ describe('Store', () => {
     expect(store.gameCounts()[0].label).toBe('valheim');
   });
 
+  it('põe provisionando e iniciando na coluna de rodando', () => {
+    store.instances.set([
+      instance({ name: 'a', state: 'starting' }),
+      instance({ name: 'b', state: 'provisioning' }),
+      instance({ name: 'c', state: 'running' }),
+      instance({ name: 'd', state: 'stopped' }),
+    ]);
+
+    expect(store.byColumn('running').map((i) => i.name)).toEqual(['a', 'b', 'c']);
+    expect(store.byColumn('stopped').map((i) => i.name)).toEqual(['d']);
+  });
+
   it('monta o aviso de fim de operação pelo tipo do evento', () => {
     store.start();
     http.expectOne('/api/v1/providers').flush([]);

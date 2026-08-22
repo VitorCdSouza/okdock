@@ -68,7 +68,7 @@
       </div>
     }
 
-    <div class="body" [class.split]="tab() === 'config' || tab() === 'recursos'">
+    <div class="body">
       <div class="main">
         @switch (tab()) {
           @case ('config') {
@@ -93,12 +93,12 @@
                   <gd-info [text]="t('detail.ramLimitTip')" />
                 </label>
                 <input id="mem" class="mono" [ngModel]="memoryLimit()"
-                       (ngModelChange)="memoryLimit.set($event); refreshPreview()">
+                       (ngModelChange)="memoryLimit.set($event); refreshRecreate()">
               </div>
               <div class="field">
                 <label for="cpus">CPUs</label>
                 <input id="cpus" type="number" step="0.5" min="0.5" class="mono" [ngModel]="cpus()"
-                       (ngModelChange)="cpus.set($event); refreshPreview()">
+                       (ngModelChange)="cpus.set($event); refreshRecreate()">
               </div>
               @for (p of inst.ports; track p.container + '/' + p.protocol) {
                 <div class="field">
@@ -169,24 +169,6 @@
 
               @if (dnsError(); as e) { <div class="alert bad">{{ e }}</div> }
             </div>
-
-            <div class="lifecycle">
-              <div>
-                <div class="lc-title">
-                  {{ inst.archived ? t('detail.archivedTitle') : t('detail.archiveTitle') }}
-                </div>
-                <div class="lc-sub">{{ t('detail.archiveSub') }}</div>
-              </div>
-              @if (inst.archived) {
-                <button class="btn btn-sm btn-go" (click)="unarchive()" [disabled]="busy()">
-                  {{ t('detail.restore') }}
-                </button>
-              } @else {
-                <button class="btn btn-sm" (click)="archive()" [disabled]="busy()">
-                  {{ t('detail.archive') }}
-                </button>
-              }
-            </div>
           }
 
           @case ('console') {
@@ -206,31 +188,28 @@
           }
         }
       </div>
+    </div>
 
-      @if (tab() === 'config' || tab() === 'recursos') {
-        <aside class="side">
-          <div class="side-head">
-            <span class="section-title">{{ t('detail.generatedCompose') }}</span>
+    @if (tab() === 'config' || tab() === 'recursos') {
+      <footer class="edit-bar">
+        @if (recreate().length) {
+          <div class="alert warn">
+            <strong>{{ recreate().length }}</strong>
+            {{ recreate().length === 1 ? t('detail.recreate.one') : t('detail.recreate.other') }}
+            <ul>@for (r of recreate(); track r) { <li class="mono">{{ r }}</li> }</ul>
           </div>
-          <pre class="code mono">{{ preview() }}</pre>
+        }
 
-          @if (recreate().length) {
-            <div class="alert warn">
-              <strong>{{ recreate().length }}</strong>
-              {{ recreate().length === 1 ? t('detail.recreate.one') : t('detail.recreate.other') }}
-              <ul>@for (r of recreate(); track r) { <li class="mono">{{ r }}</li> }</ul>
-            </div>
-          }
-
-          <div class="side-foot">
+        <div class="edit-row">
+          <span class="created mono">{{ createdLabel() }}</span>
+          <div class="edit-actions">
+            <button class="btn" (click)="discard()" [disabled]="busy()">{{ t('common.discard') }}</button>
             <button class="btn btn-primary" (click)="save()" [disabled]="busy()">
               {{ recreate().length ? t('detail.saveAndRecreate') : t('common.save') }}
             </button>
-            <button class="btn" (click)="discard()" [disabled]="busy()">{{ t('common.discard') }}</button>
           </div>
-          <div class="created mono">{{ createdLabel() }}</div>
-        </aside>
-      }
-    </div>
+        </div>
+      </footer>
+    }
   </div>
 }

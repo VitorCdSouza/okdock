@@ -149,12 +149,13 @@ tradução. O `label` da porta é um código (`game`) pela mesma razão.
 ```json
 {
   "instances": [ /* … */ ],
-  "states": ["stopped","provisioning","starting","running","updating","error","archived"]
+  "states": ["stopped","provisioning","starting","running","updating","archived","error"]
 }
 ```
 
-`states` vem na ordem das colunas do kanban, para o frontend não repetir a
-lista.
+`states` vem na ordem em que o painel apresenta os estados, para o frontend não
+repetir a lista. Nem todo estado vira coluna: `provisioning` e `starting` são
+passagem, e o quadro mostra esses cards já na coluna `running`.
 
 Uma instância junta o que está em disco com o que o Docker respondeu agora:
 

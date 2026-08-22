@@ -50,6 +50,8 @@ export const pt = {
   'kanban.noMatch': 'Nenhuma instância bate com o filtro.',
   'kanban.dropToUpdate': 'soltar para procurar imagem nova',
   'kanban.dropToStop': 'soltar para parar',
+  'kanban.dropToStart': 'soltar para iniciar',
+  'kanban.dropToArchive': 'soltar para arquivar',
   'kanban.newInstance': 'Nova instância',
   'kanban.confirmDeleteAria': 'Confirmar exclusão',
   'kanban.deleteTitle': 'Excluir {name}?',
@@ -68,6 +70,14 @@ export const pt = {
   'kanban.stopBody':
     'Derruba o container. Os volumes ficam, então o mundo é preservado e ela pode subir de novo depois.',
   'kanban.doStop': 'Parar',
+  'kanban.startTitle': 'Iniciar {name}?',
+  'kanban.startBody':
+    'Sobe o container com o compose que está no disco. Se a RAM livre não cobrir o limite da instância, o painel recusa.',
+  'kanban.doStart': 'Iniciar',
+  'kanban.archiveTitle': 'Arquivar {name}?',
+  'kanban.archiveBody':
+    'Derruba o container e tira a instância do quadro, mantendo os volumes. O mundo continua em',
+  'kanban.doArchive': 'Arquivar',
 
   'card.optionsAria': 'Opções de {name}',
   'card.edit': 'Editar',
@@ -124,15 +134,9 @@ export const pt = {
   'detail.linkTip':
     'O subdomínio precisa já existir na sua conta: a API do DuckDNS não cria nome, só atualiza o IP de um que existe. Crie em duckdns.org e volte aqui — verificar é o próprio painel tentando atualizá-lo.',
   'detail.syncing': 'conferindo o endereço no duckdns…',
-  'detail.archivedTitle': 'Instância arquivada',
-  'detail.archiveTitle': 'Arquivar instância',
-  'detail.archiveSub':
-    'Derruba o container e some do quadro, mantendo os volumes. Para excluir de vez, use o menu ⋯ no card.',
-  'detail.archive': 'Arquivar',
   'detail.consoleEmpty': 'sem saída ainda — a instância precisa estar de pé.',
   'detail.composeLead':
     'Este é o arquivo como está no disco. Editar à mão funciona — o painel relê. Mas Salvar e recriar sobrescreve.',
-  'detail.generatedCompose': 'COMPOSE GERADO',
   'detail.recreate.one': 'mudança exige recriar o container. O mundo nos volumes é preservado.',
   'detail.recreate.other': 'mudanças exigem recriar o container. O mundo nos volumes é preservado.',
   'detail.saveAndRecreate': 'Salvar e recriar',

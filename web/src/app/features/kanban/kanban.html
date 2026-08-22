@@ -10,41 +10,37 @@
 } @else {
   <div class="board">
     @for (col of columns(); track col.state) {
-      @if (visible(col.state, col.cards.length)) {
-        <section class="column"
-                 [class.droppable]="canDrop(col.state)"
-                 [class.drop-over]="dropTarget() === col.state"
-                 (dragover)="onDragOver($event, col.state)"
-                 (dragleave)="onDragLeave(col.state)"
-                 (drop)="onDrop($event, col.state)">
-          <header>
-            <span class="dot" [style.background]="col.dot"></span>
-            <span class="title">{{ col.title }}</span>
-            <span class="count mono">{{ col.cards.length }}</span>
-          </header>
+      <section class="column"
+               [class.droppable]="canDrop(col.state)"
+               [class.drop-over]="dropTarget() === col.state"
+               (dragover)="onDragOver($event, col.state)"
+               (dragleave)="onDragLeave(col.state)"
+               (drop)="onDrop($event, col.state)">
+        <header>
+          <span class="dot" [style.background]="col.dot"></span>
+          <span class="title">{{ col.title }}</span>
+          <span class="count mono">{{ col.cards.length }}</span>
+        </header>
 
-          @if (canDrop(col.state)) {
-            <div class="drop-hint mono">
-              {{ col.state === 'updating' ? t('kanban.dropToUpdate') : t('kanban.dropToStop') }}
-            </div>
-          }
+        @if (canDrop(col.state)) {
+          <div class="drop-hint mono">{{ dropHint(col.state) }}</div>
+        }
 
-          @for (card of col.cards; track card.name) {
-            <gd-instance-card
-              [instance]="card"
-              [short]="short(card)"
-              (open)="open.emit($event)"
-              (act)="onAction($event)"
-              (remove)="askRemove($event)"
-              (dragChange)="onDragChange($event)"
-              (copied)="store.notify(t('common.copied', { text: $event }))" />
-          }
+        @for (card of col.cards; track card.name) {
+          <gd-instance-card
+            [instance]="card"
+            [short]="short(card)"
+            (open)="open.emit($event)"
+            (act)="onAction($event)"
+            (remove)="askRemove($event)"
+            (dragChange)="onDragChange($event)"
+            (copied)="store.notify(t('common.copied', { text: $event }))" />
+        }
 
-          @if (col.state === 'stopped') {
-            <button class="add" (click)="create.emit()" [title]="t('kanban.newInstance')">＋</button>
-          }
-        </section>
-      }
+        @if (col.state === 'stopped') {
+          <button class="add" (click)="create.emit()" [title]="t('kanban.newInstance')">＋</button>
+        }
+      </section>
     }
   </div>
 }
@@ -85,6 +81,12 @@
       @if (pending.instance.state === 'running') {
         <p class="warn">{{ t('kanban.updateWarnRunning') }}</p>
       }
+    } @else if (pending.target === 'running') {
+      <h3>{{ t('kanban.startTitle', { name: pending.instance.name }) }}</h3>
+      <p>{{ t('kanban.startBody') }}</p>
+    } @else if (pending.target === 'archived') {
+      <h3>{{ t('kanban.archiveTitle', { name: pending.instance.name }) }}</h3>
+      <p>{{ t('kanban.archiveBody') }} <span class="mono">{{ pending.instance.dir }}</span>.</p>
     } @else {
       <h3>{{ t('kanban.stopTitle', { name: pending.instance.name }) }}</h3>
       <p>{{ t('kanban.stopBody') }}</p>
@@ -94,9 +96,10 @@
       <button class="btn" (click)="cancelAction()" [disabled]="acting()">{{ t('common.cancel') }}</button>
       <button class="btn"
               [class.btn-primary]="pending.target === 'updating'"
+              [class.btn-go]="pending.target === 'running'"
               [class.btn-danger]="pending.target === 'stopped'"
               (click)="confirmAction()" [disabled]="acting()">
-        {{ pending.target === 'updating' ? t('kanban.doUpdate') : t('kanban.doStop') }}
+        {{ confirmLabel(pending.target) }}
       </button>
     </div>
   </div>

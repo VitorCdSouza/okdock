@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, output, signal } 
 
 import { Api } from '../../core/api';
 import { Store } from '../../core/state';
-import { Instance, STATE_DOT, STATE_KEY, State } from '../../core/models';
+import { COLUMN_OF, Instance, STATE_DOT, STATE_KEY, State } from '../../core/models';
 import { I18n } from '../../core/i18n/i18n';
 import { ActionVerb, InstanceCard } from './instance-card';
 
@@ -52,13 +52,17 @@ export class Kanban {
     });
   }
 
+  // estado que nao e a propria coluna (provisionando, iniciando) entra na coluna de destino
   readonly columns = computed(() =>
-    this.store.states().map((state) => ({
-      state,
-      dot: STATE_DOT[state],
-      title: this.t(STATE_KEY[state]),
-      cards: this.store.byState(state),
-    })),
+    this.store
+      .states()
+      .filter((state) => COLUMN_OF[state] === state)
+      .map((state) => ({
+        state,
+        dot: STATE_DOT[state],
+        title: this.t(STATE_KEY[state]),
+        cards: this.store.byColumn(state),
+      })),
   );
 
   readonly total = computed(() => this.store.filtered().length);
@@ -78,6 +82,10 @@ export class Kanban {
         return !inst.archived && inst.state !== 'updating';
       case 'stopped':
         return this.isUp(inst.state);
+      case 'running':
+        return inst.state === 'stopped' || inst.state === 'error';
+      case 'archived':
+        return !inst.archived;
       default:
         return false;
     }
@@ -128,11 +136,7 @@ export class Kanban {
     const pending = this.pendingAction();
     if (!pending) return;
     this.acting.set(true);
-    const call =
-      pending.target === 'updating'
-        ? this.api.updateImage(pending.instance.name)
-        : this.api.stop(pending.instance.name);
-    call.subscribe({
+    this.call(pending.target, pending.instance.name).subscribe({
       next: () => {
         this.acting.set(false);
         this.pendingAction.set(null);
@@ -145,21 +149,47 @@ export class Kanban {
     });
   }
 
-  short(i: Instance): string {
-    return this.store.provider(i.providerId)?.short ?? '··';
+  dropHint(target: State): string {
+    switch (target) {
+      case 'updating':
+        return this.t('kanban.dropToUpdate');
+      case 'running':
+        return this.t('kanban.dropToStart');
+      case 'archived':
+        return this.t('kanban.dropToArchive');
+      default:
+        return this.t('kanban.dropToStop');
+    }
   }
 
-  visible(state: State, count: number): boolean {
-    if (count > 0) return true;
-    switch (state) {
-      case 'stopped':
-      case 'running':
+  confirmLabel(target: State): string {
+    switch (target) {
       case 'updating':
-      case 'error':
-        return true;
+        return this.t('kanban.doUpdate');
+      case 'running':
+        return this.t('kanban.doStart');
+      case 'archived':
+        return this.t('kanban.doArchive');
       default:
-        return false;
+        return this.t('kanban.doStop');
     }
+  }
+
+  private call(target: State, name: string) {
+    switch (target) {
+      case 'updating':
+        return this.api.updateImage(name);
+      case 'running':
+        return this.api.start(name);
+      case 'archived':
+        return this.api.archive(name);
+      default:
+        return this.api.stop(name);
+    }
+  }
+
+  short(i: Instance): string {
+    return this.store.provider(i.providerId)?.short ?? '··';
   }
 
   onAction({ instance, verb }: { instance: Instance; verb: ActionVerb }): void {

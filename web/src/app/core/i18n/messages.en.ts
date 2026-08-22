@@ -52,6 +52,8 @@ export const en: Record<MessageKey, string> = {
   'kanban.noMatch': 'No instance matches the filter.',
   'kanban.dropToUpdate': 'drop to look for a newer image',
   'kanban.dropToStop': 'drop to stop',
+  'kanban.dropToStart': 'drop to start',
+  'kanban.dropToArchive': 'drop to archive',
   'kanban.newInstance': 'New instance',
   'kanban.confirmDeleteAria': 'Confirm deletion',
   'kanban.deleteTitle': 'Delete {name}?',
@@ -71,6 +73,14 @@ export const en: Record<MessageKey, string> = {
   'kanban.stopBody':
     'Tears down the container. The volumes stay, so the world is preserved and it can come back up later.',
   'kanban.doStop': 'Stop',
+  'kanban.startTitle': 'Start {name}?',
+  'kanban.startBody':
+    'Brings the container up with the compose file on disk. If the free RAM does not cover the instance limit, the panel refuses.',
+  'kanban.doStart': 'Start',
+  'kanban.archiveTitle': 'Archive {name}?',
+  'kanban.archiveBody':
+    'Tears down the container and takes the instance off the board, keeping the volumes. The world stays in',
+  'kanban.doArchive': 'Archive',
 
   'card.optionsAria': 'Options for {name}',
   'card.edit': 'Edit',
@@ -127,15 +137,9 @@ export const en: Record<MessageKey, string> = {
   'detail.linkTip':
     'The subdomain has to exist in your account already: the DuckDNS API does not create names, it only updates the IP of one that exists. Create it at duckdns.org and come back — checking is the panel itself trying to update it.',
   'detail.syncing': 'checking the address on duckdns…',
-  'detail.archivedTitle': 'Instance archived',
-  'detail.archiveTitle': 'Archive instance',
-  'detail.archiveSub':
-    'Tears down the container and hides it from the board, keeping the volumes. To delete it for good, use the ⋯ menu on the card.',
-  'detail.archive': 'Archive',
   'detail.consoleEmpty': 'no output yet — the instance has to be up.',
   'detail.composeLead':
     'This is the file as it is on disk. Editing it by hand works — the panel rereads it. But Save and recreate overwrites it.',
-  'detail.generatedCompose': 'GENERATED COMPOSE',
   'detail.recreate.one':
     'change requires recreating the container. The world in the volumes is preserved.',
   'detail.recreate.other':

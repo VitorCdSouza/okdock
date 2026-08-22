@@ -3,7 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Api } from './api';
 import { Events } from './events';
 import { I18n } from './i18n/i18n';
-import { DnsStatus, Instance, Provider, State, SystemInfo } from './models';
+import { COLUMN_OF, DnsStatus, Instance, Provider, State, SystemInfo } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class Store {
@@ -61,8 +61,8 @@ export class Store {
     return [...counts.entries()].map(([game, v]) => ({ game, ...v }));
   });
 
-  byState(state: State): Instance[] {
-    return this.filtered().filter((i) => i.state === state);
+  byColumn(column: State): Instance[] {
+    return this.filtered().filter((i) => COLUMN_OF[i.state] === column);
   }
 
   start(): void {

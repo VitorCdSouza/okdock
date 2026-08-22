@@ -208,6 +208,17 @@ export const STATE_DOT: Record<State, string> = {
   archived: '#4e535d',
 };
 
+// coluna do quadro de cada estado, e provisionando e iniciando ja sentam no destino
+export const COLUMN_OF: Record<State, State> = {
+  stopped: 'stopped',
+  provisioning: 'running',
+  starting: 'running',
+  running: 'running',
+  updating: 'updating',
+  error: 'error',
+  archived: 'archived',
+};
+
 export const STATE_KEY: Record<State, MessageKey> = {
   stopped: 'state.stopped',
   provisioning: 'state.provisioning',

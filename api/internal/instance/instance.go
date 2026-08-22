@@ -20,9 +20,10 @@ const (
 	StateArchived     State = "archived"
 )
 
+// ordem dos estados na tela: o fluxo normal, depois arquivada e, por ultimo, erro
 var AllStates = []State{
 	StateStopped, StateProvisioning, StateStarting,
-	StateRunning, StateUpdating, StateError, StateArchived,
+	StateRunning, StateUpdating, StateArchived, StateError,
 }
 
 type PortBinding struct {

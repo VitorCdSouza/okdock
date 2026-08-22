@@ -62,7 +62,6 @@ export class InstanceDetail {
   readonly cpus = signal(0);
   readonly hostPorts = signal<Record<string, number>>({});
 
-  readonly preview = signal('');
   readonly recreate = signal<string[]>([]);
   readonly rawCompose = signal('');
   readonly logLines = signal<string[]>([]);
@@ -156,17 +155,14 @@ export class InstanceDetail {
       this.error.set(null);
       this.dnsDomain.set(i.dns?.domain ?? '');
       this.dnsError.set(null);
-      this.refreshPreview();
+      this.refreshRecreate();
     });
   }
 
   select(tab: Tab): void {
     this.tab.set(tab);
-    if (tab === 'compose' && !this.rawCompose()) {
-      this.api.compose(this.name()).subscribe({
-        next: (raw) => this.rawCompose.set(raw),
-        error: () => {},
-      });
+    if (tab === 'compose') {
+      this.loadCompose();
     }
     if (tab === 'console' && this.logLines().length === 0) {
       this.tailLogs();
@@ -185,14 +181,19 @@ export class InstanceDetail {
       });
   }
 
-  refreshPreview(): void {
+  private loadCompose(): void {
+    this.api.compose(this.name()).subscribe({
+      next: (raw) => this.rawCompose.set(raw),
+      error: () => {},
+    });
+  }
+
+  // o compose so e escrito no update, e aqui interessa o que exige recriar o container
+  refreshRecreate(): void {
     const req = this.request();
     if (!req) return;
     this.api.previewCompose(req).subscribe({
-      next: (res) => {
-        this.preview.set(res.compose);
-        this.recreate.set(res.recreate ?? []);
-      },
+      next: (res) => this.recreate.set(res.recreate ?? []),
       error: () => {},
     });
   }
@@ -201,7 +202,7 @@ export class InstanceDetail {
     const n = Number(raw);
     if (!Number.isFinite(n)) return;
     this.hostPorts.update((cur) => ({ ...cur, [`${container}/${protocol}`]: n }));
-    this.refreshPreview();
+    this.refreshRecreate();
   }
 
   save(): void {
@@ -212,6 +213,7 @@ export class InstanceDetail {
     this.api.update(this.name(), req).subscribe({
       next: () => {
         this.busy.set(false);
+        this.rawCompose.set('');
         this.store.reload();
       },
       error: (err: GameDockError) => {
@@ -237,10 +239,6 @@ export class InstanceDetail {
 
   restart(): void {
     this.run(this.api.restart(this.name()));
-  }
-
-  archive(): void {
-    this.run(this.api.archive(this.name()));
   }
 
   unarchive(): void {

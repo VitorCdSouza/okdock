@@ -69,6 +69,75 @@ describe('Kanban — arrastar card para uma coluna', () => {
     expect(kanban.pendingAction()?.target).toBe('stopped');
   });
 
+  it('abre a confirmação ao soltar uma instância parada em RODANDO', () => {
+    store.instances.set([instance({ state: 'stopped' })]);
+    store.dragging.set('smp');
+
+    kanban.onDrop(dragEvent(), 'running');
+
+    expect(kanban.pendingAction()?.target).toBe('running');
+  });
+
+  it('aceita em RODANDO uma instância em erro', () => {
+    store.instances.set([instance({ state: 'error' })]);
+    store.dragging.set('smp');
+
+    kanban.onDrop(dragEvent(), 'running');
+
+    expect(kanban.pendingAction()?.target).toBe('running');
+  });
+
+  it('não aceita em RODANDO uma instância que já está de pé', () => {
+    store.instances.set([instance()]);
+    store.dragging.set('smp');
+
+    kanban.onDrop(dragEvent(), 'running');
+
+    expect(kanban.pendingAction()).toBeNull();
+  });
+
+  it('confirmar em RODANDO chama start', () => {
+    store.instances.set([instance({ state: 'stopped' })]);
+    store.dragging.set('smp');
+    kanban.onDrop(dragEvent(), 'running');
+
+    kanban.confirmAction();
+
+    const req = http.expectOne('/api/v1/instances/smp/start');
+    expect(req.request.method).toBe('POST');
+    req.flush(null, { status: 202, statusText: 'Accepted' });
+
+    expect(kanban.pendingAction()).toBeNull();
+    http.expectOne('/api/v1/instances').flush({ instances: [], states: [] });
+    http.expectOne('/api/v1/system').flush({});
+  });
+
+  it('arquiva ao soltar em ARQUIVADA, venha a instância de onde vier', () => {
+    store.instances.set([instance()]);
+    store.dragging.set('smp');
+    kanban.onDrop(dragEvent(), 'archived');
+
+    expect(kanban.pendingAction()?.target).toBe('archived');
+
+    kanban.confirmAction();
+
+    const req = http.expectOne('/api/v1/instances/smp/archive');
+    expect(req.request.method).toBe('POST');
+    req.flush(null, { status: 202, statusText: 'Accepted' });
+
+    http.expectOne('/api/v1/instances').flush({ instances: [], states: [] });
+    http.expectOne('/api/v1/system').flush({});
+  });
+
+  it('não aceita em ARQUIVADA uma instância já arquivada', () => {
+    store.instances.set([instance({ state: 'archived', archived: true })]);
+    store.dragging.set('smp');
+
+    kanban.onDrop(dragEvent(), 'archived');
+
+    expect(kanban.pendingAction()).toBeNull();
+  });
+
   it('ignora o drop quando a ação não faria nada', () => {
     store.instances.set([instance({ state: 'stopped' })]);
     store.dragging.set('smp');

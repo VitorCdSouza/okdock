@@ -69,7 +69,6 @@
 .tabs button.on { border-bottom-color: var(--accent); color: var(--fg); font-weight: 600; }
 
 .body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr; background: #0d0f14; }
-.body.split { grid-template-columns: 1fr 360px; }
 
 .main {
   padding: 20px;
@@ -80,20 +79,19 @@
   min-width: 0;
 }
 
-.side {
-  padding: 20px;
-  background: #0b0d11;
-  border-left: 1px solid var(--line);
+.edit-bar {
+  flex: none;
+  padding: 12px 20px;
+  background: var(--bg-header);
+  border-top: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-height: 0;
+  gap: 10px;
 }
-.side-head { display: flex; align-items: center; justify-content: space-between; }
-.side .code { flex: 1; min-height: 0; }
-.side-foot { display: flex; gap: 8px; }
-.side-foot .btn:first-child { flex: 1; justify-content: center; }
-.created { font-size: var(--fs-xs); color: var(--fg-faint); text-align: center; }
+.edit-row { display: flex; align-items: center; gap: 10px; }
+.edit-actions { display: flex; gap: 8px; margin-left: auto; }
+.edit-bar .alert ul { max-height: 96px; overflow-y: auto; }
+.created { font-size: var(--fs-xs); color: var(--fg-faint); }
 
 .code {
   margin: 0;
@@ -152,20 +150,6 @@
 .console .line { white-space: pre-wrap; word-break: break-word; }
 .console .dim { color: var(--fg-faint); }
 
-.lifecycle {
-  margin-top: 8px;
-  padding: 14px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-sm);
-  background: var(--bg-input);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-.lc-title { font: 600 var(--fs-md) var(--sans); color: var(--fg); }
-.lc-sub { font: 400 var(--fs-xs)/1.5 var(--sans); color: var(--fg-dim); margin-top: 3px; }
-
 .alert { padding: 10px 12px; border-radius: var(--r-sm); font: 400 var(--fs-sm)/1.55 var(--sans); }
 .alert.bad {
   margin: 12px 20px 0;
@@ -187,10 +171,6 @@
   padding: 14px;
 }
 
-@media (max-width: 1080px) {
-  .body.split { grid-template-columns: 1fr; }
-  .side { border-left: none; border-top: 1px solid var(--line); }
-}
 
 .dns {
   padding: 14px;
