@@ -160,7 +160,7 @@ func TestListSkipsForeignDirectories(t *testing.T) {
 	if err := s.Create(spec("smp")); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	if err := os.MkdirAll(filepath.Join(s.Root, "coisa-do-usuario"), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Join(s.Root(), "coisa-do-usuario"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	list, err := s.List()
@@ -220,5 +220,62 @@ func TestNameFollowsDirectory(t *testing.T) {
 	}
 	if got.Name != "smp-novo" {
 		t.Errorf("Name = %q, queria smp-novo", got.Name)
+	}
+}
+
+func TestSetRootPersiste(t *testing.T) {
+	boot := t.TempDir()
+	nova := filepath.Join(t.TempDir(), "jogos")
+
+	s, err := New(boot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetRoot(nova); err != nil {
+		t.Fatalf("SetRoot: %v", err)
+	}
+	if s.Root() != nova {
+		t.Errorf("Root = %q, queria %q", s.Root(), nova)
+	}
+
+	outro, err := New(boot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if outro.Root() != nova {
+		t.Errorf("depois do restart Root = %q, queria %q", outro.Root(), nova)
+	}
+	if outro.ConfigRoot != s.ConfigRoot {
+		t.Errorf("ConfigRoot = %q, queria %q", outro.ConfigRoot, s.ConfigRoot)
+	}
+}
+
+func TestSetRootRecusaRelativo(t *testing.T) {
+	s := newStore(t)
+	before := s.Root()
+	if err := s.SetRoot("jogos"); !errors.Is(err, ErrInvalidRoot) {
+		t.Fatalf("queria ErrInvalidRoot, veio %v", err)
+	}
+	if s.Root() != before {
+		t.Errorf("a raiz mudou mesmo com o erro: %q", s.Root())
+	}
+}
+
+func TestRaizGravadaInutilizavelCaiNaDeBoot(t *testing.T) {
+	boot := t.TempDir()
+	s, err := New(boot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SavePanel(PanelConfig{Root: "/proc/nao-da-para-criar-aqui"}); err != nil {
+		t.Fatal(err)
+	}
+
+	outro, err := New(boot)
+	if err != nil {
+		t.Fatalf("New devia subir mesmo assim: %v", err)
+	}
+	if outro.Root() != s.ConfigRoot {
+		t.Errorf("Root = %q, queria a raiz de boot %q", outro.Root(), s.ConfigRoot)
 	}
 }

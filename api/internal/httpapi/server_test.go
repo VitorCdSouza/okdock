@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/VitorCdSouza/gamedock/api/internal/dockerx"
+	"github.com/VitorCdSouza/gamedock/api/internal/instance"
 	"github.com/VitorCdSouza/gamedock/api/internal/manager"
 	"github.com/VitorCdSouza/gamedock/api/internal/store"
 	"github.com/VitorCdSouza/gamedock/api/internal/system"
@@ -133,7 +134,39 @@ func TestCreateRejectsInvalidField(t *testing.T) {
 	var e apiError
 	_ = json.Unmarshal(w.Body.Bytes(), &e)
 	if len(e.Problems) == 0 {
-		t.Error("resposta 422 precisa listar os campos problemáticos")
+		t.Fatal("resposta 422 precisa listar os campos problemáticos")
+	}
+	if e.Problems[0].Field != "DIFFICULTY" || e.Problems[0].Code != "not_option" {
+		t.Errorf("problema = %+v, queria DIFFICULTY/not_option", e.Problems[0])
+	}
+}
+
+func TestPortConflictCarriesParams(t *testing.T) {
+	s := newServer(t)
+	first := manager.SpecRequest{
+		Name:       "smp",
+		ProviderID: "itzg/minecraft-server",
+		Values:     map[string]string{"EULA": "true"},
+	}
+	if w := do(t, s, "POST", "/api/v1/instances", first); w.Code != http.StatusCreated {
+		t.Fatalf("primeira criação falhou: %d %s", w.Code, w.Body)
+	}
+
+	second := first
+	second.Name = "outro"
+	second.Ports = []instance.PortBinding{{Host: 25565, Container: 25565, Protocol: "tcp"}}
+	w := do(t, s, "POST", "/api/v1/instances", second)
+	if w.Code != http.StatusConflict {
+		t.Fatalf("status = %d, queria 409; corpo = %s", w.Code, w.Body)
+	}
+
+	var e apiError
+	_ = json.Unmarshal(w.Body.Bytes(), &e)
+	if e.Error != "port_taken" {
+		t.Fatalf("código = %q, queria port_taken", e.Error)
+	}
+	if e.Params["port"] != 25565.0 || e.Params["proto"] != "tcp" || e.Params["owner"] != "smp" {
+		t.Errorf("params = %v, queria porta 25565/tcp de smp", e.Params)
 	}
 }
 
@@ -242,6 +275,30 @@ func TestSystemEndpoint(t *testing.T) {
 	}
 	if info.MemoryTotal == 0 || info.MemoryBudget == 0 {
 		t.Errorf("system = %+v", info)
+	}
+}
+
+func TestSetRoot(t *testing.T) {
+	s := newServer(t)
+	nova := filepath.Join(t.TempDir(), "jogos")
+
+	w := do(t, s, "PUT", "/api/v1/system/root", map[string]string{"root": nova})
+	if w.Code != 200 {
+		t.Fatalf("status = %d: %s", w.Code, w.Body)
+	}
+	var info manager.SystemInfo
+	if err := json.Unmarshal(w.Body.Bytes(), &info); err != nil {
+		t.Fatal(err)
+	}
+	if info.Root != nova {
+		t.Errorf("root = %q, queria %q", info.Root, nova)
+	}
+}
+
+func TestSetRootRelativo(t *testing.T) {
+	w := do(t, newServer(t), "PUT", "/api/v1/system/root", map[string]string{"root": "jogos"})
+	if w.Code != 422 {
+		t.Fatalf("status = %d, queria 422", w.Code)
 	}
 }
 

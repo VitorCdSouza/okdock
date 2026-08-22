@@ -335,3 +335,34 @@ func TestTerrariaLabelsNameTheVariant(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateProblemsCarryCodeAndParams(t *testing.T) {
+	p, _ := Get("itzg/minecraft-server")
+	_, err := p.Validate(map[string]string{
+		"DIFFICULTY":  "impossivel",
+		"MAX_PLAYERS": "0",
+	})
+
+	var ve *ValidationError
+	if !errors.As(err, &ve) {
+		t.Fatalf("esperava ValidationError, veio %v", err)
+	}
+
+	byField := map[string]Problem{}
+	for _, pr := range ve.Problems {
+		byField[pr.Field] = pr
+	}
+
+	if got := byField["DIFFICULTY"].Code; got != "not_option" {
+		t.Errorf("code de DIFFICULTY = %q, queria not_option", got)
+	}
+	if got := byField["DIFFICULTY"].Params["value"]; got != "impossivel" {
+		t.Errorf("params de DIFFICULTY não levam o valor recusado: %v", byField["DIFFICULTY"].Params)
+	}
+	if got := byField["MAX_PLAYERS"].Code; got != "below_min" {
+		t.Errorf("code de MAX_PLAYERS = %q, queria below_min", got)
+	}
+	if got := byField["MAX_PLAYERS"].Params["min"]; got != 1.0 {
+		t.Errorf("params de MAX_PLAYERS não levam o mínimo: %v", byField["MAX_PLAYERS"].Params)
+	}
+}

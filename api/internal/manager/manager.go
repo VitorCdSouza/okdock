@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
 	"sync"
@@ -12,6 +13,7 @@ import (
 	"github.com/VitorCdSouza/gamedock/api/internal/catalog"
 	"github.com/VitorCdSouza/gamedock/api/internal/compose"
 	"github.com/VitorCdSouza/gamedock/api/internal/dockerx"
+	"github.com/VitorCdSouza/gamedock/api/internal/duckdns"
 	"github.com/VitorCdSouza/gamedock/api/internal/instance"
 	"github.com/VitorCdSouza/gamedock/api/internal/store"
 	"github.com/VitorCdSouza/gamedock/api/internal/system"
@@ -21,6 +23,7 @@ type Options struct {
 	Store         *store.Store
 	Docker        dockerx.Runner
 	System        system.Reader
+	DNS           duckdns.Client
 	MemoryReserve int64
 	Now           func() time.Time
 }
@@ -37,6 +40,11 @@ type Manager struct {
 	mu  sync.Mutex
 	ops map[string]*instance.Operation
 
+	dns    duckdns.Client
+	dnsMu  sync.Mutex
+	dnsCfg store.DNSConfig
+	dnsBg  sync.WaitGroup
+
 	hub *Hub
 }
 
@@ -49,6 +57,11 @@ func New(o Options) *Manager {
 	if now == nil {
 		now = func() time.Time { return time.Now().UTC() }
 	}
+	dnsCfg, err := o.Store.LoadDNS()
+	if err != nil {
+		slog.Warn("não consegui ler a configuração de DNS", "arquivo", o.Store.DNSPath(), "err", err)
+	}
+
 	return &Manager{
 		store:   o.Store,
 		docker:  o.Docker,
@@ -56,6 +69,8 @@ func New(o Options) *Manager {
 		reserve: reserve,
 		now:     now,
 		ops:     map[string]*instance.Operation{},
+		dns:     o.DNS,
+		dnsCfg:  dnsCfg,
 		hub:     NewHub(),
 	}
 }
@@ -95,6 +110,7 @@ func (m *Manager) Get(ctx context.Context, name string) (instance.Instance, erro
 func (m *Manager) hydrate(ctx context.Context, spec instance.Spec) instance.Instance {
 	inst := instance.Instance{Spec: spec, Dir: m.store.Dir(spec.Name)}
 	inst.Operation = m.operation(spec.Name)
+	inst.DNS = m.dnsFor(spec.Name)
 
 	containers, err := m.docker.PS(ctx, inst.Dir)
 	if err != nil {
@@ -121,7 +137,7 @@ func deriveState(spec instance.Spec, containers []dockerx.Container, op *instanc
 		}
 	}
 	if spec.Archived {
-		return instance.StateArchived, "arquivada", "", nil
+		return instance.StateArchived, "", "", nil
 	}
 	if len(containers) == 0 {
 		return instance.StateStopped, "", "", nil
@@ -178,11 +194,11 @@ func (m *Manager) attachStats(ctx context.Context, list []instance.Instance, nam
 }
 
 func (m *Manager) System(ctx context.Context) (SystemInfo, error) {
-	info, err := m.sys.Read(m.store.Root)
+	info, err := m.sys.Read(m.store.Root())
 	if err != nil {
 		return SystemInfo{}, err
 	}
-	out := SystemInfo{Info: info, MemoryReserve: m.reserve}
+	out := SystemInfo{Info: info, MemoryReserve: m.reserve, Root: m.store.Root()}
 	out.MemoryBudget = info.MemoryTotal - m.reserve
 
 	if v, err := m.docker.Version(ctx); err == nil {
@@ -205,8 +221,17 @@ func (m *Manager) System(ctx context.Context) (SystemInfo, error) {
 	return out, nil
 }
 
+func (m *Manager) SetRoot(root string) error {
+	if err := m.store.SetRoot(root); err != nil {
+		return err
+	}
+	m.hub.Publish(Event{Type: "instance.changed"})
+	return nil
+}
+
 type SystemInfo struct {
 	system.Info
+	Root            string `json:"root"`
 	DockerVersion   string `json:"dockerVersion,omitempty"`
 	DockerError     string `json:"dockerError,omitempty"`
 	MemoryReserve   int64  `json:"memoryReserve"`
@@ -242,19 +267,21 @@ func (m *Manager) operation(name string) *instance.Operation {
 	return &cp
 }
 
-func (m *Manager) beginOp(name, kind, msg string) error {
+func (m *Manager) beginOp(name, kind, code string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if cur, ok := m.ops[name]; ok && cur.Error == "" {
 		return fmt.Errorf("%q já está em %s", name, cur.Kind)
 	}
-	m.ops[name] = &instance.Operation{Kind: kind, Message: msg, StartedAt: m.now()}
+	m.ops[name] = &instance.Operation{Kind: kind, Code: code, StartedAt: m.now()}
 	return nil
 }
 
-func (m *Manager) progress(name, msg string, pct *int) {
+// etapa do painel vai em code, linha crua do docker vai em msg, nunca as duas juntas
+func (m *Manager) progress(name, code, msg string, pct *int) {
 	m.mu.Lock()
 	if op, ok := m.ops[name]; ok {
+		op.Code = code
 		op.Message = msg
 		op.Percent = pct
 	}
@@ -331,7 +358,7 @@ func (m *Manager) checkBudget(ctx context.Context, spec instance.Spec) error {
 	if want == 0 {
 		return nil
 	}
-	info, err := m.sys.Read(m.store.Root)
+	info, err := m.sys.Read(m.store.Root())
 	if err != nil {
 		return err
 	}
@@ -422,17 +449,25 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 	}
 	if !prov.AcceptsImage(image) {
 		if owner, ok := catalog.ProviderForImage(image); ok {
-			return instance.Spec{}, &catalog.ValidationError{Problems: []string{
-				fmt.Sprintf("image: quem configura %q é o provedor %q, não %q", image, owner.GameLabel, prov.GameLabel),
-				fmt.Sprintf("crie a instância escolhendo %q na lista, sem mexer no campo Imagem", owner.GameLabel),
-				"as duas variantes têm bootstrap diferente: não basta trocar a tag",
-			}}
+			return instance.Spec{}, &catalog.ValidationError{Problems: []catalog.Problem{{
+				Field: "image",
+				Code:  "image_owned_by",
+				Params: map[string]any{
+					"image":    image,
+					"owner":    owner.GameLabel,
+					"provider": prov.GameLabel,
+				},
+			}}}
 		}
-		return instance.Spec{}, &catalog.ValidationError{Problems: []string{
-			fmt.Sprintf("image: %s não sabe configurar %q", prov.GameLabel, image),
-			fmt.Sprintf("ele espera uma imagem que case com %s — trocar a tag para outra versão funciona", prov.ImagePattern),
-			"para uma imagem fora do catálogo, use o provedor \"Imagem custom\", onde você define as variáveis à mão",
-		}}
+		return instance.Spec{}, &catalog.ValidationError{Problems: []catalog.Problem{{
+			Field: "image",
+			Code:  "image_not_accepted",
+			Params: map[string]any{
+				"image":    image,
+				"provider": prov.GameLabel,
+				"pattern":  prov.ImagePattern,
+			},
+		}}}
 	}
 
 	validated, err := prov.Validate(req.Values)
@@ -567,7 +602,7 @@ func (m *Manager) Create(ctx context.Context, req SpecRequest) (instance.Spec, e
 	m.hub.Publish(Event{Type: "instance.created", Instance: spec.Name})
 
 	if req.Start {
-		if err := m.beginOp(spec.Name, OpProvision, "preparando"); err != nil {
+		if err := m.beginOp(spec.Name, OpProvision, "preparing"); err != nil {
 			return spec, err
 		}
 		go m.provision(spec.Name)
@@ -581,10 +616,10 @@ func (m *Manager) provision(name string) {
 
 	dir := m.store.Dir(name)
 	err := m.docker.Pull(ctx, dir, func(line string) {
-		m.progress(name, line, nil)
+		m.progress(name, "", line, nil)
 	})
 	if err == nil {
-		m.progress(name, "criando container", nil)
+		m.progress(name, "creating", "", nil)
 		err = m.docker.Up(ctx, dir)
 	}
 	m.endOp(name, err)
@@ -623,7 +658,7 @@ func (m *Manager) Update(ctx context.Context, name string, req SpecRequest) (ins
 	}
 
 	if wasUp && NeedsRecreate(old, spec) {
-		if err := m.beginOp(name, OpUpdate, "recriando container"); err != nil {
+		if err := m.beginOp(name, OpUpdate, "recreating"); err != nil {
 			return spec, err
 		}
 		go m.recreate(name)
@@ -638,10 +673,10 @@ func (m *Manager) recreate(name string) {
 	defer cancel()
 
 	dir := m.store.Dir(name)
-	m.progress(name, "parando", nil)
+	m.progress(name, "stopping", "", nil)
 	err := m.docker.Down(ctx, dir)
 	if err == nil {
-		m.progress(name, "subindo com a config nova", nil)
+		m.progress(name, "starting_new_config", "", nil)
 		err = m.docker.Up(ctx, dir)
 	}
 	m.endOp(name, err)
@@ -739,7 +774,7 @@ func (m *Manager) Start(ctx context.Context, name string) error {
 	if err := m.checkBudget(ctx, spec); err != nil {
 		return err
 	}
-	if err := m.beginOp(name, OpStart, "subindo"); err != nil {
+	if err := m.beginOp(name, OpStart, "starting"); err != nil {
 		return err
 	}
 	go func() {
@@ -758,7 +793,7 @@ func (m *Manager) UpdateImage(ctx context.Context, name string) error {
 	if spec.Archived {
 		return fmt.Errorf("%q está arquivada; restaure antes de atualizar", name)
 	}
-	if err := m.beginOp(name, OpUpdate, "procurando atualização"); err != nil {
+	if err := m.beginOp(name, OpUpdate, "checking_update"); err != nil {
 		return err
 	}
 	go m.pullAndRecreate(name, spec)
@@ -773,7 +808,7 @@ func (m *Manager) pullAndRecreate(name string, spec instance.Spec) {
 	before, _ := m.docker.ImageID(ctx, spec.Image)
 
 	err := m.docker.Pull(ctx, dir, func(line string) {
-		m.progress(name, line, nil)
+		m.progress(name, "", line, nil)
 	})
 	if err != nil {
 		m.endOp(name, err)
@@ -791,7 +826,7 @@ func (m *Manager) pullAndRecreate(name string, spec instance.Spec) {
 		return
 	}
 
-	m.progress(name, "recriando com a imagem nova", nil)
+	m.progress(name, "recreating_new_image", "", nil)
 	err = m.docker.Up(ctx, dir)
 	m.endOp(name, err)
 	if err == nil {
@@ -807,7 +842,7 @@ func (m *Manager) Stop(ctx context.Context, name string) error {
 	if _, err := m.store.Get(name); err != nil {
 		return err
 	}
-	if err := m.beginOp(name, OpStop, "parando"); err != nil {
+	if err := m.beginOp(name, OpStop, "stopping"); err != nil {
 		return err
 	}
 	go func() {
@@ -822,7 +857,7 @@ func (m *Manager) Restart(ctx context.Context, name string) error {
 	if _, err := m.store.Get(name); err != nil {
 		return err
 	}
-	if err := m.beginOp(name, OpStart, "reiniciando"); err != nil {
+	if err := m.beginOp(name, OpStart, "restarting"); err != nil {
 		return err
 	}
 	go func() {
@@ -867,6 +902,7 @@ func (m *Manager) Delete(ctx context.Context, name string, keepData bool) error 
 	m.mu.Lock()
 	delete(m.ops, name)
 	m.mu.Unlock()
+	m.forgetDNS(name)
 	m.hub.Publish(Event{Type: "instance.deleted", Instance: name})
 	return nil
 }

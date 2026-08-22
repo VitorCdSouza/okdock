@@ -77,6 +77,7 @@ type Provider struct {
 	DefaultMemory    string   `json:"defaultMemory"`
 	MinMemory        string   `json:"minMemory"`
 	DefaultCPUs      float64  `json:"defaultCpus"`
+	Tags             []string `json:"tags,omitempty"`
 	ImagePattern     string   `json:"imagePattern,omitempty"`
 	StopGraceSeconds int      `json:"stopGraceSeconds"`
 	Fields           []Field  `json:"fields"`
@@ -112,7 +113,7 @@ func (p Provider) Defaults() map[string]string {
 
 func (p Provider) Validate(values map[string]string) (map[string]string, error) {
 	out := p.Defaults()
-	var problems []string
+	var problems []Problem
 
 	known := make(map[string]Field, len(p.Fields))
 	for _, f := range p.Fields {
@@ -133,12 +134,16 @@ func (p Provider) Validate(values map[string]string) (map[string]string, error) 
 				out[k] = v
 				continue
 			}
-			problems = append(problems, fmt.Sprintf("%s: campo desconhecido para %s", k, p.ID))
+			problems = append(problems, Problem{
+				Field:  k,
+				Code:   "unknown_field",
+				Params: map[string]any{"provider": p.ID},
+			})
 			continue
 		}
-		norm, err := validateField(f, v)
-		if err != nil {
-			problems = append(problems, fmt.Sprintf("%s: %v", k, err))
+		norm, bad := validateField(f, v)
+		if bad != nil {
+			problems = append(problems, Problem{Field: k, Code: bad.Code, Params: bad.Params})
 			continue
 		}
 		out[k] = norm
@@ -146,7 +151,7 @@ func (p Provider) Validate(values map[string]string) (map[string]string, error) 
 
 	for _, f := range p.Fields {
 		if f.Required && strings.TrimSpace(out[f.Key]) == "" {
-			problems = append(problems, fmt.Sprintf("%s: obrigatório", f.Key))
+			problems = append(problems, Problem{Field: f.Key, Code: "required"})
 		}
 	}
 
@@ -158,7 +163,7 @@ func (p Provider) Validate(values map[string]string) (map[string]string, error) 
 
 func (p Provider) acceptsFreeEnv() bool { return p.ID == CustomProviderID }
 
-func validateField(f Field, v string) (string, error) {
+func validateField(f Field, v string) (string, *Problem) {
 	v = strings.TrimSpace(v)
 	if v == "" {
 		return "", nil
@@ -167,31 +172,31 @@ func validateField(f Field, v string) (string, error) {
 	case FieldInt:
 		n, err := strconv.Atoi(v)
 		if err != nil {
-			return "", fmt.Errorf("esperava um inteiro, veio %q", v)
+			return "", &Problem{Code: "not_int", Params: map[string]any{"value": v}}
 		}
 		if f.Min != nil && float64(n) < *f.Min {
-			return "", fmt.Errorf("mínimo é %v", *f.Min)
+			return "", &Problem{Code: "below_min", Params: map[string]any{"min": *f.Min}}
 		}
 		if f.Max != nil && float64(n) > *f.Max {
-			return "", fmt.Errorf("máximo é %v", *f.Max)
+			return "", &Problem{Code: "above_max", Params: map[string]any{"max": *f.Max}}
 		}
 		return strconv.Itoa(n), nil
 	case FieldFloat:
 		n, err := strconv.ParseFloat(v, 64)
 		if err != nil {
-			return "", fmt.Errorf("esperava um número, veio %q", v)
+			return "", &Problem{Code: "not_number", Params: map[string]any{"value": v}}
 		}
 		if f.Min != nil && n < *f.Min {
-			return "", fmt.Errorf("mínimo é %v", *f.Min)
+			return "", &Problem{Code: "below_min", Params: map[string]any{"min": *f.Min}}
 		}
 		if f.Max != nil && n > *f.Max {
-			return "", fmt.Errorf("máximo é %v", *f.Max)
+			return "", &Problem{Code: "above_max", Params: map[string]any{"max": *f.Max}}
 		}
 		return strconv.FormatFloat(n, 'f', -1, 64), nil
 	case FieldBool:
 		b, err := strconv.ParseBool(strings.ToLower(v))
 		if err != nil {
-			return "", fmt.Errorf("esperava true ou false, veio %q", v)
+			return "", &Problem{Code: "not_bool", Params: map[string]any{"value": v}}
 		}
 		return strconv.FormatBool(b), nil
 	case FieldEnum:
@@ -204,7 +209,10 @@ func validateField(f Field, v string) (string, error) {
 		for i, o := range f.Options {
 			allowed[i] = o.Value
 		}
-		return "", fmt.Errorf("valor %q não é um de [%s]", v, strings.Join(allowed, ", "))
+		return "", &Problem{
+			Code:   "not_option",
+			Params: map[string]any{"value": v, "allowed": strings.Join(allowed, ", ")},
+		}
 	default:
 		return v, nil
 	}
@@ -240,12 +248,23 @@ func ProviderForImage(image string) (Provider, bool) {
 	return Provider{}, false
 }
 
+// Problem e campo reprovado: code e params bastam para a tela escrever a frase
+type Problem struct {
+	Field  string         `json:"field"`
+	Code   string         `json:"code"`
+	Params map[string]any `json:"params,omitempty"`
+}
+
 type ValidationError struct {
-	Problems []string
+	Problems []Problem
 }
 
 func (e *ValidationError) Error() string {
-	return strings.Join(e.Problems, "; ")
+	parts := make([]string, len(e.Problems))
+	for i, p := range e.Problems {
+		parts[i] = fmt.Sprintf("%s: %s", p.Field, p.Code)
+	}
+	return strings.Join(parts, "; ")
 }
 
 func (p Provider) SplitValues(values map[string]string) (env map[string]string, args []string) {

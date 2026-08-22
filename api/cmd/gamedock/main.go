@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/VitorCdSouza/gamedock/api/internal/dockerx"
+	"github.com/VitorCdSouza/gamedock/api/internal/duckdns"
 	"github.com/VitorCdSouza/gamedock/api/internal/httpapi"
 	"github.com/VitorCdSouza/gamedock/api/internal/instance"
 	"github.com/VitorCdSouza/gamedock/api/internal/manager"
@@ -59,8 +60,13 @@ func run() error {
 		Store:         st,
 		Docker:        docker,
 		System:        &system.ProcReader{},
+		DNS:           duckdns.HTTP{},
 		MemoryReserve: reserve,
 	})
+
+	dnsCtx, stopDNS := context.WithCancel(context.Background())
+	defer stopDNS()
+	go mgr.SyncDNSEvery(dnsCtx, manager.SyncInterval)
 
 	var web fs.FS
 	if webui.Placeholder() {
@@ -87,7 +93,7 @@ func run() error {
 	}
 	cancel()
 
-	slog.Info("gamedock ouvindo", "addr", *addr, "root", st.Root,
+	slog.Info("gamedock ouvindo", "addr", *addr, "root", st.Root(),
 		"reserva_ram", instance.FormatMemory(reserve))
 
 	errc := make(chan error, 1)

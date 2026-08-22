@@ -61,6 +61,14 @@ type Spec struct {
 	UpdatedAt        time.Time         `json:"updatedAt"`
 }
 
+type DNS struct {
+	Domain    string    `json:"domain"`
+	Hostname  string    `json:"hostname"`
+	LastIP    string    `json:"lastIp,omitempty"`
+	LastSync  time.Time `json:"lastSync,omitempty"`
+	LastError string    `json:"lastError,omitempty"`
+}
+
 type Stats struct {
 	CPUPercent  float64 `json:"cpuPercent"`
 	MemoryBytes int64   `json:"memoryBytes"`
@@ -76,10 +84,13 @@ type Instance struct {
 	ExitCode  *int       `json:"exitCode,omitempty"`
 	Stats     *Stats     `json:"stats,omitempty"`
 	Operation *Operation `json:"operation,omitempty"`
+	DNS       *DNS       `json:"dns,omitempty"`
 }
 
+// code e a etapa da operacao, message so vem quando o texto e a linha crua do docker
 type Operation struct {
 	Kind      string    `json:"kind"`
+	Code      string    `json:"code,omitempty"`
 	Message   string    `json:"message"`
 	Percent   *int      `json:"percent,omitempty"`
 	StartedAt time.Time `json:"startedAt"`

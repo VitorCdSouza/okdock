@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/VitorCdSouza/gamedock/api/internal/catalog"
 	"github.com/VitorCdSouza/gamedock/api/internal/instance"
@@ -159,6 +160,96 @@ func (s *Server) setArchived(archived bool) http.HandlerFunc {
 
 func (s *Server) clearError(w http.ResponseWriter, r *http.Request) {
 	s.mgr.ClearError(r.PathValue("name"))
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) setRoot(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Root string `json:"root"`
+	}
+	if !decodeJSON(w, r, &req) {
+		return
+	}
+	if err := s.mgr.SetRoot(strings.TrimSpace(req.Root)); err != nil {
+		writeError(w, err)
+		return
+	}
+	s.system(w, r)
+}
+
+func (s *Server) getDNS(w http.ResponseWriter, _ *http.Request) {
+	status := s.mgr.DNS()
+	if status.Links == nil {
+		status.Links = []manager.DNSLink{}
+	}
+	if status.Domains == nil {
+		status.Domains = []instance.DNS{}
+	}
+	writeJSON(w, http.StatusOK, status)
+}
+
+func (s *Server) setDNSToken(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Token string `json:"token"`
+	}
+	if !decodeJSON(w, r, &req) {
+		return
+	}
+	if err := s.mgr.SetDNSToken(r.Context(), strings.TrimSpace(req.Token)); err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, s.mgr.DNS())
+}
+
+func (s *Server) addDNSDomain(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Domain string `json:"domain"`
+	}
+	if !decodeJSON(w, r, &req) {
+		return
+	}
+	entry, err := s.mgr.AddDNSDomain(r.Context(), req.Domain)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, entry)
+}
+
+func (s *Server) removeDNSDomain(w http.ResponseWriter, r *http.Request) {
+	if err := s.mgr.RemoveDNSDomain(r.PathValue("domain")); err != nil {
+		writeError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) syncDNS(w http.ResponseWriter, _ *http.Request) {
+	go s.mgr.SyncDNS(context.Background())
+	w.WriteHeader(http.StatusAccepted)
+}
+
+func (s *Server) linkDNS(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Domain string `json:"domain"`
+	}
+	if !decodeJSON(w, r, &req) {
+		return
+	}
+	link, err := s.mgr.LinkDNS(r.Context(), r.PathValue("name"), req.Domain)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, link)
+}
+
+func (s *Server) unlinkDNS(w http.ResponseWriter, r *http.Request) {
+	if err := s.mgr.UnlinkDNS(r.PathValue("name")); err != nil {
+		writeError(w, err)
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 

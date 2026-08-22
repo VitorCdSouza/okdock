@@ -39,10 +39,17 @@ func (s *Server) routes() {
 
 	m.HandleFunc("GET /api/v1/health", s.health)
 	m.HandleFunc("GET /api/v1/system", s.system)
+	m.HandleFunc("PUT /api/v1/system/root", s.setRoot)
 	m.HandleFunc("GET /api/v1/events", s.events)
 
 	m.HandleFunc("GET /api/v1/providers", s.listProviders)
 	m.HandleFunc("GET /api/v1/providers/{id...}", s.getProvider)
+
+	m.HandleFunc("GET /api/v1/dns", s.getDNS)
+	m.HandleFunc("PUT /api/v1/dns", s.setDNSToken)
+	m.HandleFunc("POST /api/v1/dns/sync", s.syncDNS)
+	m.HandleFunc("POST /api/v1/dns/domains", s.addDNSDomain)
+	m.HandleFunc("DELETE /api/v1/dns/domains/{domain}", s.removeDNSDomain)
 
 	m.HandleFunc("GET /api/v1/instances", s.listInstances)
 	m.HandleFunc("POST /api/v1/instances", s.createInstance)
@@ -59,6 +66,8 @@ func (s *Server) routes() {
 	m.HandleFunc("POST /api/v1/instances/{name}/archive", s.setArchived(true))
 	m.HandleFunc("POST /api/v1/instances/{name}/unarchive", s.setArchived(false))
 	m.HandleFunc("POST /api/v1/instances/{name}/clear-error", s.clearError)
+	m.HandleFunc("PUT /api/v1/instances/{name}/dns", s.linkDNS)
+	m.HandleFunc("DELETE /api/v1/instances/{name}/dns", s.unlinkDNS)
 
 	if s.webFS != nil {
 		m.Handle("/", s.spa())

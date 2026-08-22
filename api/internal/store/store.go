@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/VitorCdSouza/gamedock/api/internal/compose"
@@ -15,9 +17,38 @@ import (
 )
 
 var (
-	ErrNotFound = errors.New("instância não encontrada")
-	ErrExists   = errors.New("já existe uma instância com esse nome")
+	ErrNotFound    = errors.New("instância não encontrada")
+	ErrExists      = errors.New("já existe uma instância com esse nome")
+	ErrInvalidRoot = errors.New("raiz inválida")
 )
+
+// os erros abaixo levam o que a tela precisa, e o texto do Error() e so para log
+
+type NotFoundError struct{ Name string }
+
+func (e *NotFoundError) Error() string        { return fmt.Sprintf("%q: %s", e.Name, ErrNotFound) }
+func (e *NotFoundError) Is(target error) bool { return target == ErrNotFound }
+
+type ExistsError struct{ Name string }
+
+func (e *ExistsError) Error() string        { return fmt.Sprintf("%q: %s", e.Name, ErrExists) }
+func (e *ExistsError) Is(target error) bool { return target == ErrExists }
+
+// Reason diz qual regra a raiz quebrou: not_absolute, create_failed, unreadable, not_dir, unwritable
+type InvalidRootError struct {
+	Reason string
+	Path   string
+	Detail string
+}
+
+func (e *InvalidRootError) Error() string {
+	if e.Detail != "" {
+		return fmt.Sprintf("%s: %s (%s)", ErrInvalidRoot, e.Path, e.Detail)
+	}
+	return fmt.Sprintf("%s: %s", ErrInvalidRoot, e.Path)
+}
+
+func (e *InvalidRootError) Is(target error) bool { return target == ErrInvalidRoot }
 
 const (
 	composeFile = "docker-compose.yml"
@@ -26,7 +57,10 @@ const (
 )
 
 type Store struct {
-	Root string
+	ConfigRoot string
+
+	mu   sync.RWMutex
+	root string
 }
 
 func New(root string) (*Store, error) {
@@ -37,11 +71,77 @@ func New(root string) (*Store, error) {
 	if err := os.MkdirAll(abs, 0o755); err != nil {
 		return nil, fmt.Errorf("criando raiz %s: %w", abs, err)
 	}
-	return &Store{Root: abs}, nil
+	s := &Store{ConfigRoot: abs, root: abs}
+
+	cfg, err := s.LoadPanel()
+	if err != nil {
+		slog.Warn("configuração do painel ilegível; seguindo na raiz de boot", "err", err)
+		return s, nil
+	}
+	if cfg.Root != "" && cfg.Root != abs {
+		if err := prepareRoot(cfg.Root); err != nil {
+			slog.Warn("raiz gravada não pôde ser usada; seguindo na raiz de boot",
+				"root", cfg.Root, "err", err)
+			return s, nil
+		}
+		s.root = cfg.Root
+	}
+	return s, nil
+}
+
+func (s *Store) Root() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.root
+}
+
+func (s *Store) SetRoot(root string) error {
+	abs, err := filepath.Abs(root)
+	if err != nil {
+		return err
+	}
+	if !filepath.IsAbs(root) {
+		return &InvalidRootError{Reason: "not_absolute", Path: root}
+	}
+	if err := prepareRoot(abs); err != nil {
+		return err
+	}
+
+	cfg, err := s.LoadPanel()
+	if err != nil {
+		cfg = PanelConfig{}
+	}
+	cfg.Root = abs
+	if err := s.SavePanel(cfg); err != nil {
+		return err
+	}
+
+	s.mu.Lock()
+	s.root = abs
+	s.mu.Unlock()
+	return nil
+}
+
+func prepareRoot(root string) error {
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		return &InvalidRootError{Reason: "create_failed", Path: root, Detail: err.Error()}
+	}
+	info, err := os.Stat(root)
+	if err != nil {
+		return &InvalidRootError{Reason: "unreadable", Path: root, Detail: err.Error()}
+	}
+	if !info.IsDir() {
+		return &InvalidRootError{Reason: "not_dir", Path: root}
+	}
+	probe, err := os.MkdirTemp(root, ".gamedock-probe-*")
+	if err != nil {
+		return &InvalidRootError{Reason: "unwritable", Path: root}
+	}
+	return os.Remove(probe)
 }
 
 func (s *Store) Dir(name string) string {
-	return filepath.Join(s.Root, name)
+	return filepath.Join(s.Root(), name)
 }
 
 func (s *Store) ComposePath(name string) string {
@@ -49,7 +149,7 @@ func (s *Store) ComposePath(name string) string {
 }
 
 func (s *Store) List() ([]instance.Spec, error) {
-	entries, err := os.ReadDir(s.Root)
+	entries, err := os.ReadDir(s.Root())
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +177,7 @@ func (s *Store) Get(name string) (instance.Spec, error) {
 	}
 	raw, err := os.ReadFile(filepath.Join(s.Dir(name), metaFile))
 	if errors.Is(err, os.ErrNotExist) {
-		return instance.Spec{}, fmt.Errorf("%q: %w", name, ErrNotFound)
+		return instance.Spec{}, &NotFoundError{Name: name}
 	}
 	if err != nil {
 		return instance.Spec{}, err
@@ -100,7 +200,7 @@ func (s *Store) Create(spec instance.Spec) error {
 		return err
 	}
 	if s.Exists(spec.Name) {
-		return fmt.Errorf("%q: %w", spec.Name, ErrExists)
+		return &ExistsError{Name: spec.Name}
 	}
 	now := time.Now().UTC()
 	spec.CreatedAt, spec.UpdatedAt = now, now
@@ -116,7 +216,7 @@ func (s *Store) Create(spec instance.Spec) error {
 
 func (s *Store) Update(spec instance.Spec) error {
 	if !s.Exists(spec.Name) {
-		return fmt.Errorf("%q: %w", spec.Name, ErrNotFound)
+		return &NotFoundError{Name: spec.Name}
 	}
 	old, err := s.Get(spec.Name)
 	if err != nil {
@@ -192,7 +292,7 @@ func (s *Store) Delete(name string, keepData bool) error {
 		return err
 	}
 	if !s.Exists(name) {
-		return fmt.Errorf("%q: %w", name, ErrNotFound)
+		return &NotFoundError{Name: name}
 	}
 	if !keepData {
 		return os.RemoveAll(s.Dir(name))
@@ -209,7 +309,7 @@ func (s *Store) Delete(name string, keepData bool) error {
 func (s *Store) ReadCompose(name string) ([]byte, error) {
 	raw, err := os.ReadFile(s.ComposePath(name))
 	if errors.Is(err, os.ErrNotExist) {
-		return nil, fmt.Errorf("%q: %w", name, ErrNotFound)
+		return nil, &NotFoundError{Name: name}
 	}
 	return raw, err
 }
