@@ -73,7 +73,7 @@ depende da versão instalada no host.
 | Variável | Padrão | Para quê |
 |---|---|---|
 | `GAMEDOCK_ADDR` | `:8080` | endereço de escuta |
-| `GAMEDOCK_ROOT` | `/srv/games` | raiz dos diretórios de instância |
+| `GAMEDOCK_ROOT` | `/srv/games` | raiz inicial das instâncias e casa do `.gamedock/` |
 | `GAMEDOCK_MEMORY_RESERVE` | `2g` | RAM que fica fora do orçamento das instâncias |
 | `GAMEDOCK_ALLOW_ORIGIN` | vazio | libera CORS; só para o `ng serve` |
 | `GAMEDOCK_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
@@ -83,12 +83,32 @@ depende da versão instalada no host.
 - **Kanban por estado** — parado, provisionando, iniciando, rodando,
   atualizando, erro, arquivado. Atualiza sozinho por SSE.
 - **Wizard de nova instância** — os campos do formulário vêm do provedor da
-  imagem, não são fixos no frontend. O compose é mostrado antes de gravar
-  qualquer coisa.
+  imagem, não são fixos no frontend. O repositório da imagem é o do provedor e
+  só a etiqueta se escolhe, `latest` inclusive. O `docker-compose.yml` gerado
+  fica na aba **compose.yml** da instância. Um dos nomes de DNS já cadastrados
+  nas configurações dá para vincular ali mesmo, sem passar pela tela da
+  instância.
 - **Orçamento de RAM** — o painel soma o teto de memória das instâncias de pé
   antes de deixar subir mais uma. É o que evita descobrir o limite pelo
   `Exited (137)`.
+- **Nome fixo para convidar** — vincula um subdomínio do
+  [duckdns.org](https://www.duckdns.org) à instância e mantém o IP em dia
+  sozinho, para o card mostrar `smp.duckdns.org:25565` pronto para copiar. O
+  subdomínio tem que existir na conta antes: a API do duckdns não cria nome, só
+  atualiza IP. E ela não conhece porta — encaminhar a porta no roteador
+  continua sendo trabalho manual.
 - **Console ao vivo** e leitura do `docker-compose.yml` como está no disco.
+- **Configurações** (a engrenagem) — raiz das instâncias, versão do Docker,
+  token do duckdns com a lista de nomes da conta (cada um com o IP que o
+  serviço confirmou), quais números aparecem na barra de cima e o idioma da
+  interface (português, inglês ou o do navegador).
+
+A escolha de idioma e a de quais números aparecem na barra ficam no
+`localStorage` do navegador, não no servidor: sem login, uma preferência
+gravada lá valeria para todo mundo da casa. A API não manda frase pronta para a
+tela: manda código e dados (`port_taken` com porta e dono, `below_min` com o
+mínimo), e o painel escreve no idioma escolhido. Só o que o docker escreve —
+linha de log, status do container — aparece como veio.
 
 Senha nunca entra no `docker-compose.yml`: os campos marcados como secretos vão
 para um `.env` ao lado, com permissão `0600` e fora do controle de versão.
@@ -103,6 +123,18 @@ para um `.env` ao lado, com permissão `0600` e fora do controle de versão.
 └── data/                 o mundo
 ```
 
+A configuração do painel — o token do duckdns, os vínculos de domínio e a raiz
+escolhida na tela de configurações — fica fora disso, em `/srv/games/.gamedock/`
+com `0600`. O ponto no nome não é enfeite: é o que impede a pasta de ser lida
+como instância.
+
+Essa pasta fica sempre na raiz com que o processo subiu (`GAMEDOCK_ROOT`),
+mesmo depois de trocar a raiz das instâncias pelo painel — é ela que guarda
+para onde a raiz mudou. Trocar a raiz não move o que já existe: o docker guarda
+o caminho absoluto dos bind mounts, então as instâncias antigas continuam de pé
+onde estão e voltam à lista se a raiz voltar. Dentro do container, só vale
+caminho que esteja montado lá com o mesmo nome de fora.
+
 O nome do diretório, o `name:` do projeto no compose e o nome do container são
 sempre o mesmo texto. Quando divergem, `docker compose` age sobre um projeto
 diferente do que a pasta sugere.
@@ -114,3 +146,13 @@ diferente do que a pasta sugere.
 - [`docs/api.md`](docs/api.md) — contrato REST + SSE
 - [`docs/catalogo.md`](docs/catalogo.md) — provedores suportados e como
   adicionar outro
+
+## Melhorias planejadas
+
+Lista de trabalho anotada, ainda não implementada.
+
+- Renomear o projeto para **OkDok**, incluindo o repositório no GitHub e tudo
+  mais.
+- Suporte a mods: descobrir de alguma forma se a imagem aceita mods e, quando
+  aceitar, mostrar uma aba **Mods** onde se arrasta arquivos soltos ou um
+  `.zip`.
