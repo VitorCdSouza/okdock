@@ -35,7 +35,7 @@ describe('Store', () => {
   let http: HttpTestingController;
 
   beforeEach(() => {
-    localStorage.removeItem('gamedock.locale');
+    localStorage.removeItem('okdock.locale');
     events = new Subject<ServerEvent>();
     TestBed.configureTestingModule({
       providers: [
@@ -49,7 +49,7 @@ describe('Store', () => {
     TestBed.inject(I18n).setPref('pt');
   });
 
-  afterEach(() => localStorage.removeItem('gamedock.locale'));
+  afterEach(() => localStorage.removeItem('okdock.locale'));
 
   it('filtra por nome, porta e imagem', () => {
     store.instances.set([instance(), instance({ name: 'terra', game: 'terraria', ports: [] })]);

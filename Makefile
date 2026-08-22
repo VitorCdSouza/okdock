@@ -19,16 +19,16 @@ dev: ## Sobe API e web juntos num terminal só; Ctrl-C derruba os dois
 	@echo "  (use localhost, nao 127.0.0.1: o ng serve escuta so em IPv6)"
 	@echo
 	@trap 'trap - INT TERM EXIT; kill 0' INT TERM EXIT; \
-	  ( cd $(API) && GAMEDOCK_ROOT=$(DATA) GAMEDOCK_ALLOW_ORIGIN=http://localhost:4200 \
-	      go run ./cmd/gamedock 2>&1 | sed -u 's/^/[api] /' ) & \
+	  ( cd $(API) && OKDOCK_ROOT=$(DATA) OKDOCK_ALLOW_ORIGIN=http://localhost:4200 \
+	      go run ./cmd/okdock 2>&1 | sed -u 's/^/[api] /' ) & \
 	  ( cd $(WEB) && npm start 2>&1 | sed -u 's/^/[web] /' ) & \
 	  wait
 
 .PHONY: dev-api
 dev-api: ## Só a API, em :8080
-	cd $(API) && GAMEDOCK_ROOT=$(DATA) \
-	  GAMEDOCK_ALLOW_ORIGIN=http://localhost:4200 \
-	  go run ./cmd/gamedock
+	cd $(API) && OKDOCK_ROOT=$(DATA) \
+	  OKDOCK_ALLOW_ORIGIN=http://localhost:4200 \
+	  go run ./cmd/okdock
 
 .PHONY: dev-web
 dev-web: ## Só o Angular, em :4200
@@ -46,8 +46,8 @@ build-web:
 
 .PHONY: build-api
 build-api:
-	cd $(API) && CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o ../gamedock ./cmd/gamedock
-	@echo "binário em ./gamedock"
+	cd $(API) && CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o ../okdock ./cmd/okdock
+	@echo "binário em ./okdock"
 
 .PHONY: test
 test: test-api test-web ## Roda todos os testes
@@ -68,6 +68,6 @@ lint: ## vet + gofmt
 
 .PHONY: clean
 clean: ## Remove artefatos de build
-	rm -f gamedock
+	rm -f okdock
 	rm -rf $(WEB)/dist $(WEB)/.angular
 	git checkout -- $(DIST) 2>/dev/null || true

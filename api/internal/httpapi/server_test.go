@@ -12,11 +12,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/VitorCdSouza/gamedock/api/internal/dockerx"
-	"github.com/VitorCdSouza/gamedock/api/internal/instance"
-	"github.com/VitorCdSouza/gamedock/api/internal/manager"
-	"github.com/VitorCdSouza/gamedock/api/internal/store"
-	"github.com/VitorCdSouza/gamedock/api/internal/system"
+	"github.com/VitorCdSouza/okdock/api/internal/dockerx"
+	"github.com/VitorCdSouza/okdock/api/internal/instance"
+	"github.com/VitorCdSouza/okdock/api/internal/manager"
+	"github.com/VitorCdSouza/okdock/api/internal/store"
+	"github.com/VitorCdSouza/okdock/api/internal/system"
 )
 
 func newServer(t *testing.T) *Server {

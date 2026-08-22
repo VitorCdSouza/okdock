@@ -1,10 +1,10 @@
-name: gamedock
+name: okdock
 
 services:
-  gamedock:
+  okdock:
     build: .
-    image: gamedock:local
-    container_name: gamedock
+    image: okdock:local
+    container_name: okdock
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -12,6 +12,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /srv/games:/srv/games
     environment:
-      GAMEDOCK_ROOT: /srv/games
-      GAMEDOCK_MEMORY_RESERVE: 2g
-      GAMEDOCK_LOG_LEVEL: info
+      OKDOCK_ROOT: /srv/games
+      OKDOCK_MEMORY_RESERVE: 2g
+      OKDOCK_LOG_LEVEL: info

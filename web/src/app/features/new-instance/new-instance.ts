@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { Api, GameDockError } from '../../core/api';
+import { Api, OkDockError } from '../../core/api';
 import { Store } from '../../core/state';
 import { Provider, SpecRequest } from '../../core/models';
 import { I18n } from '../../core/i18n/i18n';
@@ -42,7 +42,7 @@ export class NewInstance {
   readonly startAfterCreate = signal(true);
 
   readonly busy = signal(false);
-  readonly error = signal<GameDockError | null>(null);
+  readonly error = signal<OkDockError | null>(null);
 
   readonly providers = computed(() => this.store.providers());
 
@@ -148,7 +148,7 @@ export class NewInstance {
     this.error.set(null);
     this.api.create({ ...this.request(), start: this.startAfterCreate() }).subscribe({
       next: () => this.linkThenClose(),
-      error: (err: GameDockError) => {
+      error: (err: OkDockError) => {
         this.error.set(err);
         this.busy.set(false);
       },
@@ -167,7 +167,7 @@ export class NewInstance {
         this.busy.set(false);
         this.created.emit(this.name());
       },
-      error: (err: GameDockError) => {
+      error: (err: OkDockError) => {
         this.busy.set(false);
         this.store.notify(
           this.t('new.dnsLinkFailed', { name: this.name(), domain, error: err.message }),

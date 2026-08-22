@@ -33,12 +33,12 @@ describe('InstanceCard', () => {
   }
 
   beforeEach(() => {
-    localStorage.removeItem('gamedock.locale');
+    localStorage.removeItem('okdock.locale');
     TestBed.configureTestingModule({});
     TestBed.inject(I18n).setPref('pt');
   });
 
-  afterEach(() => localStorage.removeItem('gamedock.locale'));
+  afterEach(() => localStorage.removeItem('okdock.locale'));
 
   it('traduz a etapa da operação que veio em código', () => {
     expect(card({ operation: { kind: 'provision', code: 'creating', message: '', startedAt: '' } }).opLabel())

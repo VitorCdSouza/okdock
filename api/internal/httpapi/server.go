@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/VitorCdSouza/gamedock/api/internal/manager"
+	"github.com/VitorCdSouza/okdock/api/internal/manager"
 )
 
 type Options struct {

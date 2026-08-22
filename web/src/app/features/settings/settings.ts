@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { Api, GameDockError } from '../../core/api';
+import { Api, OkDockError } from '../../core/api';
 import { Store } from '../../core/state';
 import { MetricPrefs, Prefs } from '../../core/prefs';
 import { I18n } from '../../core/i18n/i18n';
@@ -96,7 +96,7 @@ export class Settings {
         this.rootSaved.set(true);
         this.store.reload();
       },
-      error: (err: GameDockError) => {
+      error: (err: OkDockError) => {
         this.rootError.set(err.message);
         this.rootBusy.set(false);
       },
@@ -131,7 +131,7 @@ export class Settings {
           this.tokenNote.set(this.t('settings.tokenSavedPending'));
         }
       },
-      error: (err: GameDockError) => {
+      error: (err: OkDockError) => {
         this.tokenError.set(err.message);
         this.tokenBusy.set(false);
       },
@@ -171,7 +171,7 @@ export class Settings {
         this.dropDraft(index);
         this.store.reloadDns();
       },
-      error: (err: GameDockError) => {
+      error: (err: OkDockError) => {
         this.domainError.set(err.message);
         this.busyDomain.set(null);
       },
@@ -196,7 +196,7 @@ export class Settings {
           },
         });
       },
-      error: (err: GameDockError) => {
+      error: (err: OkDockError) => {
         this.domainError.set(err.message);
         this.busyDomain.set(null);
         this.store.reloadDns();
@@ -213,7 +213,7 @@ export class Settings {
         this.busyDomain.set(null);
         this.store.reloadDns();
       },
-      error: (err: GameDockError) => {
+      error: (err: OkDockError) => {
         this.domainError.set(err.message);
         this.busyDomain.set(null);
       },
@@ -223,7 +223,7 @@ export class Settings {
   sync(): void {
     this.api.syncDns().subscribe({
       next: () => this.store.notify(this.t('settings.syncing')),
-      error: (err: GameDockError) => this.tokenError.set(err.message),
+      error: (err: OkDockError) => this.tokenError.set(err.message),
     });
   }
 }

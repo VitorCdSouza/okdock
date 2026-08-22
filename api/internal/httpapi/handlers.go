@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/VitorCdSouza/gamedock/api/internal/catalog"
-	"github.com/VitorCdSouza/gamedock/api/internal/instance"
-	"github.com/VitorCdSouza/gamedock/api/internal/manager"
+	"github.com/VitorCdSouza/okdock/api/internal/catalog"
+	"github.com/VitorCdSouza/okdock/api/internal/instance"
+	"github.com/VitorCdSouza/okdock/api/internal/manager"
 )
 
 func (s *Server) health(w http.ResponseWriter, _ *http.Request) {

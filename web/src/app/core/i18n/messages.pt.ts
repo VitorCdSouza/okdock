@@ -299,7 +299,7 @@ export const pt = {
   'field.ryshe/terraria-vanilla.NOUPNP.help':
     'O painel já publica a porta; deixar o servidor mexer no roteador só atrapalha.',
 
-  'api.offline': 'não consegui falar com a API do GameDock — ela está de pé?',
+  'api.offline': 'não consegui falar com a API do OkDock — ela está de pé?',
   'api.httpError': 'erro {status}',
 } as const;
 

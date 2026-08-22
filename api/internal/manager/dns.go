@@ -8,9 +8,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/VitorCdSouza/gamedock/api/internal/duckdns"
-	"github.com/VitorCdSouza/gamedock/api/internal/instance"
-	"github.com/VitorCdSouza/gamedock/api/internal/store"
+	"github.com/VitorCdSouza/okdock/api/internal/duckdns"
+	"github.com/VitorCdSouza/okdock/api/internal/instance"
+	"github.com/VitorCdSouza/okdock/api/internal/store"
 )
 
 const SyncInterval = 5 * time.Minute

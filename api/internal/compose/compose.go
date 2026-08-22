@@ -10,10 +10,10 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/VitorCdSouza/gamedock/api/internal/instance"
+	"github.com/VitorCdSouza/okdock/api/internal/instance"
 )
 
-const Label = "gamedock"
+const Label = "okdock"
 
 type file struct {
 	Name     string             `yaml:"name"`
@@ -130,7 +130,7 @@ func Render(spec instance.Spec) ([]byte, error) {
 	}
 
 	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "# Gerado pelo GameDock em %s.\n", spec.UpdatedAt.Format(time.RFC3339))
+	fmt.Fprintf(&buf, "# Gerado pelo OkDock em %s.\n", spec.UpdatedAt.Format(time.RFC3339))
 	buf.WriteString("# Editar à mão funciona — o painel relê este arquivo. Mas\n")
 	buf.WriteString("# \"Salvar e recriar\" no painel sobrescreve o que estiver aqui.\n")
 	if hasSecret {
@@ -165,7 +165,7 @@ func RenderEnv(spec instance.Spec) []byte {
 	sort.Strings(keys)
 
 	var buf bytes.Buffer
-	buf.WriteString("# Gerado pelo GameDock. Contém senhas — não versione este arquivo.\n")
+	buf.WriteString("# Gerado pelo OkDock. Contém senhas — não versione este arquivo.\n")
 	for _, k := range keys {
 		fmt.Fprintf(&buf, "%s=%s\n", k, escapeEnv(spec.Env[k]))
 	}

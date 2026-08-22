@@ -12,7 +12,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
-import { Api, GameDockError } from '../../core/api';
+import { Api, OkDockError } from '../../core/api';
 import { Events } from '../../core/events';
 import { Store } from '../../core/state';
 import { Instance, STATE_KEY, SpecRequest, State } from '../../core/models';
@@ -66,7 +66,7 @@ export class InstanceDetail {
   readonly rawCompose = signal('');
   readonly logLines = signal<string[]>([]);
   readonly busy = signal(false);
-  readonly error = signal<GameDockError | null>(null);
+  readonly error = signal<OkDockError | null>(null);
 
   readonly dnsDomain = signal('');
   readonly dnsBusy = signal(false);
@@ -216,7 +216,7 @@ export class InstanceDetail {
         this.rawCompose.set('');
         this.store.reload();
       },
-      error: (err: GameDockError) => {
+      error: (err: OkDockError) => {
         this.error.set(err);
         this.busy.set(false);
       },
@@ -257,7 +257,7 @@ export class InstanceDetail {
         this.busy.set(false);
         this.store.reload();
       },
-      error: (err: GameDockError) => {
+      error: (err: OkDockError) => {
         this.error.set(err);
         this.busy.set(false);
       },
@@ -274,7 +274,7 @@ export class InstanceDetail {
         this.dnsBusy.set(false);
         this.store.reload();
       },
-      error: (err: GameDockError) => {
+      error: (err: OkDockError) => {
         this.dnsError.set(err.message);
         this.dnsBusy.set(false);
       },
@@ -290,7 +290,7 @@ export class InstanceDetail {
         this.dnsDomain.set('');
         this.store.reload();
       },
-      error: (err: GameDockError) => {
+      error: (err: OkDockError) => {
         this.dnsError.set(err.message);
         this.dnsBusy.set(false);
       },

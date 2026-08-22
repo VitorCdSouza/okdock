@@ -8,13 +8,13 @@ describe('I18n', () => {
   let i18n: I18n;
 
   beforeEach(() => {
-    localStorage.removeItem('gamedock.locale');
+    localStorage.removeItem('okdock.locale');
     TestBed.configureTestingModule({});
     i18n = TestBed.inject(I18n);
     i18n.setPref('pt');
   });
 
-  afterEach(() => localStorage.removeItem('gamedock.locale'));
+  afterEach(() => localStorage.removeItem('okdock.locale'));
 
   it('traduz a mesma chave nos dois idiomas', () => {
     expect(i18n.t('common.save')).toBe('Salvar');
@@ -37,7 +37,7 @@ describe('I18n', () => {
     i18n.setPref('en');
     TestBed.tick();
 
-    expect(localStorage.getItem('gamedock.locale')).toBe('en');
+    expect(localStorage.getItem('okdock.locale')).toBe('en');
   });
 
   it('tem as mesmas chaves nas duas tabelas', () => {

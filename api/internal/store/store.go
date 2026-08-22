@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/VitorCdSouza/gamedock/api/internal/compose"
-	"github.com/VitorCdSouza/gamedock/api/internal/instance"
+	"github.com/VitorCdSouza/okdock/api/internal/compose"
+	"github.com/VitorCdSouza/okdock/api/internal/instance"
 )
 
 var (
@@ -53,7 +53,9 @@ func (e *InvalidRootError) Is(target error) bool { return target == ErrInvalidRo
 const (
 	composeFile = "docker-compose.yml"
 	envFile     = ".env"
-	metaFile    = ".gamedock.json"
+	metaFile    = ".okdock.json"
+	// instancia de quando o projeto se chamava GameDock, e a Spec e a unica copia desses campos
+	legacyMetaFile = ".gamedock.json"
 )
 
 type Store struct {
@@ -133,7 +135,7 @@ func prepareRoot(root string) error {
 	if !info.IsDir() {
 		return &InvalidRootError{Reason: "not_dir", Path: root}
 	}
-	probe, err := os.MkdirTemp(root, ".gamedock-probe-*")
+	probe, err := os.MkdirTemp(root, ".okdock-probe-*")
 	if err != nil {
 		return &InvalidRootError{Reason: "unwritable", Path: root}
 	}
@@ -176,6 +178,9 @@ func (s *Store) Get(name string) (instance.Spec, error) {
 		return instance.Spec{}, err
 	}
 	raw, err := os.ReadFile(filepath.Join(s.Dir(name), metaFile))
+	if errors.Is(err, os.ErrNotExist) {
+		raw, err = os.ReadFile(filepath.Join(s.Dir(name), legacyMetaFile))
+	}
 	if errors.Is(err, os.ErrNotExist) {
 		return instance.Spec{}, &NotFoundError{Name: name}
 	}
@@ -254,6 +259,10 @@ func (s *Store) write(spec instance.Spec) error {
 	if err := writeAtomic(filepath.Join(dir, metaFile), append(meta, '\n'), 0o644); err != nil {
 		return err
 	}
+	// a partir daqui vale o nome novo, os dois fariam a leitura depender de qual veio primeiro
+	if err := os.Remove(filepath.Join(dir, legacyMetaFile)); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
 
 	for _, m := range spec.Mounts {
 		if !strings.HasPrefix(m.Host, "./") {
@@ -298,7 +307,7 @@ func (s *Store) Delete(name string, keepData bool) error {
 		return os.RemoveAll(s.Dir(name))
 	}
 	dir := s.Dir(name)
-	for _, f := range []string{composeFile, envFile, metaFile} {
+	for _, f := range []string{composeFile, envFile, metaFile, legacyMetaFile} {
 		if err := os.Remove(filepath.Join(dir, f)); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return err
 		}

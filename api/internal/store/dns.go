@@ -6,14 +6,25 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/VitorCdSouza/gamedock/api/internal/instance"
+	"github.com/VitorCdSouza/okdock/api/internal/instance"
 )
 
 const (
-	panelDir  = ".gamedock"
-	dnsFile   = "dns.json"
-	panelFile = "config.json"
+	panelDir = ".okdock"
+	// pasta de quando o projeto se chamava GameDock, com a raiz escolhida e o token do DuckDNS
+	legacyPanelDir = ".gamedock"
+	dnsFile        = "dns.json"
+	panelFile      = "config.json"
 )
+
+// readPanel le da pasta do painel e cai no nome antigo, mas a gravacao e sempre em panelDir
+func (s *Store) readPanel(file string) ([]byte, error) {
+	raw, err := os.ReadFile(filepath.Join(s.ConfigRoot, panelDir, file))
+	if errors.Is(err, os.ErrNotExist) {
+		return os.ReadFile(filepath.Join(s.ConfigRoot, legacyPanelDir, file))
+	}
+	return raw, err
+}
 
 type PanelConfig struct {
 	Root string `json:"root,omitempty"`
@@ -25,7 +36,7 @@ func (s *Store) PanelPath() string {
 
 func (s *Store) LoadPanel() (PanelConfig, error) {
 	var cfg PanelConfig
-	raw, err := os.ReadFile(s.PanelPath())
+	raw, err := s.readPanel(panelFile)
 	if errors.Is(err, os.ErrNotExist) {
 		return cfg, nil
 	}
@@ -61,7 +72,7 @@ func (s *Store) DNSPath() string {
 
 func (s *Store) LoadDNS() (DNSConfig, error) {
 	cfg := DNSConfig{Links: map[string]instance.DNS{}, Domains: map[string]instance.DNS{}}
-	raw, err := os.ReadFile(s.DNSPath())
+	raw, err := s.readPanel(dnsFile)
 	if errors.Is(err, os.ErrNotExist) {
 		return cfg, nil
 	}

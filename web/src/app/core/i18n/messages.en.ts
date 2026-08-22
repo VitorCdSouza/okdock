@@ -305,6 +305,6 @@ export const en: Record<MessageKey, string> = {
   'field.ryshe/terraria-vanilla.NOUPNP.help':
     'The panel already publishes the port; letting the server touch the router only gets in the way.',
 
-  'api.offline': 'could not reach the GameDock API — is it up?',
+  'api.offline': 'could not reach the OkDock API — is it up?',
   'api.httpError': 'error {status}',
 };

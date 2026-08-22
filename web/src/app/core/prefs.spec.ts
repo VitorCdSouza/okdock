@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { Prefs } from './prefs';
 
-const KEY = 'gamedock.metrics';
+const KEY = 'okdock.metrics';
 
 describe('Prefs', () => {
   beforeEach(() => localStorage.removeItem(KEY));

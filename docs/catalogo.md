@@ -75,7 +75,7 @@ para uma imagem que o catálogo ainda não descreve.
 Os dois provedores de jogo foram exercitados contra um container de verdade em
 21/08/2026: criar instância pelo painel, subir, e confirmar que a configuração
 pegou. Minecraft gera o mundo e aceita conexão; Terraria idem, com
-`gamedock.wld` criado pelo `-autocreate`.
+`okdock.wld` criado pelo `-autocreate`.
 
 O catálogo já teve outros seis jogos (Minecraft Bedrock, Palworld, Valheim,
 ARK, Factorio, Satisfactory), removidos em 21/08/2026 a pedido do usuário. Os

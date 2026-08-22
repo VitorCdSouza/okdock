@@ -1,4 +1,4 @@
-module github.com/VitorCdSouza/gamedock/api
+module github.com/VitorCdSouza/okdock/api
 
 go 1.25
 

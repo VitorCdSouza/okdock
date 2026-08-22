@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/VitorCdSouza/gamedock/api/internal/dockerx"
-	"github.com/VitorCdSouza/gamedock/api/internal/duckdns"
-	"github.com/VitorCdSouza/gamedock/api/internal/manager"
-	"github.com/VitorCdSouza/gamedock/api/internal/store"
-	"github.com/VitorCdSouza/gamedock/api/internal/system"
+	"github.com/VitorCdSouza/okdock/api/internal/dockerx"
+	"github.com/VitorCdSouza/okdock/api/internal/duckdns"
+	"github.com/VitorCdSouza/okdock/api/internal/manager"
+	"github.com/VitorCdSouza/okdock/api/internal/store"
+	"github.com/VitorCdSouza/okdock/api/internal/system"
 )
 
 func newDNSServer(t *testing.T) (*Server, *duckdns.Fake) {

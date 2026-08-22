@@ -6,12 +6,12 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/VitorCdSouza/gamedock/api/internal/catalog"
-	"github.com/VitorCdSouza/gamedock/api/internal/dockerx"
-	"github.com/VitorCdSouza/gamedock/api/internal/duckdns"
-	"github.com/VitorCdSouza/gamedock/api/internal/instance"
-	"github.com/VitorCdSouza/gamedock/api/internal/manager"
-	"github.com/VitorCdSouza/gamedock/api/internal/store"
+	"github.com/VitorCdSouza/okdock/api/internal/catalog"
+	"github.com/VitorCdSouza/okdock/api/internal/dockerx"
+	"github.com/VitorCdSouza/okdock/api/internal/duckdns"
+	"github.com/VitorCdSouza/okdock/api/internal/instance"
+	"github.com/VitorCdSouza/okdock/api/internal/manager"
+	"github.com/VitorCdSouza/okdock/api/internal/store"
 )
 
 // a resposta de erro leva codigo e dados, e a mensagem e ultimo recurso para o JSON cru

@@ -1,5 +1,7 @@
 import { Injectable, effect, signal } from '@angular/core';
 
+import { readSetting } from './storage';
+
 export interface MetricPrefs {
   cpu: boolean;
   memory: boolean;
@@ -8,7 +10,7 @@ export interface MetricPrefs {
 }
 
 const DEFAULTS: MetricPrefs = { cpu: true, memory: true, disk: true, budget: true };
-const KEY = 'gamedock.metrics';
+const KEY = 'okdock.metrics';
 
 @Injectable({ providedIn: 'root' })
 export class Prefs {
@@ -30,7 +32,7 @@ export class Prefs {
 
 function load(): MetricPrefs {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = readSetting(KEY);
     if (!raw) return { ...DEFAULTS };
     return { ...DEFAULTS, ...(JSON.parse(raw) as Partial<MetricPrefs>) };
   } catch {

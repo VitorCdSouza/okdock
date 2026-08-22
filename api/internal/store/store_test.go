@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/VitorCdSouza/gamedock/api/internal/instance"
+	"github.com/VitorCdSouza/okdock/api/internal/instance"
 )
 
 func newStore(t *testing.T) *Store {
@@ -41,7 +41,7 @@ func TestCreateWritesTheThreeFiles(t *testing.T) {
 	if err := s.Create(spec("smp")); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	for _, f := range []string{"docker-compose.yml", ".env", ".gamedock.json"} {
+	for _, f := range []string{"docker-compose.yml", ".env", ".okdock.json"} {
 		if _, err := os.Stat(filepath.Join(s.Dir("smp"), f)); err != nil {
 			t.Errorf("faltou %s: %v", f, err)
 		}
@@ -103,7 +103,7 @@ func TestRoundTrip(t *testing.T) {
 		t.Errorf("spec mudou na ida e volta: %+v", got)
 	}
 	if got.Env["SENHA"] != "hunter2" {
-		t.Errorf("segredo não sobreviveu ao .gamedock.json: %v", got.Env)
+		t.Errorf("segredo não sobreviveu ao .okdock.json: %v", got.Env)
 	}
 	if got.CreatedAt.IsZero() {
 		t.Error("CreatedAt não foi preenchido")
@@ -277,5 +277,71 @@ func TestRaizGravadaInutilizavelCaiNaDeBoot(t *testing.T) {
 	}
 	if outro.Root() != s.ConfigRoot {
 		t.Errorf("Root = %q, queria a raiz de boot %q", outro.Root(), s.ConfigRoot)
+	}
+}
+
+func TestGetLeSpecComNomeAntigo(t *testing.T) {
+	s := newStore(t)
+	if err := s.Create(spec("smp")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	dir := s.Dir("smp")
+	if err := os.Rename(filepath.Join(dir, ".okdock.json"), filepath.Join(dir, ".gamedock.json")); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := s.Get("smp")
+	if err != nil {
+		t.Fatalf("Get com o arquivo antigo: %v", err)
+	}
+	if got.ProviderID != "itzg/minecraft-server" || len(got.SecretKeys) != 1 {
+		t.Errorf("spec veio incompleta: %+v", got)
+	}
+}
+
+func TestUpdateTrocaSpecAntigaPelaNova(t *testing.T) {
+	s := newStore(t)
+	if err := s.Create(spec("smp")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	dir := s.Dir("smp")
+	if err := os.Rename(filepath.Join(dir, ".okdock.json"), filepath.Join(dir, ".gamedock.json")); err != nil {
+		t.Fatal(err)
+	}
+
+	updated := spec("smp")
+	updated.MemoryLimit = "6g"
+	if err := s.Update(updated); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(dir, ".gamedock.json")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("o arquivo antigo devia ter saído do caminho: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, ".okdock.json")); err != nil {
+		t.Errorf("faltou o arquivo novo: %v", err)
+	}
+}
+
+func TestPainelLeConfiguracaoComPastaAntiga(t *testing.T) {
+	boot := t.TempDir()
+	nova := filepath.Join(t.TempDir(), "jogos")
+	if err := os.MkdirAll(nova, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(boot, ".gamedock"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	cfg := []byte(`{"root":"` + nova + `"}` + "\n")
+	if err := os.WriteFile(filepath.Join(boot, ".gamedock", "config.json"), cfg, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	s, err := New(boot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.Root() != nova {
+		t.Errorf("Root = %q, queria a raiz gravada em .gamedock/: %q", s.Root(), nova)
 	}
 }

@@ -3,6 +3,7 @@ import { Injectable, computed, effect, signal } from '@angular/core';
 import { MessageKey, pt } from './messages.pt';
 import { en } from './messages.en';
 import { ApiProblem } from '../models';
+import { readSetting } from '../storage';
 
 export type Locale = 'pt' | 'en';
 export type LocalePref = 'auto' | Locale;
@@ -11,7 +12,7 @@ type PluralBase<K> = K extends `${infer Base}.one` ? Base : never;
 export type PluralKey = PluralBase<MessageKey>;
 
 const TABLES: Record<Locale, Record<MessageKey, string>> = { pt, en };
-const KEY = 'gamedock.locale';
+const KEY = 'okdock.locale';
 
 @Injectable({ providedIn: 'root' })
 export class I18n {
@@ -95,10 +96,6 @@ function detect(): Locale {
 }
 
 function loadPref(): LocalePref {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw === 'pt' || raw === 'en' || raw === 'auto' ? raw : 'auto';
-  } catch {
-    return 'auto';
-  }
+  const raw = readSetting(KEY);
+  return raw === 'pt' || raw === 'en' || raw === 'auto' ? raw : 'auto';
 }

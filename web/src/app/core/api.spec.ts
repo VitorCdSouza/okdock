@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
-import { Api, GameDockError } from './api';
+import { Api, OkDockError } from './api';
 import { I18n } from './i18n/i18n';
 
 describe('Api — erro vem em código, frase é montada aqui', () => {
@@ -10,7 +10,7 @@ describe('Api — erro vem em código, frase é montada aqui', () => {
   let http: HttpTestingController;
 
   beforeEach(() => {
-    localStorage.removeItem('gamedock.locale');
+    localStorage.removeItem('okdock.locale');
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
@@ -19,11 +19,11 @@ describe('Api — erro vem em código, frase é montada aqui', () => {
     TestBed.inject(I18n).setPref('en');
   });
 
-  afterEach(() => localStorage.removeItem('gamedock.locale'));
+  afterEach(() => localStorage.removeItem('okdock.locale'));
 
-  function failStart(body: Record<string, unknown>, status = 409): GameDockError {
-    let caught: GameDockError | undefined;
-    api.start('smp').subscribe({ error: (e: GameDockError) => (caught = e) });
+  function failStart(body: Record<string, unknown>, status = 409): OkDockError {
+    let caught: OkDockError | undefined;
+    api.start('smp').subscribe({ error: (e: OkDockError) => (caught = e) });
     http
       .expectOne('/api/v1/instances/smp/start')
       .flush(body as object, { status, statusText: 'Conflict' });

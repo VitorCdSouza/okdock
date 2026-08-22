@@ -20,7 +20,7 @@ describe('Settings', () => {
   let http: HttpTestingController;
 
   beforeEach(() => {
-    localStorage.removeItem('gamedock.locale');
+    localStorage.removeItem('okdock.locale');
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
@@ -31,7 +31,7 @@ describe('Settings', () => {
     store.dns.set(dns);
   });
 
-  afterEach(() => localStorage.removeItem('gamedock.locale'));
+  afterEach(() => localStorage.removeItem('okdock.locale'));
 
   it('renomear é cadastrar o novo e só então soltar o antigo', () => {
     settings.rename('smp', 'novo');

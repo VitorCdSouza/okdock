@@ -10,34 +10,35 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
-	"github.com/VitorCdSouza/gamedock/api/internal/dockerx"
-	"github.com/VitorCdSouza/gamedock/api/internal/duckdns"
-	"github.com/VitorCdSouza/gamedock/api/internal/httpapi"
-	"github.com/VitorCdSouza/gamedock/api/internal/instance"
-	"github.com/VitorCdSouza/gamedock/api/internal/manager"
-	"github.com/VitorCdSouza/gamedock/api/internal/store"
-	"github.com/VitorCdSouza/gamedock/api/internal/system"
-	"github.com/VitorCdSouza/gamedock/api/internal/webui"
+	"github.com/VitorCdSouza/okdock/api/internal/dockerx"
+	"github.com/VitorCdSouza/okdock/api/internal/duckdns"
+	"github.com/VitorCdSouza/okdock/api/internal/httpapi"
+	"github.com/VitorCdSouza/okdock/api/internal/instance"
+	"github.com/VitorCdSouza/okdock/api/internal/manager"
+	"github.com/VitorCdSouza/okdock/api/internal/store"
+	"github.com/VitorCdSouza/okdock/api/internal/system"
+	"github.com/VitorCdSouza/okdock/api/internal/webui"
 )
 
 func main() {
 	if err := run(); err != nil {
-		slog.Error("gamedock parou", "err", err)
+		slog.Error("okdock parou", "err", err)
 		os.Exit(1)
 	}
 }
 
 func run() error {
 	var (
-		addr        = flag.String("addr", env("GAMEDOCK_ADDR", ":8080"), "endereço de escuta")
-		root        = flag.String("root", env("GAMEDOCK_ROOT", "/srv/games"), "raiz dos diretórios de instância")
-		reserveFlag = flag.String("memory-reserve", env("GAMEDOCK_MEMORY_RESERVE", "2g"), "RAM reservada ao host, fora do orçamento das instâncias")
-		allowOrigin = flag.String("allow-origin", env("GAMEDOCK_ALLOW_ORIGIN", ""), "origem liberada por CORS; use http://localhost:4200 com o ng serve")
-		dockerBin   = flag.String("docker-bin", env("GAMEDOCK_DOCKER_BIN", "docker"), "executável do docker")
-		logLevel    = flag.String("log-level", env("GAMEDOCK_LOG_LEVEL", "info"), "debug, info, warn ou error")
+		addr        = flag.String("addr", env("OKDOCK_ADDR", ":8080"), "endereço de escuta")
+		root        = flag.String("root", env("OKDOCK_ROOT", "/srv/games"), "raiz dos diretórios de instância")
+		reserveFlag = flag.String("memory-reserve", env("OKDOCK_MEMORY_RESERVE", "2g"), "RAM reservada ao host, fora do orçamento das instâncias")
+		allowOrigin = flag.String("allow-origin", env("OKDOCK_ALLOW_ORIGIN", ""), "origem liberada por CORS; use http://localhost:4200 com o ng serve")
+		dockerBin   = flag.String("docker-bin", env("OKDOCK_DOCKER_BIN", "docker"), "executável do docker")
+		logLevel    = flag.String("log-level", env("OKDOCK_LOG_LEVEL", "info"), "debug, info, warn ou error")
 	)
 	flag.Parse()
 
@@ -93,7 +94,7 @@ func run() error {
 	}
 	cancel()
 
-	slog.Info("gamedock ouvindo", "addr", *addr, "root", st.Root(),
+	slog.Info("okdock ouvindo", "addr", *addr, "root", st.Root(),
 		"reserva_ram", instance.FormatMemory(reserve))
 
 	errc := make(chan error, 1)
@@ -117,9 +118,16 @@ func run() error {
 	return srv.Shutdown(shutdownCtx)
 }
 
+// env aceita o nome antigo (GAMEDOCK_*) de quem ainda nao atualizou o compose ou o systemd
 func env(key, def string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
+	}
+	if legacy, ok := strings.CutPrefix(key, "OKDOCK_"); ok {
+		if v := os.Getenv("GAMEDOCK_" + legacy); v != "" {
+			slog.Warn("variável de ambiente com o nome antigo", "usada", "GAMEDOCK_"+legacy, "nova", key)
+			return v
+		}
 	}
 	return def
 }

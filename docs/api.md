@@ -86,7 +86,7 @@ do que o usuário pediu.
 }
 ```
 
-`root` é a raiz dos diretórios de instância — começa em `GAMEDOCK_ROOT` e pode
+`root` é a raiz dos diretórios de instância — começa em `OKDOCK_ROOT` e pode
 ser trocada por `PUT /system/root`. `memoryBudget` é
 `memoryTotal − memoryReserve`. `memoryCommitted` soma o teto
 das instâncias de pé; `memoryPlanned` soma também as paradas. Sem daemon, vem
@@ -105,7 +105,7 @@ e responde `422 invalid_root` quando não dá.
 As instâncias que já existem **não se movem**: o docker guarda o caminho
 absoluto dos bind mounts, então elas continuam de pé onde estão e somem da
 listagem até a raiz voltar. A escolha fica gravada em
-`<GAMEDOCK_ROOT>/.gamedock/config.json` — na raiz de boot, e não na nova, senão
+`<OKDOCK_ROOT>/.okdock/config.json` — na raiz de boot, e não na nova, senão
 o processo seguinte procuraria o arquivo no lugar errado.
 
 ### `GET /health`
@@ -310,7 +310,7 @@ Vincular um nome a uma instância também o cadastra.
 
 O token vem na resposta pelo mesmo motivo que `env` traz os segredos: a API é
 local e o formulário precisa do valor para editar. Em disco ele fica em
-`<raiz de boot>/.gamedock/dns.json`, com `0600`, e nunca entra em compose
+`<raiz de boot>/.okdock/dns.json`, com `0600`, e nunca entra em compose
 nenhum. `suffix` vem daqui para o frontend não repetir a regra.
 
 ### `PUT /dns`

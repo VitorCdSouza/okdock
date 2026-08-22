@@ -7,7 +7,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/VitorCdSouza/gamedock/api/internal/instance"
+	"github.com/VitorCdSouza/okdock/api/internal/instance"
 )
 
 func spec() instance.Spec {

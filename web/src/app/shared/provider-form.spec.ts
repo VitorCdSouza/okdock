@@ -28,12 +28,12 @@ describe('ProviderForm', () => {
   }
 
   beforeEach(() => {
-    localStorage.removeItem('gamedock.locale');
+    localStorage.removeItem('okdock.locale');
     TestBed.configureTestingModule({});
     TestBed.inject(I18n).setPref('pt');
   });
 
-  afterEach(() => localStorage.removeItem('gamedock.locale'));
+  afterEach(() => localStorage.removeItem('okdock.locale'));
 
   it('separa campos básicos dos avançados', () => {
     const f = form(minecraft);

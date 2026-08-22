@@ -3,7 +3,7 @@
 ## As camadas da API
 
 ```
-cmd/gamedock          flags, logger, servidor HTTP, desligamento gracioso
+cmd/okdock          flags, logger, servidor HTTP, desligamento gracioso
   └── httpapi         REST + SSE. Só traduz HTTP; não conhece Docker.
         └── manager   orquestração: orçamento de RAM, conflito de porta,
                       operações em background, derivação de estado
@@ -37,7 +37,7 @@ chama o binário do `docker compose`. Custa um processo por operação, e em tro
 o servidor continua administrável pelo terminal se o painel morrer — que é o
 cenário provável num servidor caseiro.
 
-`.gamedock.json` guarda só o que o compose não sabe dizer: de qual provedor do
+`.okdock.json` guarda só o que o compose não sabe dizer: de qual provedor do
 catálogo aquilo saiu. Se o arquivo sumir, a instância continua subindo pelo
 terminal; só deixa de ser editável pelo formulário.
 
@@ -66,7 +66,7 @@ lógica que decide se o container precisa nascer de novo — um campo sem efeito
 nenhum atravessando justamente a máquina que existe para responder "precisa
 recriar?".
 
-Então ele mora em `<raiz de boot>/.gamedock/dns.json`, junto do token, com
+Então ele mora em `<raiz de boot>/.okdock/dns.json`, junto do token, com
 `0600` — na raiz com que o processo subiu, e não na raiz atual das instâncias,
 porque é o vizinho `config.json` dessa mesma pasta que diz para onde a raiz foi
 trocada. Um arquivo, um lock, e o diretório da instância continua sendo só o

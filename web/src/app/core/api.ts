@@ -19,7 +19,7 @@ import { I18n } from './i18n/i18n';
 
 const BASE = '/api/v1';
 
-export class GameDockError extends Error {
+export class OkDockError extends Error {
   constructor(
     override readonly message: string,
     readonly code: string,
@@ -35,7 +35,7 @@ export class Api {
   private readonly http = inject(HttpClient);
   private readonly i18n = inject(I18n);
 
-  readonly lastError = signal<GameDockError | null>(null);
+  readonly lastError = signal<OkDockError | null>(null);
 
   system(): Observable<SystemInfo> {
     return this.get<SystemInfo>(`${BASE}/system`);
@@ -159,7 +159,7 @@ export class Api {
   private wrap<T>(source: Observable<T>): Observable<T> {
     return source.pipe(
       catchError((err: HttpErrorResponse) => {
-        const parsed = this.toGameDockError(err);
+        const parsed = this.toOkDockError(err);
         this.lastError.set(parsed);
         return throwError(() => parsed);
       }),
@@ -178,13 +178,13 @@ export class Api {
     );
   }
 
-  private toGameDockError(err: HttpErrorResponse): GameDockError {
+  private toOkDockError(err: HttpErrorResponse): OkDockError {
     if (err.status === 0) {
-      return new GameDockError(this.i18n.t('api.offline'), 'offline', [], 0);
+      return new OkDockError(this.i18n.t('api.offline'), 'offline', [], 0);
     }
     const body = err.error as ApiError | string | null;
     if (body && typeof body === 'object' && body.error) {
-      return new GameDockError(
+      return new OkDockError(
         this.errorText(body),
         body.error,
         body.problems ?? [],
@@ -192,6 +192,6 @@ export class Api {
       );
     }
     const fallback = err.message || this.i18n.t('api.httpError', { status: err.status });
-    return new GameDockError(fallback, 'http', [], err.status);
+    return new OkDockError(fallback, 'http', [], err.status);
   }
 }

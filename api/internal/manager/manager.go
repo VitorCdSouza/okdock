@@ -10,13 +10,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/VitorCdSouza/gamedock/api/internal/catalog"
-	"github.com/VitorCdSouza/gamedock/api/internal/compose"
-	"github.com/VitorCdSouza/gamedock/api/internal/dockerx"
-	"github.com/VitorCdSouza/gamedock/api/internal/duckdns"
-	"github.com/VitorCdSouza/gamedock/api/internal/instance"
-	"github.com/VitorCdSouza/gamedock/api/internal/store"
-	"github.com/VitorCdSouza/gamedock/api/internal/system"
+	"github.com/VitorCdSouza/okdock/api/internal/catalog"
+	"github.com/VitorCdSouza/okdock/api/internal/compose"
+	"github.com/VitorCdSouza/okdock/api/internal/dockerx"
+	"github.com/VitorCdSouza/okdock/api/internal/duckdns"
+	"github.com/VitorCdSouza/okdock/api/internal/instance"
+	"github.com/VitorCdSouza/okdock/api/internal/store"
+	"github.com/VitorCdSouza/okdock/api/internal/system"
 )
 
 type Options struct {

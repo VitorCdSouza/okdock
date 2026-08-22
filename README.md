@@ -1,4 +1,4 @@
-# GameDock
+# OkDock
 
 Painel para criar e administrar servidores de jogo em Docker num servidor
 caseiro. Cada instância vira um diretório com `docker-compose.yml` próprio, e o
@@ -7,7 +7,7 @@ Isso é de propósito: se o painel cair, tudo continua administrável pelo
 terminal.
 
 ```
-gamedock/
+okdock/
 ├── api/     API em Go — catálogo, geração de compose, orquestração
 ├── web/     painel em Angular 20
 ├── docs/    arquitetura, contrato da API, catálogo
@@ -72,11 +72,11 @@ depende da versão instalada no host.
 
 | Variável | Padrão | Para quê |
 |---|---|---|
-| `GAMEDOCK_ADDR` | `:8080` | endereço de escuta |
-| `GAMEDOCK_ROOT` | `/srv/games` | raiz inicial das instâncias e casa do `.gamedock/` |
-| `GAMEDOCK_MEMORY_RESERVE` | `2g` | RAM que fica fora do orçamento das instâncias |
-| `GAMEDOCK_ALLOW_ORIGIN` | vazio | libera CORS; só para o `ng serve` |
-| `GAMEDOCK_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+| `OKDOCK_ADDR` | `:8080` | endereço de escuta |
+| `OKDOCK_ROOT` | `/srv/games` | raiz inicial das instâncias e casa do `.okdock/` |
+| `OKDOCK_MEMORY_RESERVE` | `2g` | RAM que fica fora do orçamento das instâncias |
+| `OKDOCK_ALLOW_ORIGIN` | vazio | libera CORS; só para o `ng serve` |
+| `OKDOCK_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 
 ## O que o painel faz
 
@@ -119,16 +119,16 @@ para um `.env` ao lado, com permissão `0600` e fora do controle de versão.
 /srv/games/smp-familia/
 ├── docker-compose.yml    gerado; é o que o Docker lê
 ├── .env                  só os segredos; 0600; nunca versionado
-├── .gamedock.json        de qual provedor do catálogo isto veio
+├── .okdock.json          de qual provedor do catálogo isto veio
 └── data/                 o mundo
 ```
 
 A configuração do painel — o token do duckdns, os vínculos de domínio e a raiz
-escolhida na tela de configurações — fica fora disso, em `/srv/games/.gamedock/`
+escolhida na tela de configurações — fica fora disso, em `/srv/games/.okdock/`
 com `0600`. O ponto no nome não é enfeite: é o que impede a pasta de ser lida
 como instância.
 
-Essa pasta fica sempre na raiz com que o processo subiu (`GAMEDOCK_ROOT`),
+Essa pasta fica sempre na raiz com que o processo subiu (`OKDOCK_ROOT`),
 mesmo depois de trocar a raiz das instâncias pelo painel — é ela que guarda
 para onde a raiz mudou. Trocar a raiz não move o que já existe: o docker guarda
 o caminho absoluto dos bind mounts, então as instâncias antigas continuam de pé
@@ -147,12 +147,27 @@ diferente do que a pasta sugere.
 - [`docs/catalogo.md`](docs/catalogo.md) — provedores suportados e como
   adicionar outro
 
+## Vindo do GameDock
+
+O projeto se chamava GameDock. O painel continua lendo o que ficou com o nome
+antigo, então uma instalação existente sobe sem passo manual:
+
+| Antes | Agora | Como é lido |
+|---|---|---|
+| `GAMEDOCK_*` | `OKDOCK_*` | a variável antiga vale quando a nova não está definida, com aviso no log |
+| `<raiz>/.gamedock/` | `<raiz>/.okdock/` | a pasta antiga é lida quando a nova não existe |
+| `.gamedock.json` na instância | `.okdock.json` | o arquivo antigo é lido, e a primeira gravação troca pelo novo |
+| `gamedock.locale`, `gamedock.metrics` | `okdock.*` | a chave antiga do navegador migra na primeira leitura |
+
+O que **não** se renomeia sozinho: o diretório e o `container_name` das
+instâncias já criadas continuam com o texto que você deu a elas, e o label
+`gamedock.managed` fica nos containers antigos até a próxima recriação. Nenhum
+dos dois muda comportamento — o painel encontra a instância pelo diretório.
+
 ## Melhorias planejadas
 
 Lista de trabalho anotada, ainda não implementada.
 
-- Renomear o projeto para **OkDok**, incluindo o repositório no GitHub e tudo
-  mais.
 - Suporte a mods: descobrir de alguma forma se a imagem aceita mods e, quando
   aceitar, mostrar uma aba **Mods** onde se arrasta arquivos soltos ou um
   `.zip`.

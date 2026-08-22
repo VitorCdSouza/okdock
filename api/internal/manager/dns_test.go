@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/VitorCdSouza/gamedock/api/internal/dockerx"
-	"github.com/VitorCdSouza/gamedock/api/internal/duckdns"
-	"github.com/VitorCdSouza/gamedock/api/internal/store"
-	"github.com/VitorCdSouza/gamedock/api/internal/system"
+	"github.com/VitorCdSouza/okdock/api/internal/dockerx"
+	"github.com/VitorCdSouza/okdock/api/internal/duckdns"
+	"github.com/VitorCdSouza/okdock/api/internal/store"
+	"github.com/VitorCdSouza/okdock/api/internal/system"
 )
 
 func newDNSManager(t *testing.T) (*Manager, *duckdns.Fake) {
