@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, output, signal } 
 
 import { Api } from '../../core/api';
 import { Store } from '../../core/state';
-import { Instance, STATE_META, State } from '../../core/models';
+import { Instance, STATE_DOT, STATE_KEY, State } from '../../core/models';
+import { I18n } from '../../core/i18n/i18n';
 import { ActionVerb, InstanceCard } from './instance-card';
 
 @Component({
@@ -15,6 +16,8 @@ import { ActionVerb, InstanceCard } from './instance-card';
 export class Kanban {
   private readonly api = inject(Api);
   readonly store = inject(Store);
+
+  readonly t = inject(I18n).t;
 
   readonly open = output<Instance>();
   readonly create = output<void>();
@@ -52,7 +55,8 @@ export class Kanban {
   readonly columns = computed(() =>
     this.store.states().map((state) => ({
       state,
-      ...STATE_META[state],
+      dot: STATE_DOT[state],
+      title: this.t(STATE_KEY[state]),
       cards: this.store.byState(state),
     })),
   );

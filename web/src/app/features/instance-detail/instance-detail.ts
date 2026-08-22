@@ -15,25 +15,29 @@ import { FormsModule } from '@angular/forms';
 import { Api, GameDockError } from '../../core/api';
 import { Events } from '../../core/events';
 import { Store } from '../../core/state';
-import { Instance, SpecRequest, State } from '../../core/models';
+import { Instance, STATE_KEY, SpecRequest, State } from '../../core/models';
+import { I18n } from '../../core/i18n/i18n';
 import { ProviderForm } from '../../shared/provider-form';
-import { bytes, since } from '../../core/format';
+import { GameIcon, gameColors } from '../../shared/game-icon';
+import { InfoDot } from '../../shared/info-dot';
+import { bytes } from '../../core/format';
+import { copyText } from '../../core/clipboard';
 
 type Tab = 'config' | 'console' | 'compose' | 'recursos';
 
-const STATE_CHIP: Record<State, { label: string; bg: string; line: string; fg: string }> = {
-  running: { label: 'RODANDO', bg: 'var(--ok-bg)', line: 'var(--ok-line)', fg: 'var(--ok)' },
-  starting: { label: 'INICIANDO', bg: 'var(--warn-bg)', line: 'var(--warn-line)', fg: 'var(--warn)' },
-  provisioning: { label: 'PROVISIONANDO', bg: '#111b2b', line: '#2c3a4f', fg: 'var(--accent)' },
-  updating: { label: 'ATUALIZANDO', bg: 'var(--busy-bg)', line: 'var(--busy-line)', fg: 'var(--busy)' },
-  stopped: { label: 'PARADO', bg: '#1a1d24', line: 'var(--line-strong)', fg: 'var(--fg-muted)' },
-  error: { label: 'ERRO', bg: 'var(--bad-bg)', line: 'var(--bad-line)', fg: 'var(--bad)' },
-  archived: { label: 'ARQUIVADO', bg: '#141519', line: 'var(--line)', fg: 'var(--fg-faint)' },
+const STATE_CHIP: Record<State, { bg: string; line: string; fg: string }> = {
+  running: { bg: 'var(--ok-bg)', line: 'var(--ok-line)', fg: 'var(--ok)' },
+  starting: { bg: 'var(--warn-bg)', line: 'var(--warn-line)', fg: 'var(--warn)' },
+  provisioning: { bg: '#111b2b', line: '#2c3a4f', fg: 'var(--accent)' },
+  updating: { bg: 'var(--busy-bg)', line: 'var(--busy-line)', fg: 'var(--busy)' },
+  stopped: { bg: '#1a1d24', line: 'var(--line-strong)', fg: 'var(--fg-muted)' },
+  error: { bg: 'var(--bad-bg)', line: 'var(--bad-line)', fg: 'var(--bad)' },
+  archived: { bg: '#141519', line: 'var(--line)', fg: 'var(--fg-faint)' },
 };
 
 @Component({
   selector: 'gd-instance-detail',
-  imports: [FormsModule, ProviderForm],
+  imports: [FormsModule, ProviderForm, GameIcon, InfoDot],
   templateUrl: './instance-detail.html',
   styleUrl: './instance-detail.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,7 +47,11 @@ export class InstanceDetail {
   private readonly api = inject(Api);
   private readonly events = inject(Events);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly i18n = inject(I18n);
   readonly store = inject(Store);
+
+  readonly t = this.i18n.t;
+  readonly problem = this.i18n.problem;
 
   readonly name = input.required<string>();
   readonly close = output<void>();
@@ -61,6 +69,10 @@ export class InstanceDetail {
   readonly busy = signal(false);
   readonly error = signal<GameDockError | null>(null);
 
+  readonly dnsDomain = signal('');
+  readonly dnsBusy = signal(false);
+  readonly dnsError = signal<string | null>(null);
+
   readonly instance = computed<Instance | undefined>(() =>
     this.store.instances().find((i) => i.name === this.name()),
   );
@@ -70,7 +82,11 @@ export class InstanceDetail {
     return i ? this.store.provider(i.providerId) : undefined;
   });
 
-  readonly chip = computed(() => STATE_CHIP[this.instance()?.state ?? 'stopped']);
+  readonly chip = computed(() => {
+    const state = this.instance()?.state ?? 'stopped';
+    return { ...STATE_CHIP[state], label: this.t(STATE_KEY[state]) };
+  });
+  readonly colors = computed(() => gameColors(this.instance()?.game ?? ''));
 
   readonly isUp = computed(() => {
     const s = this.instance()?.state;
@@ -89,12 +105,39 @@ export class InstanceDetail {
   readonly statsLine = computed(() => {
     const s = this.instance()?.stats;
     if (!s) return '';
-    return `${s.cpuPercent.toFixed(0)}% CPU · ${bytes(s.memoryBytes)} de ${bytes(s.memoryLimit)}`;
+    return this.t('detail.stats', {
+      cpu: s.cpuPercent.toFixed(0),
+      used: bytes(s.memoryBytes),
+      total: bytes(s.memoryLimit),
+    });
   });
 
   readonly createdLabel = computed(() => {
     const i = this.instance();
-    return i ? `criada ${since(i.createdAt)}` : '';
+    return i ? this.t('detail.createdAt', { when: this.i18n.since(i.createdAt) }) : '';
+  });
+
+  // o rotulo da porta vem do catalogo como codigo, e imagem de fora pode mandar o texto pronto
+  portLabel(label: string | undefined): string {
+    if (!label) return this.t('detail.portFallbackLabel');
+    return this.i18n.maybe(`port.${label}`) ?? label;
+  }
+
+  readonly dnsSuffix = computed(() => this.store.dns()?.suffix ?? '.duckdns.org');
+  readonly hasToken = computed(() => !!this.store.dns()?.token);
+
+  readonly mainPort = computed(() => this.instance()?.ports[0]?.host ?? 0);
+
+  readonly dnsAddress = computed(() => {
+    const dns = this.instance()?.dns;
+    if (!dns) return '';
+    const port = this.mainPort();
+    return port ? `${dns.hostname}:${port}` : dns.hostname;
+  });
+
+  readonly dnsSyncLabel = computed(() => {
+    const at = this.instance()?.dns?.lastSync;
+    return at ? this.i18n.since(at) : this.t('detail.neverChecked');
   });
 
   private loadedFor = '';
@@ -111,6 +154,8 @@ export class InstanceDetail {
         Object.fromEntries(i.ports.map((p) => [`${p.container}/${p.protocol}`, p.host])),
       );
       this.error.set(null);
+      this.dnsDomain.set(i.dns?.domain ?? '');
+      this.dnsError.set(null);
       this.refreshPreview();
     });
   }
@@ -219,6 +264,53 @@ export class InstanceDetail {
         this.busy.set(false);
       },
     });
+  }
+
+  linkDns(): void {
+    const domain = this.dnsDomain().trim();
+    if (!domain) return;
+    this.dnsBusy.set(true);
+    this.dnsError.set(null);
+    this.api.linkDns(this.name(), domain).subscribe({
+      next: () => {
+        this.dnsBusy.set(false);
+        this.store.reload();
+      },
+      error: (err: GameDockError) => {
+        this.dnsError.set(err.message);
+        this.dnsBusy.set(false);
+      },
+    });
+  }
+
+  unlinkDns(): void {
+    this.dnsBusy.set(true);
+    this.dnsError.set(null);
+    this.api.unlinkDns(this.name()).subscribe({
+      next: () => {
+        this.dnsBusy.set(false);
+        this.dnsDomain.set('');
+        this.store.reload();
+      },
+      error: (err: GameDockError) => {
+        this.dnsError.set(err.message);
+        this.dnsBusy.set(false);
+      },
+    });
+  }
+
+  syncDns(): void {
+    this.api.syncDns().subscribe({
+      next: () => this.store.notify(this.t('detail.syncing')),
+      error: () => {},
+    });
+  }
+
+  copyAddress(): void {
+    const text = this.dnsAddress();
+    if (!text) return;
+    copyText(text);
+    this.store.notify(this.t('common.copied', { text }));
   }
 
   private request(): SpecRequest | null {

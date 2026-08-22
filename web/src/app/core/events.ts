@@ -21,7 +21,8 @@ export class Events {
 
       for (const type of ['instance.created', 'instance.changed', 'instance.deleted',
                           'instance.failed', 'instance.progress',
-                          'instance.updated', 'instance.uptodate']) {
+                          'instance.updated', 'instance.uptodate',
+                          'dns.changed']) {
         source.addEventListener(type, forward as EventListener);
       }
 

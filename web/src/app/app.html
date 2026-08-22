@@ -1,26 +1,52 @@
 <header class="topbar">
   <div class="brand">
-    <span class="mark">GD</span>
+    <span class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8.4 6.8h7.2a5.6 5.6 0 0 1 5.5 6.6l-.6 3.4a2.7 2.7 0 0 1-4.5 1.5L14.4 16H9.6l-1.6 2.3a2.7 2.7 0 0 1-4.5-1.5l-.6-3.4a5.6 5.6 0 0 1 5.5-6.6Z" />
+        <path d="M7.9 10.6v2.8M6.5 12h2.8" />
+        <circle cx="15.6" cy="11.4" r="1" fill="currentColor" stroke="none" />
+        <circle cx="17.6" cy="13.4" r="1" fill="currentColor" stroke="none" />
+      </svg>
+    </span>
     <span class="app-name">GameDock</span>
-    <span class="where mono">{{ store.system()?.instanceCount ?? 0 }} instâncias</span>
   </div>
 
   <div class="metrics mono">
     @if (system(); as s) {
-      <span>CPU <b>{{ s.cpuPercent.toFixed(0) }}%</b></span>
-      <span>RAM <b>{{ memoryLabel() }}</b></span>
-      <span>DISCO <b>{{ diskLabel() }}</b></span>
+      @if (prefs.metrics().cpu) {
+        <span>{{ t('app.metric.cpu') }} <b>{{ s.cpuPercent.toFixed(0) }}%</b></span>
+      }
+      @if (prefs.metrics().memory) {
+        <span>{{ t('app.metric.memory') }} <b>{{ memoryLabel() }}</b></span>
+      }
+      @if (prefs.metrics().disk) {
+        <span>{{ t('app.metric.disk') }} <b>{{ diskLabel() }}</b></span>
+      }
 
-      <span class="budget" [title]="'reserva do host: ' + (s.memoryReserve / 1073741824).toFixed(0) + ' GB'">
-        ORÇAMENTO <b [style.color]="budgetColor()">{{ budgetLabel() }}</b>
-        <span class="bar"><span class="fill" [style.width.%]="budgetPct()" [style.background]="budgetColor()"></span></span>
-      </span>
+      @if (prefs.metrics().budget) {
+        <span class="budget"
+              [title]="t('app.hostReserve', { gb: (s.memoryReserve / 1073741824).toFixed(0) })">
+          {{ t('app.metric.budget') }} <b [style.color]="budgetColor()">{{ budgetLabel() }}</b>
+          <span class="bar"><span class="fill" [style.width.%]="budgetPct()" [style.background]="budgetColor()"></span></span>
+        </span>
+      }
 
-      <span [class.ok]="!!s.dockerVersion" [class.bad]="!s.dockerVersion">● {{ dockerLabel() }}</span>
+      <span [class.ok]="dnsState() === 'ok'" [class.bad]="dnsState() === 'bad'"
+            [title]="dnsTitle()">● {{ dnsLabel() }}</span>
     }
   </div>
 
-  <button class="btn btn-primary" (click)="creating.set(true)">+ Nova instância</button>
+  <div class="actions">
+    <button class="gear" (click)="settingsOpen.set(true)"
+            [attr.aria-label]="t('app.settings')" [title]="t('app.settings')">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="currentColor" fill-rule="evenodd"
+              d="M10.05 1.78A10.4 10.4 0 0 1 13.95 1.78L13.50 4.14A8 8 0 0 1 16.50 5.38L17.85 3.40A10.4 10.4 0 0 1 20.60 6.15L18.62 7.50A8 8 0 0 1 19.86 10.50L22.22 10.05A10.4 10.4 0 0 1 22.22 13.95L19.86 13.50A8 8 0 0 1 18.62 16.50L20.60 17.85A10.4 10.4 0 0 1 17.85 20.60L16.50 18.62A8 8 0 0 1 13.50 19.86L13.95 22.22A10.4 10.4 0 0 1 10.05 22.22L10.50 19.86A8 8 0 0 1 7.50 18.62L6.15 20.60A10.4 10.4 0 0 1 3.40 17.85L5.38 16.50A8 8 0 0 1 4.14 13.50L1.78 13.95A10.4 10.4 0 0 1 1.78 10.05L4.14 10.50A8 8 0 0 1 5.38 7.50L3.40 6.15A10.4 10.4 0 0 1 6.15 3.40L7.50 5.38A8 8 0 0 1 10.50 4.14ZM15.5 12A3.5 3.5 0 1 0 8.50 12A3.5 3.5 0 1 0 15.5 12Z" />
+      </svg>
+    </button>
+    <button class="btn btn-primary" (click)="creating.set(true)">{{ t('app.newInstance') }}</button>
+  </div>
 </header>
 
 @if (apiError(); as err) {
@@ -30,12 +56,12 @@
 }
 
 <div class="filters">
-  <input class="search" type="search" placeholder="filtrar por nome, porta, imagem…"
+  <input class="search" type="search" [placeholder]="t('app.searchPlaceholder')"
          [ngModel]="store.search()" (ngModelChange)="store.search.set($event)">
 
   <div class="chips">
     <button class="chip" [class.on]="store.gameFilter() === null" (click)="setFilter(null)">
-      Todos · {{ store.instances().length }}
+      {{ t('app.allGames') }} · {{ store.instances().length }}
     </button>
     @for (g of store.gameCounts(); track g.game) {
       <button class="chip" [class.on]="store.gameFilter() === g.game" (click)="setFilter(g.game)">
@@ -43,8 +69,6 @@
       </button>
     }
   </div>
-
-  <span class="note mono">cada instância é um docker-compose.yml próprio em disco</span>
 </div>
 
 <main>
@@ -57,6 +81,10 @@
 
 @if (detailFor(); as name) {
   <gd-instance-detail [name]="name" (close)="detailFor.set(null)" />
+}
+
+@if (settingsOpen()) {
+  <gd-settings (close)="settingsOpen.set(false)" />
 }
 
 @if (creating()) {

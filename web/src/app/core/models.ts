@@ -1,3 +1,5 @@
+import { MessageKey } from './i18n/messages.pt';
+
 export type FieldType = 'text' | 'password' | 'int' | 'float' | 'bool' | 'enum';
 
 export interface FieldOption {
@@ -41,6 +43,7 @@ export interface Provider {
   image: string;
   description: string;
   docs?: string;
+  tags?: string[];
   ports: ProviderPort[] | null;
   volumes: ProviderVolume[];
   defaultMemory: string;
@@ -78,8 +81,28 @@ export interface Stats {
   memoryLimit: number;
 }
 
+export interface InstanceDNS {
+  domain: string;
+  hostname: string;
+  lastIp?: string;
+  lastSync?: string;
+  lastError?: string;
+}
+
+export interface DnsLink extends InstanceDNS {
+  instance: string;
+}
+
+export interface DnsStatus {
+  token: string;
+  suffix: string;
+  links: DnsLink[];
+  domains: InstanceDNS[];
+}
+
 export interface Operation {
   kind: string;
+  code?: string;
   message: string;
   percent?: number;
   startedAt: string;
@@ -110,6 +133,7 @@ export interface Instance {
   exitCode?: number;
   stats?: Stats;
   operation?: Operation;
+  dns?: InstanceDNS;
 }
 
 export interface InstancesResponse {
@@ -126,6 +150,7 @@ export interface SystemInfo {
   diskUsed: number;
   cpuCount: number;
   cpuPercent: number;
+  root: string;
   dockerVersion?: string;
   dockerError?: string;
   memoryReserve: number;
@@ -154,10 +179,17 @@ export interface ComposePreview {
   recreate?: string[];
 }
 
+export interface ApiProblem {
+  field: string;
+  code: string;
+  params?: Record<string, string | number>;
+}
+
 export interface ApiError {
   error: string;
   message: string;
-  problems?: string[];
+  params?: Record<string, string | number>;
+  problems?: ApiProblem[];
 }
 
 export interface ServerEvent {
@@ -166,12 +198,22 @@ export interface ServerEvent {
   message?: string;
 }
 
-export const STATE_META: Record<State, { title: string; dot: string }> = {
-  stopped: { title: 'PARADO', dot: '#6d7280' },
-  provisioning: { title: 'PROVISIONANDO', dot: '#6aa6f5' },
-  starting: { title: 'INICIANDO', dot: '#e5b567' },
-  running: { title: 'RODANDO', dot: '#4fd99b' },
-  updating: { title: 'ATUALIZANDO', dot: '#9b8cf5' },
-  error: { title: 'ERRO', dot: '#f08a8a' },
-  archived: { title: 'ARQUIVADO', dot: '#4e535d' },
+export const STATE_DOT: Record<State, string> = {
+  stopped: '#6d7280',
+  provisioning: '#6aa6f5',
+  starting: '#e5b567',
+  running: '#4fd99b',
+  updating: '#9b8cf5',
+  error: '#f08a8a',
+  archived: '#4e535d',
+};
+
+export const STATE_KEY: Record<State, MessageKey> = {
+  stopped: 'state.stopped',
+  provisioning: 'state.provisioning',
+  starting: 'state.starting',
+  running: 'state.running',
+  updating: 'state.updating',
+  error: 'state.error',
+  archived: 'state.archived',
 };

@@ -1,0 +1,133 @@
+<div class="backdrop" (click)="close.emit()"></div>
+
+<div class="dialog" role="dialog" [attr.aria-label]="t('settings.title')">
+  <header>
+    <h2>{{ t('settings.title') }}</h2>
+    <button class="btn btn-sm" (click)="close.emit()" [attr.aria-label]="t('common.close')">✕</button>
+  </header>
+
+  <div class="body">
+    <section>
+      <div class="section-title">{{ t('settings.rootTitle') }}</div>
+      <div class="grid3">
+        <input class="mono" spellcheck="false" placeholder="/srv/games"
+               [ngModel]="rootDraft()" (ngModelChange)="rootDraft.set($event)"
+               (keydown.enter)="saveRoot()">
+        <button class="btn btn-sm btn-go" (click)="saveRoot()"
+                [disabled]="rootBusy() || !rootChanged()">
+          {{ rootBusy() ? t('common.saving') : t('common.save') }}
+        </button>
+        <gd-info [text]="t('settings.rootTip')" />
+      </div>
+      @if (rootError(); as e) { <div class="alert bad">{{ e }}</div> }
+      @if (rootSaved()) { <div class="ok-note">{{ t('settings.rootSaved') }}</div> }
+    </section>
+
+    <section>
+      <div class="section-title">{{ t('settings.duckdnsTitle') }}</div>
+      <div class="grid3">
+        <input class="mono" [type]="tokenHidden() ? 'password' : 'text'"
+               autocomplete="off" spellcheck="false"
+               [placeholder]="t('settings.tokenPlaceholder')"
+               [ngModel]="tokenDraft()" (ngModelChange)="onTokenInput($event)"
+               (keydown.enter)="saveToken()">
+        @if (tokenHidden()) {
+          <button class="btn btn-sm" (click)="editToken()">{{ t('settings.changeToken') }}</button>
+        } @else {
+          <button class="btn btn-sm btn-go" (click)="saveToken()"
+                  [disabled]="tokenBusy() || !tokenDraft().trim()">
+            {{ tokenBusy() ? t('settings.validating') : t('common.save') }}
+          </button>
+        }
+        <gd-info [text]="t('settings.tokenTip')" />
+
+        @for (d of domains(); track d.domain) {
+          <div class="name-input"
+               [title]="instanceFor(d.domain) ? t('settings.inUseBy', { instance: instanceFor(d.domain) }) : ''">
+            <input class="mono" spellcheck="false" [value]="d.domain"
+                   [disabled]="busyDomain() === d.domain"
+                   (keydown.enter)="rename(d.domain, $any($event.target).value)"
+                   (blur)="rename(d.domain, $any($event.target).value)">
+            <span class="suffix mono">{{ suffix() }}</span>
+          </div>
+
+          <span class="status" [class.bad]="!!d.lastError" [class.unknown]="!d.lastError && !d.lastIp"
+                [title]="d.lastError || ''">
+            <span class="dot"></span>
+            {{ d.lastError ? t('settings.notMatching') : (d.lastIp || t('settings.noIpYet')) }}
+          </span>
+
+          <button class="icon" (click)="removeDomain(d.domain)"
+                  [disabled]="busyDomain() === d.domain"
+                  [attr.aria-label]="t('settings.removeAria', { name: d.hostname })">✕</button>
+        }
+
+        @for (draft of drafts(); track $index) {
+          <div class="name-input">
+            <input class="mono" spellcheck="false" placeholder="smp" autofocus
+                   [value]="draft" [disabled]="busyDomain() === draftKey($index)"
+                   (keydown.enter)="saveDraft($index, $any($event.target).value)"
+                   (input)="setDraft($index, $any($event.target).value)">
+            <span class="suffix mono">{{ suffix() }}</span>
+          </div>
+
+          <button class="btn btn-sm btn-go" (click)="saveDraft($index, draft)"
+                  [disabled]="!draft.trim() || busyDomain() === draftKey($index)">
+            {{ busyDomain() === draftKey($index) ? t('common.checking') : t('settings.verify') }}
+          </button>
+
+          <button class="icon" (click)="dropDraft($index)"
+                  [attr.aria-label]="t('settings.discardAria')">✕</button>
+        }
+
+        <button class="add" (click)="addDraft()" [disabled]="!hasToken()"
+                [title]="t('settings.addName')" [attr.aria-label]="t('settings.addName')">＋</button>
+      </div>
+
+      @if (tokenError(); as e) { <div class="alert bad">{{ e }}</div> }
+      @if (tokenNote(); as n) { <div class="ok-note">{{ n }}</div> }
+
+      @if (domainError(); as e) { <div class="alert bad">{{ e }}</div> }
+
+      @if (domains().length) {
+        <button class="btn btn-sm" (click)="sync()">{{ t('settings.checkAll') }}</button>
+      } @else if (hasToken()) {
+        <p class="none">{{ t('settings.noNames') }}</p>
+      }
+
+    </section>
+
+    <section>
+      <div class="section-title">{{ t('settings.metricsTitle') }}</div>
+      <div class="checks">
+        @for (m of metricOptions; track m.key) {
+          <label class="check">
+            <input type="checkbox" [checked]="prefs.metrics()[m.key]"
+                   (change)="prefs.toggle(m.key)">
+            <span>{{ t(m.label) }}</span>
+          </label>
+        }
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">{{ t('settings.languageTitle') }}</div>
+      <div class="row">
+        <select [ngModel]="i18n.pref()" (ngModelChange)="i18n.setPref($event)">
+          <option value="auto">{{ t('settings.languageAuto') }}</option>
+          <option value="pt">Português</option>
+          <option value="en">English</option>
+        </select>
+        <gd-info [text]="t('settings.languageTip')" />
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">{{ t('settings.dockerTitle') }}</div>
+      <div class="docker" [class.bad]="!system()?.dockerVersion">
+        {{ dockerLabel() }}
+        @if (dockerDetail(); as d) { <gd-info [text]="d" /> }
+      </div>
+    </section>
+  </div>
+</div>

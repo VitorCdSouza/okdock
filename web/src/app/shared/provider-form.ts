@@ -1,19 +1,24 @@
-import { ChangeDetectionStrategy, Component, computed, input, model, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, model, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { Provider, ProviderField } from '../core/models';
+import { ApiProblem, Provider, ProviderField } from '../core/models';
+import { I18n } from '../core/i18n/i18n';
+import { InfoDot } from './info-dot';
 
 @Component({
   selector: 'gd-provider-form',
-  imports: [FormsModule],
+  imports: [FormsModule, InfoDot],
   templateUrl: './provider-form.html',
   styleUrl: './provider-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProviderForm {
+  private readonly i18n = inject(I18n);
+  readonly t = this.i18n.t;
+
   readonly provider = input.required<Provider>();
   readonly values = model.required<Record<string, string>>();
-  readonly problems = input<string[]>([]);
+  readonly problems = input<ApiProblem[]>([]);
 
   readonly showAdvanced = signal(false);
 
@@ -23,8 +28,7 @@ export class ProviderForm {
   readonly problemFor = computed(() => {
     const map = new Map<string, string>();
     for (const p of this.problems()) {
-      const [key, ...rest] = p.split(':');
-      if (rest.length) map.set(key.trim(), rest.join(':').trim());
+      map.set(p.field, this.i18n.maybe(`problem.${p.code}`, p.params) ?? p.code);
     }
     return map;
   });
@@ -44,5 +48,10 @@ export class ProviderForm {
 
   error(field: ProviderField): string | undefined {
     return this.problemFor().get(field.key);
+  }
+
+  // o texto do catalogo sobra quando o campo e de um jogo que a tela ainda nao traduziu
+  fieldHelp(field: ProviderField): string {
+    return this.i18n.maybe(`field.${this.provider().id}.${field.key}.help`) ?? field.help ?? '';
   }
 }

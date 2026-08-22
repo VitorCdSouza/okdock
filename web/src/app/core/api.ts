@@ -4,14 +4,18 @@ import { Observable, catchError, map, throwError } from 'rxjs';
 
 import {
   ApiError,
+  ApiProblem,
   ComposePreview,
+  DnsStatus,
   Instance,
+  InstanceDNS,
   InstancesResponse,
   Provider,
   SpecRequest,
   State,
   SystemInfo,
 } from './models';
+import { I18n } from './i18n/i18n';
 
 const BASE = '/api/v1';
 
@@ -19,7 +23,7 @@ export class GameDockError extends Error {
   constructor(
     override readonly message: string,
     readonly code: string,
-    readonly problems: string[] = [],
+    readonly problems: ApiProblem[] = [],
     readonly status = 0,
   ) {
     super(message);
@@ -29,6 +33,7 @@ export class GameDockError extends Error {
 @Injectable({ providedIn: 'root' })
 export class Api {
   private readonly http = inject(HttpClient);
+  private readonly i18n = inject(I18n);
 
   readonly lastError = signal<GameDockError | null>(null);
 
@@ -103,6 +108,42 @@ export class Api {
     return this.wrap(this.http.delete<void>(url));
   }
 
+  setRoot(root: string): Observable<SystemInfo> {
+    return this.wrap(this.http.put<SystemInfo>(`${BASE}/system/root`, { root }));
+  }
+
+  dns(): Observable<DnsStatus> {
+    return this.get<DnsStatus>(`${BASE}/dns`);
+  }
+
+  saveDnsToken(token: string): Observable<DnsStatus> {
+    return this.wrap(this.http.put<DnsStatus>(`${BASE}/dns`, { token }));
+  }
+
+  addDnsDomain(domain: string): Observable<InstanceDNS> {
+    return this.post<InstanceDNS>(`${BASE}/dns/domains`, { domain });
+  }
+
+  removeDnsDomain(domain: string): Observable<void> {
+    return this.wrap(
+      this.http.delete<void>(`${BASE}/dns/domains/${encodeURIComponent(domain)}`),
+    );
+  }
+
+  linkDns(name: string, domain: string): Observable<InstanceDNS> {
+    return this.wrap(
+      this.http.put<InstanceDNS>(`${BASE}/instances/${encodeURIComponent(name)}/dns`, { domain }),
+    );
+  }
+
+  unlinkDns(name: string): Observable<void> {
+    return this.wrap(this.http.delete<void>(`${BASE}/instances/${encodeURIComponent(name)}/dns`));
+  }
+
+  syncDns(): Observable<void> {
+    return this.post<void>(`${BASE}/dns/sync`, {});
+  }
+
   private action(name: string, verb: string): Observable<void> {
     return this.post<void>(`${BASE}/instances/${encodeURIComponent(name)}/${verb}`, {});
   }
@@ -118,26 +159,39 @@ export class Api {
   private wrap<T>(source: Observable<T>): Observable<T> {
     return source.pipe(
       catchError((err: HttpErrorResponse) => {
-        const parsed = toGameDockError(err);
+        const parsed = this.toGameDockError(err);
         this.lastError.set(parsed);
         return throwError(() => parsed);
       }),
     );
   }
-}
 
-function toGameDockError(err: HttpErrorResponse): GameDockError {
-  if (err.status === 0) {
-    return new GameDockError(
-      'não consegui falar com a API do GameDock — ela está de pé?',
-      'offline',
-      [],
-      0,
+  // a API manda codigo e dados, e o texto do corpo e o ultimo recurso para um codigo novo
+  private errorText(body: ApiError): string {
+    const params = body.params ?? {};
+    const reason = params['reason'];
+    const specific = typeof reason === 'string' ? `error.${body.error}.${reason}` : '';
+    return (
+      (specific ? this.i18n.maybe(specific, params) : undefined) ??
+      this.i18n.maybe(`error.${body.error}`, params) ??
+      body.message
     );
   }
-  const body = err.error as ApiError | string | null;
-  if (body && typeof body === 'object' && body.message) {
-    return new GameDockError(body.message, body.error, body.problems ?? [], err.status);
+
+  private toGameDockError(err: HttpErrorResponse): GameDockError {
+    if (err.status === 0) {
+      return new GameDockError(this.i18n.t('api.offline'), 'offline', [], 0);
+    }
+    const body = err.error as ApiError | string | null;
+    if (body && typeof body === 'object' && body.error) {
+      return new GameDockError(
+        this.errorText(body),
+        body.error,
+        body.problems ?? [],
+        err.status,
+      );
+    }
+    const fallback = err.message || this.i18n.t('api.httpError', { status: err.status });
+    return new GameDockError(fallback, 'http', [], err.status);
   }
-  return new GameDockError(err.message || `erro ${err.status}`, 'http', [], err.status);
 }

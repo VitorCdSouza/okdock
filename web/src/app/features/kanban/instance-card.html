@@ -3,7 +3,8 @@
          (dragstart)="onDragStart($event)"
          (dragend)="onDragEnd()">
   <header>
-    <span class="badge" [style.background]="colors().bg" [style.color]="colors().fg">{{ short() }}</span>
+    <gd-game-icon class="badge" [game]="instance().game" [fallback]="short()"
+                  [style.background]="colors().bg" [style.color]="colors().fg" />
     <div class="ident">
       <div class="name">{{ instance().name }}</div>
       <div class="sub mono">{{ instance().image }}</div>
@@ -12,27 +13,36 @@
     <div class="menu-wrap">
       <button class="menu-btn" (click)="toggleMenu($event)"
               [attr.aria-expanded]="menuOpen()"
-              [attr.aria-label]="'Opções de ' + instance().name">⋯</button>
+              [attr.aria-label]="t('card.optionsAria', { name: instance().name })">⋯</button>
       @if (menuOpen()) {
         <div class="menu" role="menu" (click)="$event.stopPropagation()">
-          <button role="menuitem" (click)="pickEdit($event)">Editar</button>
-          <button role="menuitem" class="destructive" (click)="pickRemove($event)">Excluir</button>
+          <button role="menuitem" (click)="pickEdit($event)">{{ t('card.edit') }}</button>
+          <button role="menuitem" class="destructive" (click)="pickRemove($event)">
+            {{ t('card.delete') }}
+          </button>
         </div>
       }
     </div>
   </header>
 
-  @if (tags().length) {
-    <div class="tags">
-      @for (t of tags(); track t) {
-        <span class="tag">{{ t }}</span>
-      }
-    </div>
+  <dl class="specs mono">
+    <dt>{{ instance().ports.length > 1 ? t('card.port.other') : t('card.port.one') }}</dt>
+    <dd>{{ portList() }}</dd>
+    <dt>{{ t('card.ramAllocated') }}</dt>
+    <dd>{{ memoryAlloc() }}</dd>
+  </dl>
+
+  @if (address(); as addr) {
+    <button class="addr mono" (click)="copyAddress($event)"
+            [title]="t('card.copyAddress', { address: addr })"
+            [class.stale]="!!instance().dns?.lastError">
+      {{ addr }}<span class="copy">⧉</span>
+    </button>
   }
 
   @if (instance().operation && !instance().operation!.error) {
     <div class="panel">
-      <div class="progress-label mono">{{ instance().operation!.message }}</div>
+      <div class="progress-label mono">{{ opLabel() }}</div>
       <div class="bar">
         <div class="fill" [style.width.%]="instance().operation!.percent ?? 100"
              [style.background]="dot()"
@@ -46,12 +56,16 @@
   }
 
   @if (instance().stats) {
-    <div class="panel stats mono">
-      <span>{{ cpuUsage() }} CPU</span>
-      <span class="sep">|</span>
-      <span>{{ memUsage() }}</span>
-      <span class="sep">|</span>
-      <span>{{ instance().cpus }} vCPU</span>
+    <div class="usage">
+      <div class="usage-title mono">{{ t('card.inUse') }}</div>
+      <dl class="specs mono">
+        <dt>{{ t('card.cpu') }}</dt>
+        <dd>{{ cpuUsage() }}</dd>
+        <dt>{{ t('card.memory') }}</dt>
+        <dd>{{ memUsage() }}</dd>
+        <dt>{{ t('card.cores') }}</dt>
+        <dd>{{ instance().cpus }}</dd>
+      </dl>
     </div>
   }
 

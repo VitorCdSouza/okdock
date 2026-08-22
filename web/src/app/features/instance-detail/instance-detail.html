@@ -1,9 +1,10 @@
 <div class="backdrop"></div>
 
 @if (instance(); as inst) {
-  <div class="dialog" role="dialog" [attr.aria-label]="'Instância ' + inst.name">
+  <div class="dialog" role="dialog" [attr.aria-label]="t('detail.aria', { name: inst.name })">
     <header>
-      <span class="badge">{{ provider()?.short ?? '··' }}</span>
+      <gd-game-icon class="badge" [game]="instance()?.game ?? ''" [fallback]="provider()?.short ?? '··'"
+                  [style.background]="colors().bg" [style.color]="colors().fg" />
 
       <div class="ident">
         <div class="title-row">
@@ -21,24 +22,40 @@
 
       <div class="actions">
         @if (inst.state === 'error') {
-          <button class="btn btn-sm" (click)="clearError()" [disabled]="busy()">limpar erro</button>
+          <button class="btn btn-sm" (click)="clearError()" [disabled]="busy()">
+            {{ t('detail.clearError') }}
+          </button>
         }
         @if (inst.state === 'archived') {
-          <button class="btn btn-sm btn-go" (click)="unarchive()" [disabled]="busy()">Restaurar</button>
+          <button class="btn btn-sm btn-go" (click)="unarchive()" [disabled]="busy()">
+            {{ t('detail.restore') }}
+          </button>
         } @else if (isUp()) {
-          <button class="btn btn-sm" (click)="restart()" [disabled]="busy()">↻ Reiniciar</button>
-          <button class="btn btn-sm btn-danger" (click)="stop()" [disabled]="busy()">■ Parar</button>
+          <button class="btn btn-sm" (click)="restart()" [disabled]="busy()">
+            {{ t('detail.restart') }}
+          </button>
+          <button class="btn btn-sm btn-danger" (click)="stop()" [disabled]="busy()">
+            {{ t('card.action.stop') }}
+          </button>
         } @else {
-          <button class="btn btn-sm btn-go" (click)="start()" [disabled]="busy()">▶ Iniciar</button>
+          <button class="btn btn-sm btn-go" (click)="start()" [disabled]="busy()">
+            {{ t('card.action.start') }}
+          </button>
         }
-        <button class="btn btn-sm" (click)="close.emit()" aria-label="Fechar">✕</button>
+        <button class="btn btn-sm" (click)="close.emit()" [attr.aria-label]="t('common.close')">✕</button>
       </div>
     </header>
 
     <nav class="tabs">
-      <button [class.on]="tab() === 'config'" (click)="select('config')">Configurações</button>
-      <button [class.on]="tab() === 'recursos'" (click)="select('recursos')">Recursos e rede</button>
-      <button [class.on]="tab() === 'console'" (click)="select('console')">Console</button>
+      <button [class.on]="tab() === 'config'" (click)="select('config')">
+        {{ t('detail.tab.config') }}
+      </button>
+      <button [class.on]="tab() === 'recursos'" (click)="select('recursos')">
+        {{ t('detail.tab.resources') }}
+      </button>
+      <button [class.on]="tab() === 'console'" (click)="select('console')">
+        {{ t('detail.tab.console') }}
+      </button>
       <button [class.on]="tab() === 'compose'" (click)="select('compose')">compose.yml</button>
     </nav>
 
@@ -46,7 +63,7 @@
       <div class="alert bad">
         <strong>{{ err.message }}</strong>
         @if (err.problems.length) {
-          <ul>@for (p of err.problems; track p) { <li class="mono">{{ p }}</li> }</ul>
+          <ul>@for (p of err.problems; track p.field + p.code) { <li class="mono">{{ problem(p) }}</li> }</ul>
         }
       </div>
     }
@@ -57,25 +74,26 @@
           @case ('config') {
             @if (provider(); as p) {
               <div class="section-title">
-                CAMPOS DO PROVEDOR
+                {{ t('detail.providerFields') }}
                 <span class="badge-count mono">{{ p.id }} · {{ (p.fields ?? []).length }} vars</span>
               </div>
               <gd-provider-form [provider]="p" [(values)]="values"
                                 [problems]="error()?.problems ?? []" />
             } @else {
-              <p class="none">Provedor <span class="mono">{{ inst.providerId }}</span> não está mais no
-                 catálogo. Edite pelo <span class="mono">docker-compose.yml</span>.</p>
+              <p class="none">{{ t('detail.providerGone', { id: inst.providerId }) }}</p>
             }
           }
 
           @case ('recursos') {
-            <div class="section-title">RECURSOS E REDE</div>
+            <div class="section-title">{{ t('detail.resourcesTitle') }}</div>
             <div class="grid">
               <div class="field">
-                <label for="mem">Limite de RAM</label>
+                <label for="mem">
+                  {{ t('detail.ramLimit') }}
+                  <gd-info [text]="t('detail.ramLimitTip')" />
+                </label>
                 <input id="mem" class="mono" [ngModel]="memoryLimit()"
                        (ngModelChange)="memoryLimit.set($event); refreshPreview()">
-                <span class="help">teto do container. O heap da JVM vai nos campos do provedor.</span>
               </div>
               <div class="field">
                 <label for="cpus">CPUs</label>
@@ -84,8 +102,9 @@
               </div>
               @for (p of inst.ports; track p.container + '/' + p.protocol) {
                 <div class="field">
-                  <label>Porta host — {{ p.label || 'jogo' }}
-                    <span class="alias mono">{{ p.container }}/{{ p.protocol }}</span>
+                  <label>
+                    {{ t('detail.hostPort', { label: portLabel(p.label) }) }}
+                    <gd-info [text]="t('detail.inContainer', { port: p.container, protocol: p.protocol })" />
                   </label>
                   <input type="number" class="mono" [value]="p.host"
                          (input)="setPort(p.container, p.protocol, $any($event.target).value)">
@@ -93,30 +112,79 @@
               }
             </div>
 
-            <div class="section-title" style="margin-top:8px">VOLUMES</div>
+            <div class="section-title" style="margin-top:8px">{{ t('detail.volumes') }}</div>
             <ul class="mounts mono">
               @for (m of inst.mounts; track m.container) {
                 <li>
                   <span class="host">{{ m.host }}</span>
                   <span class="arrow">→</span>
                   <span>{{ m.container }}</span>
-                  @if (m.data) { <span class="tag">mundo</span> }
+                  @if (m.data) { <span class="tag">{{ t('detail.worldTag') }}</span> }
                 </li>
               }
             </ul>
 
+            <div class="section-title" style="margin-top:8px">{{ t('detail.inviteTitle') }}</div>
+
+            <div class="dns">
+              @if (!hasToken()) {
+                <p class="none">{{ t('detail.dnsNoToken') }}</p>
+              } @else if (inst.dns; as d) {
+                <div class="dns-row">
+                  <button class="dns-addr mono" (click)="copyAddress()"
+                          [title]="t('detail.copyAddressTitle')">
+                    {{ dnsAddress() }} <span class="copy">⧉</span>
+                  </button>
+                  <button class="btn btn-sm" (click)="syncDns()">{{ t('detail.checkNow') }}</button>
+                  <button class="btn btn-sm" (click)="unlinkDns()" [disabled]="dnsBusy()">
+                    {{ t('detail.unlink') }}
+                  </button>
+                  <gd-info [text]="t('detail.dnsTip', { port: mainPort() })" />
+                </div>
+
+                @if (d.lastError) {
+                  <div class="alert bad">{{ d.lastError }}</div>
+                } @else {
+                  <div class="dns-state mono">
+                    <span class="dot"></span>
+                    {{ t('detail.pointsTo', { ip: d.lastIp || '—', when: dnsSyncLabel() }) }}
+                  </div>
+                }
+
+              } @else {
+                <div class="dns-row">
+                  <div class="dns-input">
+                    <input class="mono" placeholder="{{ inst.name }}"
+                           [ngModel]="dnsDomain()" (ngModelChange)="dnsDomain.set($event)"
+                           (keydown.enter)="linkDns()">
+                    <span class="suffix mono">{{ dnsSuffix() }}</span>
+                  </div>
+                  <button class="btn btn-sm btn-go" (click)="linkDns()"
+                          [disabled]="dnsBusy() || !dnsDomain().trim()">
+                    {{ dnsBusy() ? t('common.checking') : t('detail.verifyAndLink') }}
+                  </button>
+                  <gd-info [text]="t('detail.linkTip')" />
+                </div>
+              }
+
+              @if (dnsError(); as e) { <div class="alert bad">{{ e }}</div> }
+            </div>
+
             <div class="lifecycle">
               <div>
-                <div class="lc-title">{{ inst.archived ? 'Instância arquivada' : 'Arquivar instância' }}</div>
-                <div class="lc-sub">
-                  Derruba o container e some do quadro, mantendo os volumes.
-                  Para excluir de vez, use o menu <span class="mono">⋯</span> no card.
+                <div class="lc-title">
+                  {{ inst.archived ? t('detail.archivedTitle') : t('detail.archiveTitle') }}
                 </div>
+                <div class="lc-sub">{{ t('detail.archiveSub') }}</div>
               </div>
               @if (inst.archived) {
-                <button class="btn btn-sm btn-go" (click)="unarchive()" [disabled]="busy()">Restaurar</button>
+                <button class="btn btn-sm btn-go" (click)="unarchive()" [disabled]="busy()">
+                  {{ t('detail.restore') }}
+                </button>
               } @else {
-                <button class="btn btn-sm" (click)="archive()" [disabled]="busy()">Arquivar</button>
+                <button class="btn btn-sm" (click)="archive()" [disabled]="busy()">
+                  {{ t('detail.archive') }}
+                </button>
               }
             </div>
           }
@@ -124,7 +192,7 @@
           @case ('console') {
             <div class="console mono">
               @if (logLines().length === 0) {
-                <div class="dim">sem saída ainda — a instância precisa estar de pé.</div>
+                <div class="dim">{{ t('detail.consoleEmpty') }}</div>
               }
               @for (line of logLines(); track $index) {
                 <div class="line">{{ line }}</div>
@@ -133,11 +201,8 @@
           }
 
           @case ('compose') {
-            <p class="lead">
-              Este é o arquivo como está no disco. Editar à mão funciona — o painel relê.
-              Mas <strong>Salvar e recriar</strong> sobrescreve.
-            </p>
-            <pre class="code mono">{{ rawCompose() || 'carregando…' }}</pre>
+            <p class="lead">{{ t('detail.composeLead') }}</p>
+            <pre class="code mono">{{ rawCompose() || t('common.loading') }}</pre>
           }
         }
       </div>
@@ -145,24 +210,23 @@
       @if (tab() === 'config' || tab() === 'recursos') {
         <aside class="side">
           <div class="side-head">
-            <span class="section-title">COMPOSE GERADO</span>
+            <span class="section-title">{{ t('detail.generatedCompose') }}</span>
           </div>
           <pre class="code mono">{{ preview() }}</pre>
 
           @if (recreate().length) {
             <div class="alert warn">
               <strong>{{ recreate().length }}</strong>
-              {{ recreate().length === 1 ? 'mudança exige' : 'mudanças exigem' }} recriar o container.
-              O mundo nos volumes é preservado.
+              {{ recreate().length === 1 ? t('detail.recreate.one') : t('detail.recreate.other') }}
               <ul>@for (r of recreate(); track r) { <li class="mono">{{ r }}</li> }</ul>
             </div>
           }
 
           <div class="side-foot">
             <button class="btn btn-primary" (click)="save()" [disabled]="busy()">
-              {{ recreate().length ? 'Salvar e recriar' : 'Salvar' }}
+              {{ recreate().length ? t('detail.saveAndRecreate') : t('common.save') }}
             </button>
-            <button class="btn" (click)="discard()" [disabled]="busy()">Descartar</button>
+            <button class="btn" (click)="discard()" [disabled]="busy()">{{ t('common.discard') }}</button>
           </div>
           <div class="created mono">{{ createdLabel() }}</div>
         </aside>

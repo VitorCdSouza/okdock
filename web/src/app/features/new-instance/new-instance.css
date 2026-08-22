@@ -31,9 +31,9 @@
   border-bottom: 1px solid var(--line);
   background: var(--bg-header);
 }
-h2 { margin: 0; font: 600 15px var(--sans); }
+h2 { margin: 0; font: 600 var(--fs-2xl) var(--sans); }
 
-.steps { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 10.5px; }
+.steps { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: var(--fs-xs); }
 .steps span {
   padding: 3px 8px;
   border-radius: var(--r-xs);
@@ -45,11 +45,9 @@ h2 { margin: 0; font: 600 15px var(--sans); }
 
 .body { padding: 20px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
 
-.lead { margin: 0; font-size: 12px; line-height: 1.6; color: var(--fg-muted); }
-
 .providers {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(262px, 1fr));
   gap: 10px;
 }
 .provider {
@@ -65,23 +63,23 @@ h2 { margin: 0; font: 600 15px var(--sans); }
 .provider.on { border-color: var(--accent-line); background: #141b26; }
 .provider .head { display: flex; align-items: center; gap: 8px; }
 .provider .short {
-  width: 22px; height: 22px;
-  display: grid; place-items: center;
+  width: 26px; height: 26px;
+  flex: none;
   border-radius: var(--r-xs);
   background: var(--bg-chip);
-  font: 600 9px var(--mono);
   color: var(--fg-soft);
 }
-.provider .game { font: 600 12.5px var(--sans); color: var(--fg); }
-.provider .id { font-size: 10px; color: var(--accent); }
-.provider .desc { font: 400 11px/1.5 var(--sans); color: var(--fg-muted); }
-.provider .meta { font-size: 10px; color: var(--fg-dim); }
+.provider .game { font: 600 var(--fs-md) var(--sans); color: var(--fg); }
+.provider .id { font-size: var(--fs-xs); color: var(--accent); }
+.provider .desc { font: 400 var(--fs-sm)/1.5 var(--sans); color: var(--fg-muted); }
+.provider .meta { font-size: var(--fs-xs); color: var(--fg-dim); }
 
 section { display: flex; flex-direction: column; gap: 12px; }
-.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
-.alias { font-size: 10px; color: var(--fg-faint); }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.alias { font-size: var(--fs-xs); color: var(--fg-faint); }
 .has-error input { border-color: var(--bad-line); }
-.err { font: 400 10.5px/1.4 var(--sans); color: var(--bad); }
+.err { font: 400 var(--fs-xs)/1.4 var(--sans); color: var(--bad); }
+.note { font: 400 var(--fs-xs)/1.45 var(--sans); color: var(--fg-dim); }
 
 .badge-count {
   margin-left: 8px;
@@ -89,29 +87,16 @@ section { display: flex; flex-direction: column; gap: 12px; }
   border-radius: var(--r-xs);
   background: #1b2330;
   border: 1px solid #2c3a4f;
-  font-size: 9.5px;
+  font-size: var(--fs-2xs);
   color: var(--accent);
   font-weight: 500;
-}
-
-.compose {
-  margin: 0;
-  background: var(--bg-code);
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  padding: 14px;
-  font-size: 10.5px;
-  line-height: 1.75;
-  color: var(--fg-muted);
-  overflow-x: auto;
-  max-height: 46vh;
 }
 
 .check {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 11.5px;
+  font-size: var(--fs-sm);
   color: var(--fg-soft);
   cursor: pointer;
 }
@@ -120,12 +105,12 @@ section { display: flex; flex-direction: column; gap: 12px; }
 .alert {
   padding: 10px 12px;
   border-radius: var(--r-sm);
-  font: 400 11.5px/1.55 var(--sans);
+  font: 400 var(--fs-sm)/1.55 var(--sans);
 }
 .alert.bad { background: var(--bad-bg); border: 1px solid var(--bad-line); color: #f3b3b3; }
 .alert.warn { background: var(--warn-bg); border: 1px solid var(--warn-line); color: #c9b98c; }
 .alert ul { margin: 8px 0 0; padding-left: 18px; }
-.alert li { font-size: 10.5px; }
+.alert li { font-size: var(--fs-xs); }
 
 .dialog > footer {
   display: flex;
@@ -136,5 +121,5 @@ section { display: flex; flex-direction: column; gap: 12px; }
   border-top: 1px solid var(--line);
   background: #0d0f14;
 }
-.hint { font-size: 10.5px; color: var(--fg-dim); }
+.hint { display: flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--fg-dim); }
 .actions { display: flex; gap: 8px; }

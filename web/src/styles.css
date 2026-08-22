@@ -47,6 +47,14 @@
 
   --sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --fs-2xs: 0.6875rem;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-md: 0.875rem;
+  --fs-lg: 0.9375rem;
+  --fs-xl: 1rem;
+  --fs-2xl: 1.0625rem;
 }
 
 * { box-sizing: border-box; }
@@ -58,9 +66,9 @@ html, body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--sans);
-  font-size: 13px;
   -webkit-font-smoothing: antialiased;
 }
+body { font-size: var(--fs-lg); }
 
 button {
   font-family: inherit;
@@ -75,7 +83,7 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 
 input, select, textarea {
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--fs-md);
   color: var(--fg);
   background: var(--bg-input);
   border: 1px solid var(--line-strong);
@@ -109,7 +117,7 @@ select { cursor: pointer; }
   border-radius: var(--r);
   border: 1px solid var(--line-strong);
   font-weight: 600;
-  font-size: 12px;
+  font-size: var(--fs-md);
   color: var(--fg-soft);
   white-space: nowrap;
 }
@@ -124,21 +132,20 @@ select { cursor: pointer; }
 .btn-danger:hover:not(:disabled) { border-color: var(--bad); color: var(--bad); }
 .btn-go { background: var(--ok-bg); border-color: var(--ok-line); color: var(--ok); }
 .btn-go:hover:not(:disabled) { border-color: var(--ok); color: var(--ok); }
-.btn-sm { padding: 4px 9px; font-size: 10.5px; }
+.btn-sm { padding: 4px 9px; font-size: var(--fs-xs); }
 
 .field { display: flex; flex-direction: column; gap: 5px; }
 .field > label {
-  font: 500 10.5px var(--mono);
+  font: 500 var(--fs-xs) var(--mono);
   color: var(--fg-muted);
   display: flex;
   align-items: baseline;
   gap: 6px;
 }
-.field .help { font: 400 10.5px/1.45 var(--sans); color: var(--fg-dim); }
 .field .req { color: var(--bad); }
 
 .section-title {
-  font: 600 12px var(--sans);
+  font: 600 var(--fs-md) var(--sans);
   letter-spacing: .02em;
   color: var(--fg);
 }
@@ -147,7 +154,7 @@ select { cursor: pointer; }
   padding: 2px 6px;
   border-radius: var(--r-xs);
   background: var(--bg-chip);
-  font: 500 9.5px var(--mono);
+  font: 500 var(--fs-2xs) var(--mono);
   color: #9297a3;
 }
 
@@ -155,6 +162,6 @@ select { cursor: pointer; }
   padding: 48px 24px;
   text-align: center;
   color: var(--fg-dim);
-  font-size: 12.5px;
+  font-size: var(--fs-md);
   line-height: 1.6;
 }

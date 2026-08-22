@@ -1,10 +1,8 @@
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(232px, 1fr));
   gap: 14px;
 }
-
-.alias { font: 400 10px var(--sans); color: var(--fg-faint); }
 
 .check {
   display: flex;
@@ -14,24 +12,24 @@
   background: var(--bg-input);
   border: 1px solid var(--line-strong);
   border-radius: var(--r-sm);
-  font-size: 11.5px;
+  font-size: var(--fs-sm);
   color: var(--fg-soft);
   cursor: pointer;
 }
 .check input { accent-color: var(--accent); }
 
 .has-error input, .has-error select { border-color: var(--bad-line); }
-.err { font: 400 10.5px/1.45 var(--sans); color: var(--bad); }
+.err { font: 400 var(--fs-xs)/1.45 var(--sans); color: var(--bad); }
 
 .toggle {
   margin-top: 14px;
-  font: 500 11px var(--mono);
+  font: 500 var(--fs-sm) var(--mono);
   color: var(--fg-muted);
 }
 .toggle:hover { color: var(--accent); }
 
 .none {
-  font: 400 11.5px/1.6 var(--sans);
+  font: 400 var(--fs-sm)/1.6 var(--sans);
   color: var(--fg-dim);
   background: var(--bg-input);
   border: 1px dashed var(--line-strong);

@@ -3,8 +3,8 @@
     <div class="field" [class.has-error]="!!error(f)">
       <label [for]="'f-' + f.key">
         {{ f.key }}
-        @if (f.required) { <span class="req" title="obrigatório">*</span> }
-        @if (f.label !== f.key) { <span class="alias">{{ f.label }}</span> }
+        @if (f.required) { <span class="req" [title]="t('form.required')">*</span> }
+        @if (fieldHelp(f); as help) { <gd-info [text]="help" /> }
       </label>
 
       @switch (f.type) {
@@ -13,7 +13,7 @@
             <input type="checkbox" [id]="'f-' + f.key"
                    [checked]="checked(f)"
                    (change)="set(f, $any($event.target).checked)">
-            <span>{{ checked(f) ? 'sim' : 'não' }}</span>
+            <span>{{ checked(f) ? t('form.yes') : t('form.no') }}</span>
           </label>
         }
         @case ('enum') {
@@ -46,8 +46,6 @@
 
       @if (error(f)) {
         <span class="err">{{ error(f) }}</span>
-      } @else if (f.help) {
-        <span class="help">{{ f.help }}</span>
       }
     </div>
   }
@@ -55,7 +53,7 @@
 
 @if (advanced().length) {
   <button type="button" class="toggle" (click)="showAdvanced.set(!showAdvanced())">
-    {{ showAdvanced() ? '▾' : '▸' }} avançados ({{ advanced().length }})
+    {{ showAdvanced() ? '▾' : '▸' }} {{ t('form.advanced', { count: advanced().length }) }}
   </button>
 
   @if (showAdvanced()) {
@@ -64,7 +62,7 @@
         <div class="field" [class.has-error]="!!error(f)">
           <label [for]="'a-' + f.key">
             {{ f.key }}
-            @if (f.label !== f.key) { <span class="alias">{{ f.label }}</span> }
+            @if (fieldHelp(f); as help) { <gd-info [text]="help" /> }
           </label>
 
           @switch (f.type) {
@@ -73,7 +71,7 @@
                 <input type="checkbox" [id]="'a-' + f.key"
                        [checked]="checked(f)"
                        (change)="set(f, $any($event.target).checked)">
-                <span>{{ checked(f) ? 'sim' : 'não' }}</span>
+                <span>{{ checked(f) ? t('form.yes') : t('form.no') }}</span>
               </label>
             }
             @case ('enum') {
@@ -92,8 +90,6 @@
 
           @if (error(f)) {
             <span class="err">{{ error(f) }}</span>
-          } @else if (f.help) {
-            <span class="help">{{ f.help }}</span>
           }
         </div>
       }
@@ -102,8 +98,5 @@
 }
 
 @if (!(provider().fields ?? []).length) {
-  <p class="none">
-    Esta imagem não tem schema no catálogo. Defina as variáveis de ambiente à mão
-    na aba <strong>compose.yml</strong>.
-  </p>
+  <p class="none">{{ t('form.noSchema') }}</p>
 }

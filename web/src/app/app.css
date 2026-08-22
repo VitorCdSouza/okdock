@@ -18,21 +18,20 @@
 
 .brand { display: flex; align-items: center; gap: 9px; flex: none; }
 .mark {
-  width: 24px; height: 24px;
+  width: 30px; height: 30px;
   border-radius: var(--r-sm);
   background: var(--accent);
   display: grid; place-items: center;
-  font: 700 10.5px var(--mono);
   color: var(--bg);
 }
-.app-name { font: 600 14.5px var(--sans); letter-spacing: -.01em; }
-.where { font-size: 10.5px; color: var(--fg-dim); padding-left: 4px; }
+.mark svg { width: 68%; height: 68%; }
+.app-name { font: 600 var(--fs-xl) var(--sans); letter-spacing: -.01em; }
 
 .metrics {
   display: flex;
   align-items: center;
   gap: 16px;
-  font-size: 11px;
+  font-size: var(--fs-sm);
   color: var(--fg-muted);
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -44,7 +43,7 @@
 
 .budget { display: flex; align-items: center; gap: 7px; }
 .budget .bar {
-  width: 54px; height: 3px;
+  width: 64px; height: 3px;
   border-radius: 2px;
   background: var(--line);
   overflow: hidden;
@@ -52,12 +51,23 @@
 }
 .budget .fill { display: block; height: 100%; transition: width .4s ease; }
 
+.actions { display: flex; align-items: center; gap: 10px; flex: none; }
+.gear {
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r);
+  color: var(--fg-muted);
+}
+.gear svg { width: 17px; height: 17px; }
+.gear:hover { border-color: var(--line-hover); color: var(--fg); }
+
 .banner {
   padding: 9px 22px;
   background: var(--bad-bg);
   border-bottom: 1px solid var(--bad-line);
   color: #f3b3b3;
-  font-size: 11.5px;
+  font-size: var(--fs-sm);
   flex: none;
 }
 
@@ -71,27 +81,24 @@
   flex: none;
   flex-wrap: wrap;
 }
-.search { width: 240px; padding: 5px 11px; font-size: 11.5px; }
+.search { width: 264px; padding: 5px 11px; font-size: var(--fs-sm); }
 
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .chip {
   padding: 5px 11px;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-sm);
-  font: 500 11.5px var(--sans);
+  font: 500 var(--fs-sm) var(--sans);
   color: var(--fg-muted);
 }
 .chip:hover { border-color: var(--line-hover); color: var(--fg-soft); }
 .chip.on { border-color: var(--accent-line); background: #1f2531; color: var(--fg); }
 
-.note { margin-left: auto; font-size: 11px; color: var(--fg-faint); }
-
 main { flex: 1; min-height: 0; overflow: auto; }
 
 @media (max-width: 900px) {
   .topbar { flex-wrap: wrap; }
-  .metrics { justify-content: flex-start; font-size: 10.5px; gap: 12px; }
-  .note { display: none; }
+  .metrics { justify-content: flex-start; font-size: var(--fs-xs); gap: 12px; }
 }
 
 .toast {
@@ -106,6 +113,6 @@ main { flex: 1; min-height: 0; overflow: auto; }
   border: 1px solid var(--line-strong);
   border-radius: var(--r);
   box-shadow: 0 12px 32px rgba(0, 0, 0, .5);
-  font-size: 11.5px;
+  font-size: var(--fs-sm);
   color: var(--fg-soft);
 }

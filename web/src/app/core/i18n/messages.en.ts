@@ -1,0 +1,306 @@
+import { MessageKey } from './messages.pt';
+
+export const en: Record<MessageKey, string> = {
+  'common.close': 'Close',
+  'common.cancel': 'Cancel',
+  'common.save': 'Save',
+  'common.saving': 'saving…',
+  'common.discard': 'Discard',
+  'common.loading': 'loading…',
+  'common.checking': 'checking…',
+  'common.copied': 'copied: {text}',
+
+  'state.stopped': 'STOPPED',
+  'state.provisioning': 'PROVISIONING',
+  'state.starting': 'STARTING',
+  'state.running': 'RUNNING',
+  'state.updating': 'UPDATING',
+  'state.error': 'ERROR',
+  'state.archived': 'ARCHIVED',
+
+  'time.seconds': 'seconds ago',
+  'time.minutes': '{n} min ago',
+  'time.hours': '{n}h ago',
+  'time.days': '{n}d ago',
+  'time.months.one': '{n} month ago',
+  'time.months.other': '{n} months ago',
+  'time.years.one': '{n} year ago',
+  'time.years.other': '{n} years ago',
+
+  'app.newInstance': '+ New instance',
+  'app.settings': 'Settings',
+  'app.metric.cpu': 'CPU',
+  'app.metric.memory': 'RAM',
+  'app.metric.disk': 'DISK',
+  'app.metric.budget': 'RAM FOR INSTANCES',
+  'app.hostReserve': 'host reserve: {gb} GB',
+  'app.searchPlaceholder': 'filter by name, port, image…',
+  'app.allGames': 'All',
+  'app.created': '{name} was created',
+  'app.dns.noToken': 'duckdns no token',
+  'app.dns.noNames': 'duckdns no names',
+  'app.dns.names.one': 'duckdns {n} name',
+  'app.dns.names.other': 'duckdns {n} names',
+  'app.dns.failing.one': 'duckdns {n} name failing',
+  'app.dns.failing.other': 'duckdns {n} names failing',
+  'app.dns.titleNoToken': 'no duckdns token configured',
+  'app.dns.titleNoNames': 'token configured, no names registered',
+
+  'kanban.loading': 'loading instances…',
+  'kanban.empty': 'No instances yet.',
+  'kanban.createFirst': '+ Create the first one',
+  'kanban.noMatch': 'No instance matches the filter.',
+  'kanban.dropToUpdate': 'drop to look for a newer image',
+  'kanban.dropToStop': 'drop to stop',
+  'kanban.newInstance': 'New instance',
+  'kanban.confirmDeleteAria': 'Confirm deletion',
+  'kanban.deleteTitle': 'Delete {name}?',
+  'kanban.deleteBody':
+    'Tears down the container and deletes docker-compose.yml. The world stays on disk, at',
+  'kanban.deleteWorldToo': 'delete the world too — ',
+  'kanban.noUndo': 'there is no undo',
+  'kanban.deleteAndWorld': 'Delete and erase the world',
+  'kanban.deleteKeepWorld': 'Delete, keep the world',
+  'kanban.updateTitle': 'Update {name}?',
+  'kanban.updateBodyPre': 'Looks for a newer image of',
+  'kanban.updateBodyPost':
+    '. The container is recreated only if there is one — and the world in the volumes is preserved.',
+  'kanban.updateWarnRunning': 'The instance is up: recreating drops whoever is playing.',
+  'kanban.doUpdate': 'Look for an update',
+  'kanban.stopTitle': 'Stop {name}?',
+  'kanban.stopBody':
+    'Tears down the container. The volumes stay, so the world is preserved and it can come back up later.',
+  'kanban.doStop': 'Stop',
+
+  'card.optionsAria': 'Options for {name}',
+  'card.edit': 'Edit',
+  'card.delete': 'Delete',
+  'card.port.one': 'Port',
+  'card.port.other': 'Ports',
+  'card.ramAllocated': 'RAM allocated',
+  'card.copyAddress': 'copy {address}',
+  'card.inUse': 'In use',
+  'card.cpu': 'CPU',
+  'card.memory': 'RAM',
+  'card.cores': 'Cores',
+  'card.noLimit': 'no limit',
+  'card.action.start': '▶ Start',
+  'card.action.stop': '■ Stop',
+  'card.action.logs': 'Logs',
+  'card.action.fix': 'Fix',
+  'card.action.restore': 'Restore',
+  'card.action.details': 'Details',
+  'card.exited': 'exited with code {code}',
+  'card.archivedSince': 'archived {when}',
+  'card.stoppedSince': 'stopped {when}',
+
+  'detail.aria': 'Instance {name}',
+  'detail.stats': '{cpu}% CPU · {used} of {total}',
+  'detail.clearError': 'clear error',
+  'detail.restore': 'Restore',
+  'detail.restart': '↻ Restart',
+  'detail.tab.config': 'Settings',
+  'detail.tab.resources': 'Resources & network',
+  'detail.tab.console': 'Console',
+  'detail.providerFields': 'PROVIDER FIELDS',
+  'detail.providerGone':
+    'Provider {id} is no longer in the catalog. Edit it through docker-compose.yml.',
+  'detail.resourcesTitle': 'RESOURCES & NETWORK',
+  'detail.ramLimit': 'RAM limit',
+  'detail.ramLimitTip': 'The container ceiling. The JVM heap goes in the provider fields.',
+  'detail.hostPort': 'Host port — {label}',
+  'detail.portFallbackLabel': 'game',
+  'detail.inContainer': 'Inside the container: {port}/{protocol}',
+  'detail.volumes': 'VOLUMES',
+  'detail.worldTag': 'world',
+  'detail.inviteTitle': 'ADDRESS TO INVITE PEOPLE',
+  'detail.dnsNoToken':
+    'The duckdns account token is missing. There is a single one for the whole panel: it lives in Settings, the gear next to + New instance.',
+  'detail.copyAddressTitle': 'copy address',
+  'detail.checkNow': 'Check now',
+  'detail.unlink': 'Unlink',
+  'detail.dnsTip':
+    'The name resolves to this house’s IP, and the panel resends it every 5 minutes. Port {port} still has to be open on the router — that part the panel cannot check from here.',
+  'detail.pointsTo': 'points to {ip} · checked {when}',
+  'detail.neverChecked': 'not checked yet',
+  'detail.verifyAndLink': 'Check and link',
+  'detail.linkTip':
+    'The subdomain has to exist in your account already: the DuckDNS API does not create names, it only updates the IP of one that exists. Create it at duckdns.org and come back — checking is the panel itself trying to update it.',
+  'detail.syncing': 'checking the address on duckdns…',
+  'detail.archivedTitle': 'Instance archived',
+  'detail.archiveTitle': 'Archive instance',
+  'detail.archiveSub':
+    'Tears down the container and hides it from the board, keeping the volumes. To delete it for good, use the ⋯ menu on the card.',
+  'detail.archive': 'Archive',
+  'detail.consoleEmpty': 'no output yet — the instance has to be up.',
+  'detail.composeLead':
+    'This is the file as it is on disk. Editing it by hand works — the panel rereads it. But Save and recreate overwrites it.',
+  'detail.generatedCompose': 'GENERATED COMPOSE',
+  'detail.recreate.one':
+    'change requires recreating the container. The world in the volumes is preserved.',
+  'detail.recreate.other':
+    'changes require recreating the container. The world in the volumes is preserved.',
+  'detail.saveAndRecreate': 'Save and recreate',
+  'detail.createdAt': 'created {when}',
+
+  'new.title': 'New instance',
+  'new.step1': '1 game',
+  'new.step2': '2 image & config',
+  'new.providerMeta': '{fields} fields · minimum RAM {memory}',
+  'new.name': 'Instance name',
+  'new.nameTip':
+    'It becomes the directory, the compose project name and the container name — always the same text in all three.',
+  'new.nameInvalid':
+    'lowercase, digits, - and _; 2 to 39 characters, starting with a letter or a digit',
+  'new.nameTaken': 'an instance with this name already exists',
+  'new.image': 'Image',
+  'new.imageTip':
+    'The repository comes from the provider; only the tag changes. Any tag that exists on the image works, latest included — the list is only a suggestion.',
+  'new.memoryLimit': 'Container RAM limit',
+  'new.memoryTip': 'The container ceiling, not the JVM heap. Minimum for this image: {memory}',
+  'new.dns': 'Name to invite people with',
+  'new.dnsTip':
+    'Links one of the names already registered in the settings; the link keeps the IP up to date on its own. What you pass along is always name:port — duckdns does not store a port, and forwarding it on the router is still manual.',
+  'new.dnsNone': 'no name — by IP only',
+  'new.dnsAllTaken':
+    'every registered name already belongs to another instance; register another one in the settings',
+  'new.dnsNoToken': 'set the duckdns token in the settings to link a name here',
+  'new.dnsLinkFailed': '{name} was created, but I could not link {domain}: {error}',
+  'new.budgetWarning':
+    'This instance asks for {want}, but only {free} GB are free in the budget. You can create it stopped and start it later.',
+  'new.namePlaceholder': '<name>',
+  'new.hint': 'generates {name}/docker-compose.yml',
+  'new.startAfterCreate': 'start the instance right after creating it (pulls the image first)',
+  'new.footerTip':
+    'Passwords never enter docker-compose.yml: secret fields go to an .env next to it, with 0600 permissions and out of version control. The generated file shows up in the instance’s compose.yml tab.',
+  'new.back': 'Back',
+  'new.wait': 'please wait…',
+  'new.create': 'Create instance',
+  'new.continue': 'Continue →',
+
+  'settings.title': 'Settings',
+  'settings.rootTitle': 'INSTANCE ROOT',
+  'settings.rootTip':
+    'Absolute path where each instance becomes a directory. The panel creates the folder if it is missing. What already exists is not moved: instances under the old root stay up where they are and come back to the list if the root goes back. Inside the container, only a path mounted there under the same name works.',
+  'settings.rootSaved': 'new root in use',
+  'settings.duckdnsTitle': 'DUCKDNS',
+  'settings.tokenPlaceholder': 'token from your duckdns.org account',
+  'settings.changeToken': 'Change',
+  'settings.validating': 'validating…',
+  'settings.tokenTip':
+    'The token is for the whole panel and lives in a 0600 file, outside any docker-compose.yml. It is what proves each name in the list below: the duckdns API only answers OK for a name that already exists in that account.',
+  'settings.tokenSavedChecking': 'token saved; checking the names in the list…',
+  'settings.tokenSavedPending': 'token saved; it will be checked on the first name in the list',
+  'settings.inUseBy': 'in use by {instance}',
+  'settings.notMatching': 'does not check out',
+  'settings.noIpYet': 'no IP yet',
+  'settings.removeAria': 'Remove {name}',
+  'settings.verify': 'Check',
+  'settings.discardAria': 'Discard',
+  'settings.addName': 'Add name',
+  'settings.checkAll': 'Check all now',
+  'settings.noNames':
+    'No names yet. The subdomain is born on the duckdns.org site: here it is checked and kept with the IP up to date.',
+  'settings.syncing': 'checking the addresses on duckdns…',
+  'settings.metricsTitle': 'WHAT SHOWS IN THE BAR',
+  'settings.metric.cpu': 'CPU',
+  'settings.metric.memory': 'RAM',
+  'settings.metric.disk': 'Disk',
+  'settings.metric.budget': 'RAM for instances',
+  'settings.languageTitle': 'LANGUAGE',
+  'settings.languageAuto': 'Automatic (system)',
+  'settings.languageTip':
+    'Applies to this browser only, like the numbers in the bar: with no login, a choice saved on the server would apply to everyone in the house. What docker itself writes — log lines and container status — shows up as it came.',
+  'settings.dockerTitle': 'DOCKER',
+  'settings.dockerVersion': 'version {version}',
+  'settings.dockerSilent': 'did not answer',
+
+  'form.required': 'required',
+  'form.yes': 'yes',
+  'form.no': 'no',
+  'form.advanced': 'advanced ({count})',
+  'form.noSchema':
+    'This image has no schema in the catalog. Set the environment variables by hand in the compose.yml tab.',
+
+  'error.not_found': 'instance {name} not found',
+  'error.already_exists': 'an instance named {name} already exists',
+  'error.invalid_root': 'invalid root',
+  'error.invalid_root.not_absolute': '{path} is not an absolute path',
+  'error.invalid_root.create_failed': 'could not create {path}: {detail}',
+  'error.invalid_root.unreadable': 'could not read {path}: {detail}',
+  'error.invalid_root.not_dir': '{path} is not a directory',
+  'error.invalid_root.unwritable': 'no write permission in {path}',
+  'error.memory_budget':
+    '{instance} asks for {requested}, but only {free} are free in the {budget} budget — instances already up take {committed}.',
+  'error.port_taken': 'port {port}/{proto} already belongs to {owner}',
+  'error.invalid_domain':
+    'invalid name: lowercase letters, digits and hyphen only — the part before {suffix}',
+  'error.dns_rejected':
+    'duckdns refused it: check that the token is right and that the name is in your account',
+  'error.dns_unreachable': 'could not reach duckdns.org ({detail})',
+  'error.dns_token_missing': 'the duckdns token has not been set yet',
+  'error.dns_disabled': 'this panel started with no DNS client',
+  'error.dns_taken': '{domain} is already linked to {instance}',
+  'error.docker_failed': 'docker refused the command: {detail}',
+  'error.invalid_fields': 'some fields did not pass the provider validation',
+  'error.bad_request': 'the request was malformed',
+  'error.internal': 'internal panel error',
+
+  'problem.required': 'required',
+  'problem.unknown_field': 'unknown field for {provider}',
+  'problem.not_int': 'expected an integer, got {value}',
+  'problem.not_number': 'expected a number, got {value}',
+  'problem.not_bool': 'expected true or false, got {value}',
+  'problem.below_min': 'the minimum is {min}',
+  'problem.above_max': 'the maximum is {max}',
+  'problem.not_option': '{value} is not one of: {allowed}',
+  'problem.image_owned_by':
+    '{image} is configured by the {owner} provider, not {provider}. Create the instance by picking {owner} from the list, leaving the Image field alone: the two variants bootstrap differently, changing the tag is not enough.',
+  'problem.image_not_accepted':
+    '{provider} does not know how to configure {image}. It expects an image matching {pattern} — switching the tag to another version works. For an image outside the catalog, use the custom image provider, where you set the variables by hand.',
+
+  'op.preparing': 'preparing',
+  'op.creating': 'creating container',
+  'op.starting': 'starting',
+  'op.restarting': 'restarting',
+  'op.stopping': 'stopping',
+  'op.recreating': 'recreating container',
+  'op.checking_update': 'looking for an update',
+  'op.recreating_new_image': 'recreating with the new image',
+  'op.starting_new_config': 'starting with the new config',
+
+  'port.game': 'Game',
+
+  'event.instance.uptodate': '{name} is already on the newest image',
+  'event.instance.updated': '{name} was updated; the world in the volumes was preserved',
+
+  'provider.itzg/minecraft-server.desc':
+    'Java server with vanilla, Paper, Fabric, Forge and modpack support.',
+  'provider.ryshe/terraria.desc':
+    'Terraria 1.4.5.6 with TShock 6.1.0 — plugins, permissions and admin commands. TShock usually takes weeks to catch up with a Terraria release; if the client complains about the version, use the vanilla variant.',
+  'provider.ryshe/terraria-vanilla.desc':
+    'Terraria 1.4.5.7 without TShock: no plugins and no admin commands, but it follows the client version much faster.',
+  'provider.custom.desc': 'Any image. You set ports, volumes and variables by hand.',
+
+  'field.itzg/minecraft-server.EULA.help': 'The image does not start without this accepted.',
+  'field.itzg/minecraft-server.VERSION.help':
+    'LATEST, SNAPSHOT or an exact version such as 1.21.1.',
+  'field.itzg/minecraft-server.MEMORY.help':
+    'Keep it at least 1 GB below the container RAM limit, or the kernel kills the process (exit 137).',
+  'field.itzg/minecraft-server.OPS.help': 'Nicknames separated by commas.',
+  'field.ryshe/terraria.WORLD_FILENAME.help':
+    'Name of the .wld inside ./data. If it does not exist, it is created with the size below.',
+  'field.ryshe/terraria.AUTOCREATE.help':
+    'Only takes effect while the world file does not exist yet.',
+  'field.ryshe/terraria.NOUPNP.help':
+    'The panel already publishes the port; letting the server touch the router only gets in the way.',
+  'field.ryshe/terraria-vanilla.WORLD.help':
+    'Path inside the container. The folder is the instance ./data volume; change only the file name.',
+  'field.ryshe/terraria-vanilla.AUTOCREATE.help':
+    'Only takes effect while the world file does not exist yet.',
+  'field.ryshe/terraria-vanilla.NOUPNP.help':
+    'The panel already publishes the port; letting the server touch the router only gets in the way.',
+
+  'api.offline': 'could not reach the GameDock API — is it up?',
+  'api.httpError': 'error {status}',
+};

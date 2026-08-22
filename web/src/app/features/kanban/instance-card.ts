@@ -1,25 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 
-import { Instance, STATE_META } from '../../core/models';
-import { bytes, since } from '../../core/format';
-
-const GAME_COLORS: Record<string, { bg: string; fg: string }> = {
-  'minecraft-java': { bg: '#1c3323', fg: '#4fd99b' },
-  'minecraft-bedrock': { bg: '#1c3323', fg: '#4fd99b' },
-  terraria: { bg: '#33261c', fg: '#e5b567' },
-  palworld: { bg: '#1e2f43', fg: '#6aa6f5' },
-  valheim: { bg: '#2b2438', fg: '#b79cf0' },
-  ark: { bg: '#33261c', fg: '#e08a5a' },
-  factorio: { bg: '#332a1c', fg: '#e5b567' },
-  satisfactory: { bg: '#1e2f43', fg: '#7fb2f0' },
-  custom: { bg: '#1e222b', fg: '#9297a3' },
-};
+import { Instance, STATE_DOT } from '../../core/models';
+import { I18n } from '../../core/i18n/i18n';
+import { bytes } from '../../core/format';
+import { copyText } from '../../core/clipboard';
+import { GameIcon, gameColors } from '../../shared/game-icon';
 
 type Action = { label: string; kind: 'go' | 'bad' | 'flat'; verb: ActionVerb };
 export type ActionVerb = 'start' | 'stop' | 'restart' | 'logs' | 'fix' | 'unarchive' | 'cancel';
 
 @Component({
   selector: 'gd-instance-card',
+  imports: [GameIcon],
   templateUrl: './instance-card.html',
   styleUrl: './instance-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,15 +21,34 @@ export type ActionVerb = 'start' | 'stop' | 'restart' | 'logs' | 'fix' | 'unarch
   },
 })
 export class InstanceCard {
+  private readonly i18n = inject(I18n);
+  readonly t = this.i18n.t;
+
   readonly instance = input.required<Instance>();
   readonly short = input('··');
 
   readonly open = output<Instance>();
+  readonly copied = output<string>();
   readonly act = output<{ instance: Instance; verb: ActionVerb }>();
   readonly remove = output<Instance>();
   readonly dragChange = output<string | null>();
 
   readonly menuOpen = signal(false);
+
+  readonly address = computed(() => {
+    const i = this.instance();
+    const port = i.ports[0]?.host;
+    if (!i.dns || !port) return i.dns?.hostname ?? '';
+    return `${i.dns.hostname}:${port}`;
+  });
+
+  copyAddress(event: Event): void {
+    event.stopPropagation();
+    const addr = this.address();
+    if (!addr) return;
+    copyText(addr);
+    this.copied.emit(addr);
+  }
 
   toggleMenu(event: Event): void {
     event.stopPropagation();
@@ -66,40 +77,44 @@ export class InstanceCard {
     this.dragChange.emit(null);
   }
 
-  readonly colors = computed(() => GAME_COLORS[this.instance().game] ?? GAME_COLORS['custom']);
-  readonly dot = computed(() => STATE_META[this.instance().state].dot);
+  readonly colors = computed(() => gameColors(this.instance().game));
+  readonly dot = computed(() => STATE_DOT[this.instance().state]);
 
-  readonly tags = computed(() => {
-    const i = this.instance();
-    const out = i.ports.slice(0, 2).map((p) => `:${p.host}${p.protocol === 'udp' ? '/udp' : ''}`);
-    if (i.memoryLimit) out.push(i.memoryLimit.toUpperCase());
-    return out;
+  readonly portList = computed(() => {
+    const ports = this.instance().ports;
+    if (!ports.length) return '—';
+    return ports.map((p) => `${p.host}${p.protocol === 'udp' ? '/udp' : ''}`).join(', ');
   });
+
+  readonly memoryAlloc = computed(() =>
+    memoryLabel(this.instance().memoryLimit, this.t('card.noLimit')),
+  );
 
   readonly action = computed<Action>(() => {
     switch (this.instance().state) {
       case 'stopped':
-        return { label: '▶ Iniciar', kind: 'go', verb: 'start' };
+        return { label: this.t('card.action.start'), kind: 'go', verb: 'start' };
       case 'running':
-        return { label: '■ Parar', kind: 'bad', verb: 'stop' };
+        return { label: this.t('card.action.stop'), kind: 'bad', verb: 'stop' };
       case 'starting':
-        return { label: 'Logs', kind: 'flat', verb: 'logs' };
+        return { label: this.t('card.action.logs'), kind: 'flat', verb: 'logs' };
       case 'error':
-        return { label: 'Corrigir', kind: 'bad', verb: 'fix' };
+        return { label: this.t('card.action.fix'), kind: 'bad', verb: 'fix' };
       case 'archived':
-        return { label: 'Restaurar', kind: 'flat', verb: 'unarchive' };
+        return { label: this.t('card.action.restore'), kind: 'flat', verb: 'unarchive' };
       default:
-        return { label: 'Detalhes', kind: 'flat', verb: 'logs' };
+        return { label: this.t('card.action.details'), kind: 'flat', verb: 'logs' };
     }
   });
 
   readonly meta = computed(() => {
     const i = this.instance();
     if (i.operation?.error) return i.operation.error;
-    if (i.state === 'error') return i.status || `saiu com código ${i.exitCode ?? '?'}`;
+    if (i.state === 'error') return i.status || this.t('card.exited', { code: i.exitCode ?? '?' });
     if (i.status) return i.status;
-    if (i.state === 'archived') return `arquivada ${since(i.updatedAt)}`;
-    return `parada ${since(i.updatedAt)}`;
+    const when = this.i18n.since(i.updatedAt);
+    if (i.state === 'archived') return this.t('card.archivedSince', { when });
+    return this.t('card.stoppedSince', { when });
   });
 
   readonly metaColor = computed(() => {
@@ -108,6 +123,12 @@ export class InstanceCard {
     if (s === 'running') return 'var(--ok)';
     if (s === 'updating') return 'var(--busy)';
     return 'var(--fg-dim)';
+  });
+
+  readonly opLabel = computed(() => {
+    const op = this.instance().operation;
+    if (!op) return '';
+    return op.code ? this.i18n.maybe(`op.${op.code}`) ?? op.code : op.message;
   });
 
   readonly memUsage = computed(() => {
@@ -119,4 +140,12 @@ export class InstanceCard {
     const s = this.instance().stats;
     return s ? `${s.cpuPercent.toFixed(0)}%` : '';
   });
+}
+
+function memoryLabel(limit: string | undefined, noLimit: string): string {
+  if (!limit) return noLimit;
+  const m = /^(\d+(?:\.\d+)?)\s*([gmk])?b?$/i.exec(limit.trim());
+  if (!m) return limit;
+  const unit = { g: 'GB', m: 'MB', k: 'KB', '': 'B' }[m[2]?.toLowerCase() ?? ''];
+  return `${m[1]} ${unit}`;
 }

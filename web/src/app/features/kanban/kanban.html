@@ -1,14 +1,12 @@
 @if (store.loading()) {
-  <div class="empty">carregando instâncias…</div>
+  <div class="empty">{{ t('kanban.loading') }}</div>
 } @else if (store.instances().length === 0) {
   <div class="empty">
-    <p>Nenhuma instância ainda.</p>
-    <p>Cada instância vira um diretório com <span class="mono">docker-compose.yml</span> próprio,
-       administrável pelo terminal mesmo com o painel fora do ar.</p>
-    <button class="btn btn-primary" (click)="create.emit()">+ Criar a primeira</button>
+    <p>{{ t('kanban.empty') }}</p>
+    <button class="btn btn-primary" (click)="create.emit()">{{ t('kanban.createFirst') }}</button>
   </div>
 } @else if (total() === 0) {
-  <div class="empty">Nenhuma instância bate com o filtro.</div>
+  <div class="empty">{{ t('kanban.noMatch') }}</div>
 } @else {
   <div class="board">
     @for (col of columns(); track col.state) {
@@ -27,7 +25,7 @@
 
           @if (canDrop(col.state)) {
             <div class="drop-hint mono">
-              {{ col.state === 'updating' ? 'soltar para procurar imagem nova' : 'soltar para parar' }}
+              {{ col.state === 'updating' ? t('kanban.dropToUpdate') : t('kanban.dropToStop') }}
             </div>
           }
 
@@ -38,11 +36,12 @@
               (open)="open.emit($event)"
               (act)="onAction($event)"
               (remove)="askRemove($event)"
-              (dragChange)="onDragChange($event)" />
+              (dragChange)="onDragChange($event)"
+              (copied)="store.notify(t('common.copied', { text: $event }))" />
           }
 
           @if (col.state === 'stopped') {
-            <button class="add" (click)="create.emit()" title="Nova instância">＋</button>
+            <button class="add" (click)="create.emit()" [title]="t('kanban.newInstance')">＋</button>
           }
         </section>
       }
@@ -52,23 +51,24 @@
 
 @if (pendingDelete(); as target) {
   <div class="confirm-backdrop" (click)="cancelRemove()"></div>
-  <div class="confirm" role="alertdialog" aria-label="Confirmar exclusão">
-    <h3>Excluir {{ target.name }}?</h3>
+  <div class="confirm" role="alertdialog" [attr.aria-label]="t('kanban.confirmDeleteAria')">
+    <h3>{{ t('kanban.deleteTitle', { name: target.name }) }}</h3>
     <p>
-      Derruba o container e apaga o <span class="mono">docker-compose.yml</span>.
-      O mundo em <span class="mono">{{ target.dir }}</span> fica no disco.
+      {{ t('kanban.deleteBody') }} <span class="mono">{{ target.dir }}</span>.
     </p>
 
     <label class="check">
       <input type="checkbox" [checked]="deleteData()"
              (change)="deleteData.set($any($event.target).checked)">
-      <span>apagar também o mundo — <strong>isto não tem volta</strong></span>
+      <span>{{ t('kanban.deleteWorldToo') }}<strong>{{ t('kanban.noUndo') }}</strong></span>
     </label>
 
     <div class="confirm-actions">
-      <button class="btn" (click)="cancelRemove()" [disabled]="deleting()">Cancelar</button>
+      <button class="btn" (click)="cancelRemove()" [disabled]="deleting()">
+        {{ t('common.cancel') }}
+      </button>
       <button class="btn btn-danger" (click)="confirmRemove()" [disabled]="deleting()">
-        {{ deleteData() ? 'Excluir e apagar o mundo' : 'Excluir, manter o mundo' }}
+        {{ deleteData() ? t('kanban.deleteAndWorld') : t('kanban.deleteKeepWorld') }}
       </button>
     </div>
   </div>
@@ -78,29 +78,25 @@
   <div class="confirm-backdrop" (click)="cancelAction()"></div>
   <div class="confirm action" role="alertdialog">
     @if (pending.target === 'updating') {
-      <h3>Atualizar {{ pending.instance.name }}?</h3>
+      <h3>{{ t('kanban.updateTitle', { name: pending.instance.name }) }}</h3>
       <p>
-        Procura uma imagem mais nova de <span class="mono">{{ pending.instance.image }}</span>.
-        O container só é recriado se houver — e o mundo nos volumes é preservado.
+        {{ t('kanban.updateBodyPre') }} <span class="mono">{{ pending.instance.image }}</span>{{ t('kanban.updateBodyPost') }}
       </p>
       @if (pending.instance.state === 'running') {
-        <p class="warn">A instância está de pé: recriar derruba quem estiver jogando.</p>
+        <p class="warn">{{ t('kanban.updateWarnRunning') }}</p>
       }
     } @else {
-      <h3>Parar {{ pending.instance.name }}?</h3>
-      <p>
-        Derruba o container. Os volumes ficam, então o mundo é preservado e ela
-        pode subir de novo depois.
-      </p>
+      <h3>{{ t('kanban.stopTitle', { name: pending.instance.name }) }}</h3>
+      <p>{{ t('kanban.stopBody') }}</p>
     }
 
     <div class="confirm-actions">
-      <button class="btn" (click)="cancelAction()" [disabled]="acting()">Cancelar</button>
+      <button class="btn" (click)="cancelAction()" [disabled]="acting()">{{ t('common.cancel') }}</button>
       <button class="btn"
               [class.btn-primary]="pending.target === 'updating'"
               [class.btn-danger]="pending.target === 'stopped'"
               (click)="confirmAction()" [disabled]="acting()">
-        {{ pending.target === 'updating' ? 'Procurar atualização' : 'Parar' }}
+        {{ pending.target === 'updating' ? t('kanban.doUpdate') : t('kanban.doStop') }}
       </button>
     </div>
   </div>

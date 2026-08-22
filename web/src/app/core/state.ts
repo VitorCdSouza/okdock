@@ -2,17 +2,20 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 
 import { Api } from './api';
 import { Events } from './events';
-import { Instance, Provider, State, SystemInfo } from './models';
+import { I18n } from './i18n/i18n';
+import { DnsStatus, Instance, Provider, State, SystemInfo } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class Store {
   private readonly api = inject(Api);
   private readonly events = inject(Events);
+  private readonly i18n = inject(I18n);
 
   readonly instances = signal<Instance[]>([]);
   readonly states = signal<State[]>([]);
   readonly providers = signal<Provider[]>([]);
   readonly system = signal<SystemInfo | null>(null);
+  readonly dns = signal<DnsStatus | null>(null);
   readonly loading = signal(true);
   readonly gameFilter = signal<string | null>(null);
   readonly search = signal('');
@@ -71,12 +74,16 @@ export class Store {
       error: () => {},
     });
     this.reload();
+    this.reloadDns();
 
     this.events.stream().subscribe({
       next: (ev) => {
-        if (ev.message && (ev.type === 'instance.uptodate' || ev.type === 'instance.updated')) {
-          this.notify(ev.message);
+        if (ev.type === 'instance.uptodate' || ev.type === 'instance.updated') {
+          const text =
+            this.i18n.maybe(`event.${ev.type}`, { name: ev.instance ?? '' }) ?? ev.message;
+          if (text) this.notify(text);
         }
+        if (ev.type === 'dns.changed') this.reloadDns();
         this.scheduleReload();
       },
       error: () => setInterval(() => this.reload(), 5000),
@@ -94,6 +101,13 @@ export class Store {
     });
     this.api.system().subscribe({
       next: (s) => this.system.set(s),
+      error: () => {},
+    });
+  }
+
+  reloadDns(): void {
+    this.api.dns().subscribe({
+      next: (d) => this.dns.set(d),
       error: () => {},
     });
   }
