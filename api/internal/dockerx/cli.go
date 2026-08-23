@@ -389,7 +389,7 @@ func parseStatus(status string) (health string, exitCode int) {
 
 func parsePorts(raw string) []HostPort {
 	var out []HostPort
-	// a mesma porta vem duas vezes, em IPv4 e IPv6
+	// the same port comes twice, once for IPv4 and once for IPv6
 	seen := map[HostPort]bool{}
 	for _, part := range strings.Split(raw, ",") {
 		part = strings.TrimSpace(part)

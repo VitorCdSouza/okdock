@@ -42,7 +42,7 @@ func render(t *testing.T, s instance.Spec) map[string]any {
 	}
 	var doc map[string]any
 	if err := yaml.Unmarshal(raw, &doc); err != nil {
-		t.Fatalf("compose gerado não é YAML válido: %v\n%s", err, raw)
+		t.Fatalf("the generated compose is not valid YAML: %v\n%s", err, raw)
 	}
 	return doc
 }
@@ -54,7 +54,7 @@ func TestRenderProjectNameMatchesDirName(t *testing.T) {
 	}
 	services, _ := doc["services"].(map[string]any)
 	if _, ok := services["smp-familia"]; !ok {
-		t.Errorf("serviço não tem o nome da instância: %v", services)
+		t.Errorf("the service is not named after the instance: %v", services)
 	}
 }
 
@@ -72,10 +72,10 @@ func TestRenderKeepsSecretsOutOfCompose(t *testing.T) {
 
 	env := RenderEnv(spec())
 	if !strings.Contains(string(env), "RCON_SENHA=hunter2") {
-		t.Errorf(".env não recebeu o segredo:\n%s", env)
+		t.Errorf(".env did not get the secret:\n%s", env)
 	}
 	if strings.Contains(string(env), "MAX_PLAYERS") {
-		t.Errorf("valor não secreto foi parar no .env:\n%s", env)
+		t.Errorf("a non-secret value ended up in .env:\n%s", env)
 	}
 }
 
@@ -86,10 +86,10 @@ func TestRenderNoEnvFileWhenNoSecrets(t *testing.T) {
 
 	raw, _ := Render(s)
 	if strings.Contains(string(raw), "env_file") {
-		t.Errorf("sem segredo não devia haver env_file:\n%s", raw)
+		t.Errorf("with no secret there should be no env_file:\n%s", raw)
 	}
 	if RenderEnv(s) != nil {
-		t.Error("sem segredo o .env não devia ser criado")
+		t.Error("with no secret the .env should not be created")
 	}
 }
 
@@ -99,7 +99,7 @@ func TestRenderEmptySecretDoesNotCreateEnvFile(t *testing.T) {
 
 	raw, _ := Render(s)
 	if strings.Contains(string(raw), "env_file") {
-		t.Errorf("senha em branco não justifica env_file:\n%s", raw)
+		t.Errorf("a blank password does not justify env_file:\n%s", raw)
 	}
 }
 
@@ -116,7 +116,7 @@ func TestRenderPortsAndLimits(t *testing.T) {
 	}
 	limits := svc["deploy"].(map[string]any)["resources"].(map[string]any)["limits"].(map[string]any)
 	if limits["memory"] != "6g" {
-		t.Errorf("limite de memória = %v", limits["memory"])
+		t.Errorf("memory limit = %v", limits["memory"])
 	}
 }
 
@@ -132,9 +132,9 @@ func TestRenderQuotesPorts(t *testing.T) {
 
 func TestRenderRejectsBadName(t *testing.T) {
 	s := spec()
-	s.Name = "Nome Com Espaço"
+	s.Name = "Name With Space"
 	if _, err := Render(s); err == nil {
-		t.Error("nome inválido devia falhar antes de gerar arquivo")
+		t.Error("an invalid name should fail before any file is written")
 	}
 }
 
@@ -160,6 +160,6 @@ func TestRenderIsDeterministic(t *testing.T) {
 	a, _ := Render(spec())
 	b, _ := Render(spec())
 	if string(a) != string(b) {
-		t.Error("Render não é determinístico")
+		t.Error("Render is not deterministic")
 	}
 }

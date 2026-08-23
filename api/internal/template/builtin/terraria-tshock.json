@@ -4,7 +4,7 @@
   "category": "games",
   "short": "TR",
   "image": "ryshe/terraria:tshock-1.4.5.6-6.1.0",
-  "description": "Terraria 1.4.5.6 com TShock 6.1.0 — plugins, permissões e comandos de admin. O TShock costuma demorar semanas para acompanhar um lançamento do Terraria; se o cliente reclamar de versão, use a variante vanilla.",
+  "description": "Terraria 1.4.5.6 with TShock 6.1.0: plugins, permissions and admin commands. TShock usually takes weeks to catch up with a Terraria release, so use the vanilla variant when the client complains about the version.",
   "docs": "https://github.com/ryshe/docker-terraria",
   "ports": [
     {
@@ -33,7 +33,7 @@
       "type": "text",
       "default": "okdock.wld",
       "required": true,
-      "help": "Nome do .wld dentro de ./data. Se não existir, é criado com o tamanho abaixo."
+      "help": "Name of the .wld inside ./data. If it does not exist, it is created with the size below."
     },
     {
       "key": "AUTOCREATE",
@@ -54,7 +54,7 @@
           "label": "Large"
         }
       ],
-      "help": "Só tem efeito quando o arquivo do mundo ainda não existe.",
+      "help": "Only takes effect when the world file does not exist yet.",
       "target": "arg",
       "flag": "-autocreate"
     },
@@ -94,7 +94,7 @@
     },
     {
       "key": "MAXPLAYERS",
-      "label": "Máximo de jogadores",
+      "label": "Max players",
       "type": "int",
       "default": "8",
       "min": 1,
@@ -139,7 +139,7 @@
       "label": "Desligar UPnP",
       "type": "bool",
       "default": "true",
-      "help": "O painel já publica a porta; deixar o servidor mexer no roteador só atrapalha.",
+      "help": "The panel already publishes the port, letting the server touch the router only gets in the way.",
       "advanced": true,
       "target": "arg",
       "flag": "-noupnp"

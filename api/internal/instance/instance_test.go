@@ -65,7 +65,7 @@ func TestPortBindingString(t *testing.T) {
 	}
 }
 
-func TestSpecLeCamposComNomeAntigo(t *testing.T) {
+func TestSpecReadsFieldsWithTheOldName(t *testing.T) {
 	raw := []byte(`{"name":"smp","providerId":"itzg/minecraft-server","game":"minecraft-java","image":"itzg/minecraft-server:java21"}`)
 
 	var spec Spec
@@ -73,14 +73,14 @@ func TestSpecLeCamposComNomeAntigo(t *testing.T) {
 		t.Fatalf("Unmarshal: %v", err)
 	}
 	if spec.TemplateID != "itzg/minecraft-server" {
-		t.Errorf("templateId = %q; o id antigo precisa sobreviver para o catálogo traduzir", spec.TemplateID)
+		t.Errorf("templateId = %q, the old id must survive so the catalog can translate it", spec.TemplateID)
 	}
 	if spec.Category != "games" {
-		t.Errorf("category = %q; instância criada como GameDock só podia ser jogo", spec.Category)
+		t.Errorf("category = %q, an instance created as GameDock could only be a game", spec.Category)
 	}
 }
 
-func TestSpecPrefereOsCamposNovos(t *testing.T) {
+func TestSpecPrefersTheNewFields(t *testing.T) {
 	raw := []byte(`{"name":"filmes","templateId":"jellyfin","category":"media","providerId":"velho","game":"minecraft-java"}`)
 
 	var spec Spec

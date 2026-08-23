@@ -47,7 +47,7 @@ func TestCreateWritesTheThreeFiles(t *testing.T) {
 		}
 	}
 	if info, err := os.Stat(filepath.Join(s.Dir("smp"), "data")); err != nil || !info.IsDir() {
-		t.Errorf("diretório de dados não foi criado: %v", err)
+		t.Errorf("the data directory was not created: %v", err)
 	}
 }
 
@@ -61,7 +61,7 @@ func TestEnvFileIsNotWorldReadable(t *testing.T) {
 		t.Fatalf("stat .env: %v", err)
 	}
 	if perm := info.Mode().Perm(); perm&0o077 != 0 {
-		t.Errorf(".env com permissão %v; esperava no máximo 0600", perm)
+		t.Errorf(".env with permission %v, expected at most 0600", perm)
 	}
 }
 
@@ -85,7 +85,7 @@ func TestCreateRollsBackOnRenderFailure(t *testing.T) {
 		t.Fatal("esperava erro de render")
 	}
 	if s.Exists("smp") {
-		t.Error("diretório meio criado ficou para trás")
+		t.Error("a half-created directory was left behind")
 	}
 }
 
@@ -103,10 +103,10 @@ func TestRoundTrip(t *testing.T) {
 		t.Errorf("spec mudou na ida e volta: %+v", got)
 	}
 	if got.Env["SENHA"] != "hunter2" {
-		t.Errorf("segredo não sobreviveu ao .okdock.json: %v", got.Env)
+		t.Errorf("the secret did not survive .okdock.json: %v", got.Env)
 	}
 	if got.CreatedAt.IsZero() {
-		t.Error("CreatedAt não foi preenchido")
+		t.Error("CreatedAt was not filled in")
 	}
 }
 
@@ -128,7 +128,7 @@ func TestUpdateKeepsCreatedAt(t *testing.T) {
 		t.Errorf("CreatedAt mudou no update: %v -> %v", before.CreatedAt, after.CreatedAt)
 	}
 	if after.MemoryLimit != "8g" {
-		t.Errorf("update não pegou: %q", after.MemoryLimit)
+		t.Errorf("the update did not stick: %q", after.MemoryLimit)
 	}
 }
 
@@ -189,7 +189,7 @@ func TestDeleteKeepData(t *testing.T) {
 		t.Errorf("keepData devia preservar o mundo: %v", err)
 	}
 	if _, err := s.Get("smp"); !errors.Is(err, ErrNotFound) {
-		t.Errorf("instância devia sumir da listagem: %v", err)
+		t.Errorf("the instance should be gone from the listing: %v", err)
 	}
 }
 
@@ -202,7 +202,7 @@ func TestDeleteEverything(t *testing.T) {
 		t.Fatalf("Delete: %v", err)
 	}
 	if _, err := os.Stat(s.Dir("smp")); !errors.Is(err, fs.ErrNotExist) {
-		t.Errorf("diretório devia ter sumido: %v", err)
+		t.Errorf("the directory should be gone: %v", err)
 	}
 }
 
@@ -211,46 +211,46 @@ func TestNameFollowsDirectory(t *testing.T) {
 	if err := s.Create(spec("smp")); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	if err := os.Rename(s.Dir("smp"), s.Dir("smp-novo")); err != nil {
+	if err := os.Rename(s.Dir("smp"), s.Dir("smp-fresh")); err != nil {
 		t.Fatal(err)
 	}
-	got, err := s.Get("smp-novo")
+	got, err := s.Get("smp-fresh")
 	if err != nil {
 		t.Fatalf("Get: %v", err)
 	}
-	if got.Name != "smp-novo" {
-		t.Errorf("Name = %q, queria smp-novo", got.Name)
+	if got.Name != "smp-fresh" {
+		t.Errorf("Name = %q, queria smp-fresh", got.Name)
 	}
 }
 
 func TestSetRootPersiste(t *testing.T) {
 	boot := t.TempDir()
-	nova := filepath.Join(t.TempDir(), "jogos")
+	newRoot := filepath.Join(t.TempDir(), "jogos")
 
 	s, err := New(boot)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetRoot(nova); err != nil {
+	if err := s.SetRoot(newRoot); err != nil {
 		t.Fatalf("SetRoot: %v", err)
 	}
-	if s.Root() != nova {
-		t.Errorf("Root = %q, queria %q", s.Root(), nova)
+	if s.Root() != newRoot {
+		t.Errorf("Root = %q, queria %q", s.Root(), newRoot)
 	}
 
-	outro, err := New(boot)
+	other, err := New(boot)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if outro.Root() != nova {
-		t.Errorf("depois do restart Root = %q, queria %q", outro.Root(), nova)
+	if other.Root() != newRoot {
+		t.Errorf("depois do restart Root = %q, queria %q", other.Root(), newRoot)
 	}
-	if outro.ConfigRoot != s.ConfigRoot {
-		t.Errorf("ConfigRoot = %q, queria %q", outro.ConfigRoot, s.ConfigRoot)
+	if other.ConfigRoot != s.ConfigRoot {
+		t.Errorf("ConfigRoot = %q, queria %q", other.ConfigRoot, s.ConfigRoot)
 	}
 }
 
-func TestSetRootRecusaRelativo(t *testing.T) {
+func TestSetRootRefusesARelativePath(t *testing.T) {
 	s := newStore(t)
 	before := s.Root()
 	if err := s.SetRoot("jogos"); !errors.Is(err, ErrInvalidRoot) {
@@ -261,7 +261,7 @@ func TestSetRootRecusaRelativo(t *testing.T) {
 	}
 }
 
-func TestRaizGravadaInutilizavelCaiNaDeBoot(t *testing.T) {
+func TestAnUnusableSavedRootFallsBackToTheBootOne(t *testing.T) {
 	boot := t.TempDir()
 	s, err := New(boot)
 	if err != nil {
@@ -271,16 +271,16 @@ func TestRaizGravadaInutilizavelCaiNaDeBoot(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	outro, err := New(boot)
+	other, err := New(boot)
 	if err != nil {
 		t.Fatalf("New devia subir mesmo assim: %v", err)
 	}
-	if outro.Root() != s.ConfigRoot {
-		t.Errorf("Root = %q, queria a raiz de boot %q", outro.Root(), s.ConfigRoot)
+	if other.Root() != s.ConfigRoot {
+		t.Errorf("Root = %q, queria a raiz de boot %q", other.Root(), s.ConfigRoot)
 	}
 }
 
-func TestGetLeSpecComNomeAntigo(t *testing.T) {
+func TestGetReadsASpecWithTheOldName(t *testing.T) {
 	s := newStore(t)
 	if err := s.Create(spec("smp")); err != nil {
 		t.Fatalf("Create: %v", err)
@@ -299,7 +299,7 @@ func TestGetLeSpecComNomeAntigo(t *testing.T) {
 	}
 }
 
-func TestUpdateTrocaSpecAntigaPelaNova(t *testing.T) {
+func TestUpdateSwapsTheOldSpecForTheNewOne(t *testing.T) {
 	s := newStore(t)
 	if err := s.Create(spec("smp")); err != nil {
 		t.Fatalf("Create: %v", err)
@@ -316,23 +316,23 @@ func TestUpdateTrocaSpecAntigaPelaNova(t *testing.T) {
 	}
 
 	if _, err := os.Stat(filepath.Join(dir, ".gamedock.json")); !errors.Is(err, fs.ErrNotExist) {
-		t.Errorf("o arquivo antigo devia ter saído do caminho: %v", err)
+		t.Errorf("the old file should be out of the way: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(dir, ".okdock.json")); err != nil {
-		t.Errorf("faltou o arquivo novo: %v", err)
+		t.Errorf("faltou o arquivo fresh: %v", err)
 	}
 }
 
-func TestPainelLeConfiguracaoComPastaAntiga(t *testing.T) {
+func TestThePanelReadsConfigFromTheOldFolder(t *testing.T) {
 	boot := t.TempDir()
-	nova := filepath.Join(t.TempDir(), "jogos")
-	if err := os.MkdirAll(nova, 0o755); err != nil {
+	newRoot := filepath.Join(t.TempDir(), "jogos")
+	if err := os.MkdirAll(newRoot, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.MkdirAll(filepath.Join(boot, ".gamedock"), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	cfg := []byte(`{"root":"` + nova + `"}` + "\n")
+	cfg := []byte(`{"root":"` + newRoot + `"}` + "\n")
 	if err := os.WriteFile(filepath.Join(boot, ".gamedock", "config.json"), cfg, 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -341,17 +341,17 @@ func TestPainelLeConfiguracaoComPastaAntiga(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if s.Root() != nova {
-		t.Errorf("Root = %q, queria a raiz gravada em .gamedock/: %q", s.Root(), nova)
+	if s.Root() != newRoot {
+		t.Errorf("Root = %q, queria a raiz gravada em .gamedock/: %q", s.Root(), newRoot)
 	}
 }
 
-func TestListIgnoraPastaComNomeQueNaoSeriaInstancia(t *testing.T) {
+func TestListSkipsAFolderNamedLikeNoInstance(t *testing.T) {
 	s := newStore(t)
 	if err := s.Create(spec("smp")); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	for _, dir := range []string{"botTelegram", "Media", "com espaço"} {
+	for _, dir := range []string{"botTelegram", "Media", "with space"} {
 		if err := os.MkdirAll(filepath.Join(s.Root(), dir), 0o755); err != nil {
 			t.Fatal(err)
 		}
@@ -362,6 +362,6 @@ func TestListIgnoraPastaComNomeQueNaoSeriaInstancia(t *testing.T) {
 		t.Fatalf("List: %v", err)
 	}
 	if len(list) != 1 || list[0].Name != "smp" {
-		t.Errorf("esperava só a instância do painel, veio %+v", list)
+		t.Errorf("expected only the panel instance, got %+v", list)
 	}
 }

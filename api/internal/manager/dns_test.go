@@ -39,7 +39,7 @@ func mustCreate(t *testing.T, m *Manager, name string) {
 	}
 }
 
-func TestLinkDNSVerificaEGrava(t *testing.T) {
+func TestLinkDNSChecksAndSaves(t *testing.T) {
 	m, fake := newDNSManager(t)
 	mustCreate(t, m, "smp")
 
@@ -51,10 +51,10 @@ func TestLinkDNSVerificaEGrava(t *testing.T) {
 		t.Fatal(err)
 	}
 	if link.Domain != "smp" || link.Hostname != "smp.duckdns.org" {
-		t.Errorf("o domínio devia sair normalizado: %+v", link)
+		t.Errorf("the domain should come out normalized: %+v", link)
 	}
 	if link.LastIP != fake.IP {
-		t.Errorf("LastIP = %q, queria %q", link.LastIP, fake.IP)
+		t.Errorf("LastIP = %q, wanted %q", link.LastIP, fake.IP)
 	}
 
 	inst, err := m.Get(context.Background(), "smp")
@@ -62,39 +62,39 @@ func TestLinkDNSVerificaEGrava(t *testing.T) {
 		t.Fatal(err)
 	}
 	if inst.DNS == nil || inst.DNS.Hostname != "smp.duckdns.org" {
-		t.Fatalf("a instância devia trazer o DNS: %+v", inst.DNS)
+		t.Fatalf("the instance should carry the DNS: %+v", inst.DNS)
 	}
 }
 
-func TestLinkDNSSemToken(t *testing.T) {
+func TestLinkDNSWithoutAToken(t *testing.T) {
 	m, fake := newDNSManager(t)
 	mustCreate(t, m, "smp")
 
 	if _, err := m.LinkDNS(context.Background(), "smp", "smp"); !errors.Is(err, ErrNoToken) {
-		t.Fatalf("queria ErrNoToken, veio %v", err)
+		t.Fatalf("wanted ErrNoToken, got %v", err)
 	}
 	if len(fake.Calls) != 0 {
-		t.Error("sem token não faz sentido bater no duckdns")
+		t.Error("with no token there is no point calling duckdns")
 	}
 }
 
-func TestLinkDNSRecusadoNaoGrava(t *testing.T) {
+func TestLinkDNSRefusedSavesNothing(t *testing.T) {
 	m, fake := newDNSManager(t)
 	mustCreate(t, m, "smp")
-	fake.Domains = map[string]bool{"outro": true}
+	fake.Domains = map[string]bool{"other": true}
 
 	if err := m.SetDNSToken(context.Background(), "tok"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := m.LinkDNS(context.Background(), "smp", "smp"); !errors.Is(err, duckdns.ErrRejected) {
-		t.Fatalf("queria ErrRejected, veio %v", err)
+		t.Fatalf("wanted ErrRejected, got %v", err)
 	}
 	if len(m.DNS().Links) != 0 {
-		t.Error("o vínculo não devia ter sido gravado")
+		t.Error("the link should not have been saved")
 	}
 }
 
-func TestLinkDNSDominioJaUsado(t *testing.T) {
+func TestLinkDNSDomainAlreadyUsed(t *testing.T) {
 	m, _ := newDNSManager(t)
 	mustCreate(t, m, "smp")
 	mustCreate(t, m, "criativo")
@@ -105,21 +105,21 @@ func TestLinkDNSDominioJaUsado(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := m.LinkDNS(context.Background(), "criativo", "casa"); !errors.Is(err, ErrDNSTaken) {
-		t.Fatalf("queria ErrDNSTaken, veio %v", err)
+		t.Fatalf("wanted ErrDNSTaken, got %v", err)
 	}
 }
 
-func TestLinkDNSInstanciaInexistente(t *testing.T) {
+func TestLinkDNSUnknownInstance(t *testing.T) {
 	m, _ := newDNSManager(t)
 	if err := m.SetDNSToken(context.Background(), "tok"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := m.LinkDNS(context.Background(), "fantasma", "casa"); !errors.Is(err, store.ErrNotFound) {
-		t.Fatalf("queria ErrNotFound, veio %v", err)
+		t.Fatalf("wanted ErrNotFound, got %v", err)
 	}
 }
 
-func TestDNSPersisteEntreManagers(t *testing.T) {
+func TestDNSSurvivesBetweenManagers(t *testing.T) {
 	m, _ := newDNSManager(t)
 	mustCreate(t, m, "smp")
 	if err := m.SetDNSToken(context.Background(), "tok"); err != nil {
@@ -129,19 +129,19 @@ func TestDNSPersisteEntreManagers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	outro := New(Options{
+	other := New(Options{
 		Store:  m.store,
 		Docker: dockerx.NewFake(),
 		System: system.StaticReader{},
 		DNS:    duckdns.NewFake(),
 	})
-	got := outro.DNS()
+	got := other.DNS()
 	if got.Token != "tok" || len(got.Links) != 1 || got.Links[0].Domain != "casa" {
-		t.Fatalf("configuração não voltou do disco: %+v", got)
+		t.Fatalf("the config did not come back from disk: %+v", got)
 	}
 }
 
-func TestSyncDNSAtualizaIP(t *testing.T) {
+func TestSyncDNSUpdatesTheIP(t *testing.T) {
 	m, fake := newDNSManager(t)
 	mustCreate(t, m, "smp")
 	if err := m.SetDNSToken(context.Background(), "tok"); err != nil {
@@ -155,11 +155,11 @@ func TestSyncDNSAtualizaIP(t *testing.T) {
 	m.SyncDNS(context.Background())
 
 	if got := m.DNS().Links[0].LastIP; got != "200.1.2.3" {
-		t.Errorf("LastIP = %q, queria o IP novo", got)
+		t.Errorf("LastIP = %q, wanted the new IP", got)
 	}
 }
 
-func TestSyncDNSGuardaAFalha(t *testing.T) {
+func TestSyncDNSKeepsTheFailure(t *testing.T) {
 	m, fake := newDNSManager(t)
 	mustCreate(t, m, "smp")
 	if err := m.SetDNSToken(context.Background(), "tok"); err != nil {
@@ -173,19 +173,19 @@ func TestSyncDNSGuardaAFalha(t *testing.T) {
 	m.SyncDNS(context.Background())
 
 	if got := m.DNS().Links[0].LastError; got == "" {
-		t.Error("a falha do sync devia ficar registrada no vínculo")
+		t.Error("the sync failure should be recorded on the link")
 	}
 }
 
-func TestSyncDNSSemTokenNaoSaiParaRede(t *testing.T) {
+func TestSyncDNSWithoutATokenNeverHitsTheNetwork(t *testing.T) {
 	m, fake := newDNSManager(t)
 	m.SyncDNS(context.Background())
 	if len(fake.Calls) != 0 {
-		t.Error("sem token configurado o painel não pode chamar o duckdns")
+		t.Error("with no token saved the panel must not call duckdns")
 	}
 }
 
-func TestDeleteEsqueceOVinculo(t *testing.T) {
+func TestDeleteForgetsTheLink(t *testing.T) {
 	m, _ := newDNSManager(t)
 	mustCreate(t, m, "smp")
 	if err := m.SetDNSToken(context.Background(), "tok"); err != nil {
@@ -198,7 +198,7 @@ func TestDeleteEsqueceOVinculo(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(m.DNS().Links) != 0 {
-		t.Error("vínculo órfão sobrou depois de apagar a instância")
+		t.Error("an orphan link survived deleting the instance")
 	}
 }
 
@@ -215,21 +215,21 @@ func TestUnlinkDNS(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(m.DNS().Links) != 0 {
-		t.Fatal("o vínculo devia ter saído")
+		t.Fatal("the link should be gone")
 	}
 	if m.DNS().Token != "tok" {
-		t.Error("o token não devia sumir junto")
+		t.Error("the token should not vanish with it")
 	}
 }
 
-func TestDNSDesligadoSemCliente(t *testing.T) {
+func TestDNSIsOffWithoutAClient(t *testing.T) {
 	m, _ := newManager(t, 16*gb)
 	if err := m.SetDNSToken(context.Background(), "tok"); !errors.Is(err, ErrDNSDisabled) {
-		t.Fatalf("queria ErrDNSDisabled, veio %v", err)
+		t.Fatalf("wanted ErrDNSDisabled, got %v", err)
 	}
 }
 
-func TestAddDNSDomainVerificaEGrava(t *testing.T) {
+func TestAddDNSDomainChecksAndSaves(t *testing.T) {
 	m, fake := newDNSManager(t)
 	fake.Domains = map[string]bool{"casa": true}
 	if err := m.SetDNSToken(context.Background(), "tok"); err != nil {
@@ -241,35 +241,35 @@ func TestAddDNSDomainVerificaEGrava(t *testing.T) {
 		t.Fatalf("AddDNSDomain: %v", err)
 	}
 	if entry.Domain != "casa" || entry.Hostname != "casa.duckdns.org" || entry.LastIP == "" {
-		t.Errorf("entrada = %+v", entry)
+		t.Errorf("entry = %+v", entry)
 	}
 	if got := m.DNS().Domains; len(got) != 1 || got[0].Domain != "casa" {
 		t.Errorf("Domains = %+v", got)
 	}
 }
 
-func TestAddDNSDomainRecusadoNaoEntraNaLista(t *testing.T) {
+func TestAddDNSDomainRefusedStaysOutOfTheList(t *testing.T) {
 	m, fake := newDNSManager(t)
 	fake.Domains = map[string]bool{"casa": true}
 	if err := m.SetDNSToken(context.Background(), "tok"); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := m.AddDNSDomain(context.Background(), "de-outro"); !errors.Is(err, duckdns.ErrRejected) {
-		t.Fatalf("queria ErrRejected, veio %v", err)
+	if _, err := m.AddDNSDomain(context.Background(), "someone-else"); !errors.Is(err, duckdns.ErrRejected) {
+		t.Fatalf("wanted ErrRejected, got %v", err)
 	}
 	if got := m.DNS().Domains; len(got) != 0 {
-		t.Errorf("Domains = %+v, queria vazio", got)
+		t.Errorf("Domains = %+v, wanted empty", got)
 	}
 }
 
-func TestAddDNSDomainSemToken(t *testing.T) {
+func TestAddDNSDomainWithoutAToken(t *testing.T) {
 	m, fake := newDNSManager(t)
 	if _, err := m.AddDNSDomain(context.Background(), "casa"); !errors.Is(err, ErrNoToken) {
-		t.Fatalf("queria ErrNoToken, veio %v", err)
+		t.Fatalf("wanted ErrNoToken, got %v", err)
 	}
 	if len(fake.Calls) != 0 {
-		t.Error("sem token o painel não pode chamar o duckdns")
+		t.Error("with no token the panel must not call duckdns")
 	}
 }
 
@@ -285,11 +285,11 @@ func TestRemoveDNSDomain(t *testing.T) {
 		t.Fatalf("RemoveDNSDomain: %v", err)
 	}
 	if got := m.DNS().Domains; len(got) != 0 {
-		t.Errorf("Domains = %+v, queria vazio", got)
+		t.Errorf("Domains = %+v, wanted empty", got)
 	}
 }
 
-func TestLinkDNSCadastraONome(t *testing.T) {
+func TestLinkDNSRegistersTheName(t *testing.T) {
 	m, _ := newDNSManager(t)
 	mustCreate(t, m, "smp")
 	if err := m.SetDNSToken(context.Background(), "tok"); err != nil {
@@ -303,7 +303,7 @@ func TestLinkDNSCadastraONome(t *testing.T) {
 	}
 }
 
-func TestSyncDNSNaoRepeteODominio(t *testing.T) {
+func TestSyncDNSDoesNotRepeatTheDomain(t *testing.T) {
 	m, fake := newDNSManager(t)
 	mustCreate(t, m, "smp")
 	if err := m.SetDNSToken(context.Background(), "tok"); err != nil {
@@ -317,11 +317,11 @@ func TestSyncDNSNaoRepeteODominio(t *testing.T) {
 	fake.Calls = nil
 	m.SyncDNS(context.Background())
 	if len(fake.Calls) != 1 {
-		t.Errorf("updates = %v, queria um só", fake.Calls)
+		t.Errorf("updates = %v, wanted just one", fake.Calls)
 	}
 }
 
-func TestSyncDNSAtualizaNomeCadastrado(t *testing.T) {
+func TestSyncDNSUpdatesARegisteredName(t *testing.T) {
 	m, fake := newDNSManager(t)
 	if err := m.SetDNSToken(context.Background(), "tok"); err != nil {
 		t.Fatal(err)
@@ -335,6 +335,6 @@ func TestSyncDNSAtualizaNomeCadastrado(t *testing.T) {
 	m.SyncDNS(context.Background())
 
 	if got := m.DNS().Domains[0].LastIP; got != "200.1.2.3" {
-		t.Errorf("LastIP = %q, queria o IP novo", got)
+		t.Errorf("LastIP = %q, wanted the new IP", got)
 	}
 }

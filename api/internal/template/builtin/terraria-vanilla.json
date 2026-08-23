@@ -4,7 +4,7 @@
   "category": "games",
   "short": "TV",
   "image": "ryshe/terraria:vanilla-1.4.5.7",
-  "description": "Terraria 1.4.5.7 sem TShock: sem plugins nem comandos de admin, mas acompanha a versão do cliente muito mais rápido.",
+  "description": "Terraria 1.4.5.7 without TShock: no plugins and no admin commands, but it follows the client version much faster.",
   "docs": "https://github.com/ryshe/docker-terraria",
   "ports": [
     {
@@ -37,7 +37,7 @@
       "type": "text",
       "default": "/root/.local/share/Terraria/Worlds/okdock.wld",
       "required": true,
-      "help": "Caminho dentro do container. A pasta é o volume ./data da instância; troque só o nome do arquivo.",
+      "help": "Path inside the container. The folder is the instance ./data volume, change only the file name.",
       "target": "arg",
       "flag": "-world"
     },
@@ -60,7 +60,7 @@
           "label": "Large"
         }
       ],
-      "help": "Só tem efeito quando o arquivo do mundo ainda não existe.",
+      "help": "Only takes effect when the world file does not exist yet.",
       "target": "arg",
       "flag": "-autocreate"
     },
@@ -100,7 +100,7 @@
     },
     {
       "key": "MAXPLAYERS",
-      "label": "Máximo de jogadores",
+      "label": "Max players",
       "type": "int",
       "default": "8",
       "min": 1,
@@ -145,7 +145,7 @@
       "label": "Desligar UPnP",
       "type": "bool",
       "default": "true",
-      "help": "O painel já publica a porta; deixar o servidor mexer no roteador só atrapalha.",
+      "help": "The panel already publishes the port, letting the server touch the router only gets in the way.",
       "advanced": true,
       "target": "arg",
       "flag": "-noupnp"

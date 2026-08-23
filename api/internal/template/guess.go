@@ -2,7 +2,7 @@ package template
 
 import "strings"
 
-// Hints e o que se sabe de um container sem template: imagem, nome, servico, rotulos e portas
+// what is known about a container that did not come from a template
 type Hints struct {
 	Image   string
 	Name    string
@@ -11,7 +11,7 @@ type Hints struct {
 	Ports   []int
 }
 
-var palpites = map[Category][]string{
+var imageNeedles = map[Category][]string{
 	CategoryMedia: {
 		"jellyfin", "plex", "emby", "sonarr", "radarr", "lidarr", "readarr",
 		"bazarr", "prowlarr", "jackett", "qbittorrent",
@@ -43,8 +43,8 @@ var palpites = map[Category][]string{
 	},
 }
 
-// portas que so um tipo de servico costuma publicar, 80 e 8080 ficam de fora de proposito
-var portasConhecidas = map[int]Category{
+// ports only one kind of service tends to publish; 80, 443 and 8080 are left out on purpose
+var knownPorts = map[int]Category{
 	25565: CategoryGames, 25575: CategoryGames, 19132: CategoryGames,
 	7777: CategoryGames, 2456: CategoryGames, 2457: CategoryGames,
 	27015: CategoryGames, 8211: CategoryGames, 34197: CategoryGames,
@@ -64,16 +64,16 @@ var portasConhecidas = map[int]Category{
 	8123: CategoryUtilities, 9443: CategoryUtilities,
 }
 
-// palavras de nome de container feito em casa, ultimo recurso e so como palavra inteira
-var palavrasDeApp = map[Category][]string{
+// words from homemade container names, matched whole so "bot" never hits "robot"
+var homemadeWords = map[Category][]string{
 	CategoryUtilities: {
 		"bot", "webhook", "worker", "scraper", "crawler", "notifier",
 		"exporter", "cron", "backup", "dashboard",
 	},
 }
 
-// rotulos que descrevem a imagem, o resto descreve outra coisa, como o traefik do proxy
-var rotulosDescritivos = []string{
+// labels that describe the image; the rest is ignored, a container behind the proxy carries "traefik.*"
+var describingLabels = []string{
 	"org.opencontainers.image.title",
 	"org.opencontainers.image.description",
 	"org.opencontainers.image.source",
@@ -85,32 +85,32 @@ var rotulosDescritivos = []string{
 }
 
 func GuessCategory(h Hints) (Category, bool) {
-	if category, ok := porTrecho(h.Image); ok {
+	if category, ok := bySubstring(h.Image); ok {
 		return category, true
 	}
-	if category, ok := porTrecho(textoDosRotulos(h.Labels)); ok {
+	if category, ok := bySubstring(labelText(h.Labels)); ok {
 		return category, true
 	}
-	if category, ok := porPorta(h.Ports); ok {
+	if category, ok := byPort(h.Ports); ok {
 		return category, true
 	}
-	if category, ok := porTrecho(h.Name + " " + h.Service); ok {
+	if category, ok := bySubstring(h.Name + " " + h.Service); ok {
 		return category, true
 	}
-	if category, ok := porPalavra(h.Image, h.Name, h.Service); ok {
+	if category, ok := byWord(h.Image, h.Name, h.Service); ok {
 		return category, true
 	}
 	return CategoryOther, false
 }
 
-func porTrecho(texto string) (Category, bool) {
-	texto = strings.ToLower(texto)
-	if strings.TrimSpace(texto) == "" {
+func bySubstring(text string) (Category, bool) {
+	text = strings.ToLower(text)
+	if strings.TrimSpace(text) == "" {
 		return CategoryOther, false
 	}
 	for _, category := range AllCategories {
-		for _, needle := range palpites[category] {
-			if strings.Contains(texto, needle) {
+		for _, needle := range imageNeedles[category] {
+			if strings.Contains(text, needle) {
 				return category, true
 			}
 		}
@@ -118,25 +118,25 @@ func porTrecho(texto string) (Category, bool) {
 	return CategoryOther, false
 }
 
-func porPorta(ports []int) (Category, bool) {
+func byPort(ports []int) (Category, bool) {
 	for _, p := range ports {
-		if category, ok := portasConhecidas[p]; ok {
+		if category, ok := knownPorts[p]; ok {
 			return category, true
 		}
 	}
 	return CategoryOther, false
 }
 
-func porPalavra(textos ...string) (Category, bool) {
-	palavras := map[string]bool{}
-	for _, texto := range textos {
-		for _, palavra := range strings.FieldsFunc(strings.ToLower(texto), naoAlfanumerico) {
-			palavras[palavra] = true
+func byWord(texts ...string) (Category, bool) {
+	words := map[string]bool{}
+	for _, text := range texts {
+		for _, word := range strings.FieldsFunc(strings.ToLower(text), notAlphanumeric) {
+			words[word] = true
 		}
 	}
 	for _, category := range AllCategories {
-		for _, palavra := range palavrasDeApp[category] {
-			if palavras[palavra] {
+		for _, word := range homemadeWords[category] {
+			if words[word] {
 				return category, true
 			}
 		}
@@ -144,7 +144,7 @@ func porPalavra(textos ...string) (Category, bool) {
 	return CategoryOther, false
 }
 
-func naoAlfanumerico(r rune) bool {
+func notAlphanumeric(r rune) bool {
 	switch {
 	case r >= 'a' && r <= 'z':
 		return false
@@ -155,12 +155,12 @@ func naoAlfanumerico(r rune) bool {
 	}
 }
 
-func textoDosRotulos(labels map[string]string) string {
+func labelText(labels map[string]string) string {
 	if len(labels) == 0 {
 		return ""
 	}
 	var b strings.Builder
-	for _, key := range rotulosDescritivos {
+	for _, key := range describingLabels {
 		if v := labels[key]; v != "" {
 			b.WriteString(v)
 			b.WriteByte(' ')

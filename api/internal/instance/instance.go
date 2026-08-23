@@ -125,7 +125,7 @@ var nameRE = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{1,38}$`)
 
 func ValidateName(name string) error {
 	if !nameRE.MatchString(name) {
-		return fmt.Errorf("nome inválido: use 2 a 39 caracteres entre minúsculas, dígitos, - e _, começando por letra ou dígito")
+		return fmt.Errorf("invalid name: use 2 to 39 characters among lowercase, digits, - and _, starting with a letter or digit")
 	}
 	return nil
 }
@@ -147,10 +147,10 @@ func ParseMemory(s string) (int64, error) {
 	digits := strings.TrimRight(s, "gmkb")
 	n, err := strconv.ParseFloat(digits, 64)
 	if err != nil {
-		return 0, fmt.Errorf("limite de memória inválido: %q", s)
+		return 0, fmt.Errorf("invalid memory limit: %q", s)
 	}
 	if n <= 0 {
-		return 0, fmt.Errorf("limite de memória precisa ser positivo: %q", s)
+		return 0, fmt.Errorf("memory limit must be positive: %q", s)
 	}
 	return int64(n * float64(mult)), nil
 }

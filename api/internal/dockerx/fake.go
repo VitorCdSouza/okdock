@@ -171,7 +171,7 @@ func (f *Fake) ContainerAction(_ context.Context, name, verb string) error {
 		}
 		return nil
 	}
-	return fmt.Errorf("container %q não existe", name)
+	return fmt.Errorf("container %q does not exist", name)
 }
 
 func (f *Fake) ContainerLogs(_ context.Context, name string, _ int, _ bool) (io.ReadCloser, error) {

@@ -16,9 +16,9 @@ import (
 const SyncInterval = 5 * time.Minute
 
 var (
-	ErrDNSDisabled = errors.New("este painel foi iniciado sem cliente de DNS")
-	ErrNoToken     = errors.New("o token do duckdns ainda não foi configurado")
-	ErrDNSTaken    = errors.New("esse domínio já está vinculado a outra instância")
+	ErrDNSDisabled = errors.New("this panel started without a DNS client")
+	ErrNoToken     = errors.New("the duckdns token is not configured yet")
+	ErrDNSTaken    = errors.New("that domain is already linked to another instance")
 )
 
 type DNSTakenError struct {
@@ -224,7 +224,7 @@ func (m *Manager) forgetDNS(name string) {
 		delete(cfg.Links, name)
 		return nil
 	}); err != nil {
-		slog.Warn("não consegui limpar o vínculo de DNS", "instancia", name, "err", err)
+		slog.Warn("could not clear the DNS link", "instance", name, "err", err)
 	}
 }
 
@@ -289,7 +289,7 @@ func (m *Manager) SyncDNS(ctx context.Context) {
 		return nil
 	})
 	if err != nil {
-		slog.Warn("não consegui gravar o resultado do sync de DNS", "err", err)
+		slog.Warn("could not write the DNS sync result", "err", err)
 		return
 	}
 	if changed {

@@ -63,7 +63,7 @@ func New(o Options) *Manager {
 	}
 	dnsCfg, err := o.Store.LoadDNS()
 	if err != nil {
-		slog.Warn("não consegui ler a configuração de DNS", "arquivo", o.Store.DNSPath(), "err", err)
+		slog.Warn("could not read the DNS config", "file", o.Store.DNSPath(), "err", err)
 	}
 
 	return &Manager{
@@ -107,11 +107,11 @@ func (m *Manager) List(ctx context.Context) ([]instance.Instance, error) {
 func (m *Manager) listExternal(ctx context.Context, managed []instance.Instance) (list []instance.Instance, running []string) {
 	containers, err := m.docker.PSAll(ctx)
 	if err != nil {
-		slog.Debug("não consegui listar os containers do host", "err", err)
+		slog.Debug("could not list the host containers", "err", err)
 		return nil, nil
 	}
 
-	// dentro do container, o hostname e o id curto do proprio container
+	// inside the container the hostname is the container own short id
 	self, _ := os.Hostname()
 
 	ours := make(map[string]bool, len(managed)*2)
@@ -410,7 +410,7 @@ func (m *Manager) beginOp(name, kind, code string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if cur, ok := m.ops[name]; ok && cur.Error == "" {
-		return fmt.Errorf("%q já está em %s", name, cur.Kind)
+		return fmt.Errorf("%q is already in %s", name, cur.Kind)
 	}
 	m.ops[name] = &instance.Operation{Kind: kind, Code: code, StartedAt: m.now()}
 	return nil
@@ -462,7 +462,7 @@ type ErrBudget struct {
 
 func (e *ErrBudget) Error() string {
 	return fmt.Sprintf(
-		"%s pede %s, mas só há %s livres no orçamento de %s (as instâncias de pé já usam %s)",
+		"%s asks for %s, but only %s is free in the %s budget (running instances already use %s)",
 		e.Instance,
 		instance.FormatMemory(e.Requested),
 		instance.FormatMemory(max64(0, e.Budget-e.Committed)),
@@ -485,7 +485,7 @@ type ErrPortTaken struct {
 }
 
 func (e *ErrPortTaken) Error() string {
-	return fmt.Sprintf("porta %d/%s já é usada por %s", e.Port, e.Proto, e.Owner)
+	return fmt.Sprintf("port %d/%s is already used by %s", e.Port, e.Proto, e.Owner)
 }
 
 func (m *Manager) checkBudget(ctx context.Context, spec instance.Spec) error {
@@ -575,7 +575,7 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 	}
 	tmpl, ok := m.templates.Get(req.TemplateID)
 	if !ok {
-		return instance.Spec{}, fmt.Errorf("template desconhecido: %q", req.TemplateID)
+		return instance.Spec{}, fmt.Errorf("unknown template: %q", req.TemplateID)
 	}
 
 	image := strings.TrimSpace(req.Image)
@@ -583,7 +583,7 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 		image = tmpl.Image
 	}
 	if image == "" {
-		return instance.Spec{}, errors.New("a imagem custom precisa de um nome de imagem")
+		return instance.Spec{}, errors.New("the custom template needs an image name")
 	}
 	if !tmpl.AcceptsImage(image) {
 		if owner, ok := m.templates.TemplateForImage(image); ok {
@@ -641,7 +641,7 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 	}
 	for i, p := range ports {
 		if p.Host < 1 || p.Host > 65535 || p.Container < 1 || p.Container > 65535 {
-			return instance.Spec{}, fmt.Errorf("porta inválida: %s", p)
+			return instance.Spec{}, fmt.Errorf("invalid port: %s", p)
 		}
 		if p.Protocol != "tcp" && p.Protocol != "udp" {
 			ports[i].Protocol = "tcp"
@@ -665,7 +665,7 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 	}
 	if min, err := instance.ParseMemory(tmpl.MinMemory); err == nil && min > 0 && want < min {
 		return instance.Spec{}, fmt.Errorf(
-			"%s pede pelo menos %s de RAM; %s não sobe (a imagem morre com exit 137)",
+			"%s asks for at least %s of RAM, %s does not start (the image dies with exit 137)",
 			tmpl.Name, tmpl.MinMemory, memLimit)
 	}
 
@@ -766,10 +766,10 @@ func (m *Manager) provision(name string) {
 type ExternalError struct{ Name string }
 
 func (e *ExternalError) Error() string {
-	return fmt.Sprintf("%q é um container externo; o painel só sobe, para e mostra o console", e.Name)
+	return fmt.Sprintf("%q is an external container, the panel only starts, stops and shows the console", e.Name)
 }
 
-var ErrExternal = errors.New("container externo")
+var ErrExternal = errors.New("external container")
 
 func (e *ExternalError) Is(target error) bool { return target == ErrExternal }
 
@@ -883,16 +883,16 @@ func NeedsRecreate(old, new instance.Spec) bool {
 func RecreateFields(old, new instance.Spec) []string {
 	var out []string
 	if old.Image != new.Image {
-		out = append(out, "imagem")
+		out = append(out, "image")
 	}
 	if old.MemoryLimit != new.MemoryLimit {
-		out = append(out, "limite de RAM")
+		out = append(out, "RAM limit")
 	}
 	if old.CPUs != new.CPUs {
 		out = append(out, "CPUs")
 	}
 	if old.Restart != new.Restart {
-		out = append(out, "política de restart")
+		out = append(out, "restart policy")
 	}
 	for k, v := range new.Env {
 		if old.Env[k] != v {
@@ -901,15 +901,15 @@ func RecreateFields(old, new instance.Spec) []string {
 	}
 	for k := range old.Env {
 		if _, ok := new.Env[k]; !ok {
-			out = append(out, k+" (removida)")
+			out = append(out, k+" (removed)")
 		}
 	}
 	if len(old.Ports) != len(new.Ports) {
-		out = append(out, "portas")
+		out = append(out, "ports")
 	} else {
 		for i := range new.Ports {
 			if old.Ports[i] != new.Ports[i] {
-				out = append(out, "portas")
+				out = append(out, "ports")
 				break
 			}
 		}
@@ -927,7 +927,7 @@ func (m *Manager) Start(ctx context.Context, name string) error {
 		return err
 	}
 	if spec.Archived {
-		return fmt.Errorf("%q está arquivada; restaure antes de subir", name)
+		return fmt.Errorf("%q is archived, restore it before starting", name)
 	}
 	if err := m.checkBudget(ctx, spec); err != nil {
 		return err
@@ -943,7 +943,7 @@ func (m *Manager) Start(ctx context.Context, name string) error {
 	return nil
 }
 
-// externalAction vai para goroutine: o docker stop respeita o grace period, maior que o request
+// runs in a goroutine because docker stop waits for the container stop_grace_period
 func (m *Manager) externalAction(name, verb, kind, code string) error {
 	if err := m.beginOp(name, kind, code); err != nil {
 		return err
@@ -962,7 +962,7 @@ func (m *Manager) UpdateImage(ctx context.Context, name string) error {
 		return m.notManaged(ctx, name, err)
 	}
 	if spec.Archived {
-		return fmt.Errorf("%q está arquivada; restaure antes de atualizar", name)
+		return fmt.Errorf("%q is archived, restore it before updating", name)
 	}
 	if err := m.beginOp(name, OpUpdate, "checking_update"); err != nil {
 		return err
@@ -992,7 +992,7 @@ func (m *Manager) pullAndRecreate(name string, spec instance.Spec) {
 		m.hub.Publish(Event{
 			Type:     "instance.uptodate",
 			Instance: name,
-			Message:  fmt.Sprintf("%s já está na imagem mais nova", name),
+			Message:  fmt.Sprintf("%s is already on the newest image", name),
 		})
 		return
 	}
@@ -1004,7 +1004,7 @@ func (m *Manager) pullAndRecreate(name string, spec instance.Spec) {
 		m.hub.Publish(Event{
 			Type:     "instance.updated",
 			Instance: name,
-			Message:  fmt.Sprintf("%s foi atualizada; o mundo nos volumes foi preservado", name),
+			Message:  fmt.Sprintf("%s was updated, the world in the volumes was kept", name),
 		})
 	}
 }

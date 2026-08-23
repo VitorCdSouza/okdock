@@ -65,7 +65,7 @@ func TestUpdateOK(t *testing.T) {
 		t.Errorf("ip devia ir vazio, foi %q", got.Get("ip"))
 	}
 	if got.Get("verbose") != "true" {
-		t.Error("sem verbose=true a resposta não traz o IP registrado")
+		t.Error("without verbose=true the answer does not carry the registered IP")
 	}
 	if got.Get("domains") != "smp" || got.Get("token") != "tok" {
 		t.Errorf("query errada: %v", got)
@@ -80,7 +80,7 @@ func TestUpdateNoChange(t *testing.T) {
 
 	res, err := HTTP{Endpoint: srv.URL}.Update(context.Background(), "tok", "smp")
 	if err != nil || res.Changed {
-		t.Fatalf("NOCHANGE não devia vir como Changed: %+v, %v", res, err)
+		t.Fatalf("NOCHANGE must not come back as Changed: %+v, %v", res, err)
 	}
 }
 
@@ -89,6 +89,6 @@ func TestHostname(t *testing.T) {
 		t.Errorf("Hostname(smp) = %q", got)
 	}
 	if got := Hostname(""); got != "" {
-		t.Errorf("sem domínio não existe hostname, veio %q", got)
+		t.Errorf("with no domain there is no hostname, got %q", got)
 	}
 }

@@ -44,7 +44,7 @@ func (s *Server) getTemplate(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		writeJSON(w, http.StatusNotFound, apiError{
 			Error:   "not_found",
-			Message: fmt.Sprintf("template %q não está no catálogo", r.PathValue("id")),
+			Message: fmt.Sprintf("template %q is not in the catalog", r.PathValue("id")),
 		})
 		return
 	}
@@ -59,7 +59,7 @@ func (s *Server) createTemplate(w http.ResponseWriter, r *http.Request) {
 	if _, exists := s.templates.Get(t.ID); exists {
 		writeJSON(w, http.StatusConflict, apiError{
 			Error:   "template_exists",
-			Message: fmt.Sprintf("já existe um template com o id %q", t.ID),
+			Message: fmt.Sprintf("a template with id %q already exists", t.ID),
 		})
 		return
 	}
@@ -314,7 +314,7 @@ func (s *Server) getLogs(w http.ResponseWriter, r *http.Request) {
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		badRequest(w, "esta conexão não suporta streaming")
+		badRequest(w, "this connection does not support streaming")
 		return
 	}
 
@@ -348,7 +348,7 @@ func (s *Server) getLogs(w http.ResponseWriter, r *http.Request) {
 func (s *Server) events(w http.ResponseWriter, r *http.Request) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		badRequest(w, "esta conexão não suporta streaming")
+		badRequest(w, "this connection does not support streaming")
 		return
 	}
 	ch, cancel := s.mgr.Events().Subscribe()

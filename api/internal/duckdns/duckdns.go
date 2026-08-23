@@ -18,9 +18,9 @@ const Suffix = ".duckdns.org"
 const defaultEndpoint = "https://www.duckdns.org/update"
 
 var (
-	ErrRejected      = errors.New("o duckdns recusou: confira se o token está certo e se esse domínio é da sua conta")
-	ErrUnreachable   = errors.New("não consegui falar com o duckdns.org")
-	ErrInvalidDomain = errors.New("domínio inválido")
+	ErrRejected      = errors.New("duckdns said KO, check the token and whether the domain belongs to your account")
+	ErrUnreachable   = errors.New("could not reach duckdns.org")
+	ErrInvalidDomain = errors.New("invalid domain")
 )
 
 type UnreachableError struct{ Detail string }
@@ -109,7 +109,7 @@ func Normalize(s string) (string, error) {
 	s = strings.Trim(s, "/.")
 	s = strings.TrimSuffix(s, Suffix)
 	if !domainRE.MatchString(s) {
-		return "", fmt.Errorf("%w: use só letras minúsculas, dígitos e hífen — o nome antes de %s", ErrInvalidDomain, Suffix)
+		return "", fmt.Errorf("%w: use only lowercase letters, digits and hyphen, the name before %s", ErrInvalidDomain, Suffix)
 	}
 	return s, nil
 }

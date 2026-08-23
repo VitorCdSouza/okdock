@@ -2,7 +2,7 @@ package main
 
 import "testing"
 
-func TestEnvAceitaNomeAntigo(t *testing.T) {
+func TestEnvAcceptsTheOldName(t *testing.T) {
 	t.Setenv("GAMEDOCK_ROOT", "/srv/velho")
 
 	if got := env("OKDOCK_ROOT", "/srv/games"); got != "/srv/velho" {
@@ -15,8 +15,8 @@ func TestEnvAceitaNomeAntigo(t *testing.T) {
 	}
 }
 
-func TestEnvCaiNoPadrao(t *testing.T) {
+func TestEnvFallsBackToTheDefault(t *testing.T) {
 	if got := env("OKDOCK_ROOT", "/srv/games"); got != "/srv/games" {
-		t.Errorf("env = %q, queria o padrão", got)
+		t.Errorf("env = %q, wanted the default", got)
 	}
 }

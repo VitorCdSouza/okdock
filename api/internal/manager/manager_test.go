@@ -66,7 +66,7 @@ func waitFor(t *testing.T, what string, cond func() bool) {
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
-	t.Fatalf("timeout esperando: %s", what)
+	t.Fatalf("timeout waiting for: %s", what)
 }
 
 func TestBuildSpecUsesProviderDefaults(t *testing.T) {
@@ -76,16 +76,16 @@ func TestBuildSpecUsesProviderDefaults(t *testing.T) {
 		t.Fatalf("BuildSpec: %v", err)
 	}
 	if spec.Image != "itzg/minecraft-server:java21" {
-		t.Errorf("imagem = %q", spec.Image)
+		t.Errorf("image = %q", spec.Image)
 	}
 	if spec.MemoryLimit != "4g" {
-		t.Errorf("limite de RAM = %q, queria o default do provedor", spec.MemoryLimit)
+		t.Errorf("RAM limit = %q, wanted the template default", spec.MemoryLimit)
 	}
 	if len(spec.Ports) != 1 || spec.Ports[0].Host != 25565 {
-		t.Errorf("portas = %v", spec.Ports)
+		t.Errorf("ports = %v", spec.Ports)
 	}
 	if spec.Env["TYPE"] != "VANILLA" {
-		t.Errorf("default de campo não aplicado: %v", spec.Env)
+		t.Errorf("field default not applied: %v", spec.Env)
 	}
 }
 
@@ -106,11 +106,11 @@ func TestBuildSpecMarksProviderSecrets(t *testing.T) {
 		}
 	}
 	if !found {
-		t.Errorf("PASSWORD não foi marcada como segredo: %v", spec.SecretKeys)
+		t.Errorf("PASSWORD was not marked as a secret: %v", spec.SecretKeys)
 	}
 	for _, a := range spec.Command {
 		if a == "abc" {
-			t.Errorf("senha vazou para o comando: %v", spec.Command)
+			t.Errorf("the password leaked into the command: %v", spec.Command)
 		}
 	}
 }
@@ -119,10 +119,10 @@ func TestBuildSpecRejectsMemoryBelowProviderMinimum(t *testing.T) {
 	m, _ := newManager(t, 32*gb)
 	_, err := m.BuildSpec(req("smp", "512m"))
 	if err == nil {
-		t.Fatal("RAM abaixo do mínimo do provedor devia falhar")
+		t.Fatal("RAM below the template minimum should fail")
 	}
 	if !strings.Contains(err.Error(), "137") {
-		t.Errorf("erro devia explicar o sintoma (exit 137): %v", err)
+		t.Errorf("the error should explain the symptom (exit 137): %v", err)
 	}
 }
 
@@ -130,7 +130,7 @@ func TestBuildSpecCustomNeedsImage(t *testing.T) {
 	m, _ := newManager(t, 32*gb)
 	_, err := m.BuildSpec(SpecRequest{Name: "custom-1", TemplateID: "custom"})
 	if err == nil {
-		t.Fatal("provedor custom sem imagem devia falhar")
+		t.Fatal("the custom template with no image should fail")
 	}
 }
 
@@ -141,7 +141,7 @@ func TestCreateWithoutStartDoesNotTouchDocker(t *testing.T) {
 	}
 	for _, c := range fake.Calls {
 		if strings.HasPrefix(c, "up:") || strings.HasPrefix(c, "pull:") {
-			t.Errorf("criar sem start não devia subir nada; chamadas: %v", fake.Calls)
+			t.Errorf("creating without start must not bring anything up, calls: %v", fake.Calls)
 		}
 	}
 	inst, err := m.Get(context.Background(), "smp")
@@ -149,7 +149,7 @@ func TestCreateWithoutStartDoesNotTouchDocker(t *testing.T) {
 		t.Fatalf("Get: %v", err)
 	}
 	if inst.State != instance.StateStopped {
-		t.Errorf("estado = %q, queria stopped", inst.State)
+		t.Errorf("state = %q, wanted stopped", inst.State)
 	}
 }
 
@@ -160,7 +160,7 @@ func TestCreateWithStartPullsThenUps(t *testing.T) {
 	if _, err := m.Create(context.Background(), r); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	waitFor(t, "instância subir", func() bool {
+	waitFor(t, "the instance to come up", func() bool {
 		i, err := m.Get(context.Background(), "smp")
 		return err == nil && i.State == instance.StateRunning
 	})
@@ -172,7 +172,7 @@ func TestCreateWithStartPullsThenUps(t *testing.T) {
 		}
 	}
 	if len(order) < 2 || order[0] != "pull" || order[1] != "up" {
-		t.Errorf("ordem das chamadas = %v", order)
+		t.Errorf("call order = %v", order)
 	}
 }
 
@@ -190,10 +190,10 @@ func TestCreateRejectsPortAlreadyUsed(t *testing.T) {
 
 	var pe *ErrPortTaken
 	if !errors.As(err, &pe) {
-		t.Fatalf("esperava ErrPortTaken, veio %v", err)
+		t.Fatalf("expected ErrPortTaken, got %v", err)
 	}
 	if pe.Owner != "mc-a" {
-		t.Errorf("erro devia apontar quem ocupa a porta, veio %q", pe.Owner)
+		t.Errorf("the error should name who holds the port, got %q", pe.Owner)
 	}
 }
 
@@ -203,7 +203,7 @@ func TestSuggestPortSkipsTakenOnes(t *testing.T) {
 		t.Fatalf("Create: %v", err)
 	}
 	if got := m.SuggestPort(25565, "tcp"); got != 25566 {
-		t.Errorf("SuggestPort = %d, queria 25566", got)
+		t.Errorf("SuggestPort = %d, wanted 25566", got)
 	}
 }
 
@@ -215,7 +215,7 @@ func TestStartRefusesWhenRAMBudgetIsExceeded(t *testing.T) {
 	if _, err := m.Create(context.Background(), up); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	waitFor(t, "mc-a subir", func() bool {
+	waitFor(t, "mc-a to come up", func() bool {
 		i, _ := m.Get(context.Background(), "mc-a")
 		return i.State == instance.StateRunning
 	})
@@ -227,10 +227,10 @@ func TestStartRefusesWhenRAMBudgetIsExceeded(t *testing.T) {
 
 	var be *ErrBudget
 	if !errors.As(err, &be) {
-		t.Fatalf("esperava ErrBudget, veio %v", err)
+		t.Fatalf("expected ErrBudget, got %v", err)
 	}
 	if be.Budget != 6*gb {
-		t.Errorf("orçamento = %d, queria 6 GiB", be.Budget)
+		t.Errorf("budget = %d, wanted 6 GiB", be.Budget)
 	}
 }
 
@@ -243,7 +243,7 @@ func TestStoppedInstancesDoNotConsumeBudget(t *testing.T) {
 		t.Fatalf("Create: %v", err)
 	}
 	if err := m.Start(context.Background(), "mc-b"); err != nil {
-		t.Fatalf("instância parada não devia contar no orçamento: %v", err)
+		t.Fatalf("a stopped instance must not count against the budget: %v", err)
 	}
 }
 
@@ -254,7 +254,7 @@ func TestStopBringsInstanceDown(t *testing.T) {
 	if _, err := m.Create(context.Background(), r); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	waitFor(t, "subir", func() bool {
+	waitFor(t, "it to come up", func() bool {
 		i, _ := m.Get(context.Background(), "smp")
 		return i.State == instance.StateRunning
 	})
@@ -262,7 +262,7 @@ func TestStopBringsInstanceDown(t *testing.T) {
 	if err := m.Stop(context.Background(), "smp"); err != nil {
 		t.Fatalf("Stop: %v", err)
 	}
-	waitFor(t, "parar", func() bool {
+	waitFor(t, "it to stop", func() bool {
 		i, _ := m.Get(context.Background(), "smp")
 		return i.State == instance.StateStopped
 	})
@@ -278,20 +278,20 @@ func TestFailedOperationSurfacesAsError(t *testing.T) {
 	if err := m.Start(context.Background(), "smp"); err != nil {
 		t.Fatalf("Start: %v", err)
 	}
-	waitFor(t, "falha aparecer", func() bool {
+	waitFor(t, "the failure to show up", func() bool {
 		i, _ := m.Get(context.Background(), "smp")
 		return i.State == instance.StateError
 	})
 
 	inst, _ := m.Get(context.Background(), "smp")
 	if !strings.Contains(inst.Status, "already allocated") {
-		t.Errorf("o card precisa mostrar o motivo do docker, veio %q", inst.Status)
+		t.Errorf("the card must show what docker said, got %q", inst.Status)
 	}
 
 	m.ClearError("smp")
 	inst, _ = m.Get(context.Background(), "smp")
 	if inst.State == instance.StateError {
-		t.Error("ClearError não limpou o estado de erro")
+		t.Error("ClearError did not clear the error state")
 	}
 }
 
@@ -302,7 +302,7 @@ func TestUpdateRecreatesWhenEnvChanges(t *testing.T) {
 	if _, err := m.Create(context.Background(), r); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	waitFor(t, "subir", func() bool {
+	waitFor(t, "it to come up", func() bool {
 		i, _ := m.Get(context.Background(), "smp")
 		return i.State == instance.StateRunning
 	})
@@ -313,7 +313,7 @@ func TestUpdateRecreatesWhenEnvChanges(t *testing.T) {
 	if _, err := m.Update(context.Background(), "smp", next); err != nil {
 		t.Fatalf("Update: %v", err)
 	}
-	waitFor(t, "recriar", func() bool {
+	waitFor(t, "the recreate", func() bool {
 		i, _ := m.Get(context.Background(), "smp")
 		return i.State == instance.StateRunning
 	})
@@ -328,7 +328,7 @@ func TestUpdateRecreatesWhenEnvChanges(t *testing.T) {
 		}
 	}
 	if !down || !up {
-		t.Errorf("update de env devia derrubar e subir; chamadas: %v", fake.Calls[before:])
+		t.Errorf("an env update should bring it down and up, calls: %v", fake.Calls[before:])
 	}
 }
 
@@ -346,19 +346,19 @@ func TestNeedsRecreate(t *testing.T) {
 		Ports:       []instance.PortBinding{{Host: 1, Container: 1, Protocol: "tcp"}},
 	}
 	if NeedsRecreate(base, same) {
-		t.Error("specs iguais não deviam pedir recriação")
+		t.Error("identical specs should not ask for a recreate")
 	}
 
 	changed := same
 	changed.Env = map[string]string{"A": "2"}
 	if !NeedsRecreate(base, changed) {
-		t.Error("mudança de env devia pedir recriação")
+		t.Error("an env change should ask for a recreate")
 	}
 
 	changed = same
 	changed.MemoryLimit = "8g"
 	if !NeedsRecreate(base, changed) {
-		t.Error("mudança de limite de RAM devia pedir recriação")
+		t.Error("a RAM limit change should ask for a recreate")
 	}
 }
 
@@ -371,7 +371,7 @@ func TestDeleteRemovesInstance(t *testing.T) {
 		t.Fatalf("Delete: %v", err)
 	}
 	if _, err := m.Get(context.Background(), "smp"); !errors.Is(err, store.ErrNotFound) {
-		t.Errorf("esperava ErrNotFound, veio %v", err)
+		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
 
@@ -385,10 +385,10 @@ func TestArchivedInstanceRefusesToStart(t *testing.T) {
 	}
 	inst, _ := m.Get(context.Background(), "smp")
 	if inst.State != instance.StateArchived {
-		t.Errorf("estado = %q, queria archived", inst.State)
+		t.Errorf("state = %q, wanted archived", inst.State)
 	}
 	if err := m.Start(context.Background(), "smp"); err == nil {
-		t.Error("instância arquivada não devia subir sem ser restaurada")
+		t.Error("an archived instance must not start before being restored")
 	}
 }
 
@@ -399,7 +399,7 @@ func TestSystemReportsCommittedMemory(t *testing.T) {
 	if _, err := m.Create(context.Background(), r); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	waitFor(t, "subir", func() bool {
+	waitFor(t, "it to come up", func() bool {
 		i, _ := m.Get(context.Background(), "smp")
 		return i.State == instance.StateRunning
 	})
@@ -409,10 +409,10 @@ func TestSystemReportsCommittedMemory(t *testing.T) {
 		t.Fatalf("System: %v", err)
 	}
 	if info.MemoryBudget != 14*gb {
-		t.Errorf("orçamento = %d, queria 14 GiB", info.MemoryBudget)
+		t.Errorf("budget = %d, wanted 14 GiB", info.MemoryBudget)
 	}
 	if info.MemoryCommitted != 4*gb {
-		t.Errorf("comprometido = %d, queria 4 GiB", info.MemoryCommitted)
+		t.Errorf("committed = %d, wanted 4 GiB", info.MemoryCommitted)
 	}
 }
 
@@ -422,19 +422,19 @@ func TestDeriveState(t *testing.T) {
 		containers []dockerx.Container
 		want       instance.State
 	}{
-		{"sem container", nil, instance.StateStopped},
-		{"rodando", []dockerx.Container{{State: "running"}}, instance.StateRunning},
-		{"healthcheck ainda subindo", []dockerx.Container{{State: "running", Health: "starting"}}, instance.StateStarting},
+		{"no container", nil, instance.StateStopped},
+		{"running", []dockerx.Container{{State: "running"}}, instance.StateRunning},
+		{"healthcheck still starting", []dockerx.Container{{State: "running", Health: "starting"}}, instance.StateStarting},
 		{"unhealthy", []dockerx.Container{{State: "running", Health: "unhealthy"}}, instance.StateError},
-		{"saiu limpo", []dockerx.Container{{State: "exited", ExitCode: 0}}, instance.StateStopped},
+		{"exited clean", []dockerx.Container{{State: "exited", ExitCode: 0}}, instance.StateStopped},
 		{"OOM killed", []dockerx.Container{{State: "exited", ExitCode: 137}}, instance.StateError},
-		{"criado mas não iniciado", []dockerx.Container{{State: "created"}}, instance.StateProvisioning},
+		{"created but not started", []dockerx.Container{{State: "created"}}, instance.StateProvisioning},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			got, _, _, _ := deriveState(instance.Spec{}, tc.containers, nil)
 			if got != tc.want {
-				t.Errorf("deriveState = %q, queria %q", got, tc.want)
+				t.Errorf("deriveState = %q, wanted %q", got, tc.want)
 			}
 		})
 	}
@@ -448,16 +448,16 @@ func TestHubDeliversAndUnsubscribes(t *testing.T) {
 	select {
 	case ev := <-ch:
 		if ev.Instance != "smp" {
-			t.Errorf("evento = %+v", ev)
+			t.Errorf("event = %+v", ev)
 		}
 	case <-time.After(time.Second):
-		t.Fatal("evento não chegou")
+		t.Fatal("the event never arrived")
 	}
 
 	cancel()
 	h.Publish(Event{Type: "instance.changed", Instance: "smp"})
 	if _, open := <-ch; open {
-		t.Error("canal devia estar fechado após cancel")
+		t.Error("the channel should be closed after cancel")
 	}
 }
 
@@ -476,7 +476,7 @@ func TestSlowSubscriberDoesNotBlockPublish(t *testing.T) {
 	select {
 	case <-done:
 	case <-time.After(2 * time.Second):
-		t.Fatal("Publish travou num assinante lento")
+		t.Fatal("Publish blocked on a slow subscriber")
 	}
 }
 
@@ -487,36 +487,36 @@ func TestUpdateImageRecreatesOnlyWhenTheImageChanged(t *testing.T) {
 	if _, err := m.Create(context.Background(), r); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	waitFor(t, "subir", func() bool {
+	waitFor(t, "it to come up", func() bool {
 		i, _ := m.Get(context.Background(), "smp")
 		return i.State == instance.StateRunning
 	})
 
 	image := "itzg/minecraft-server:java21"
-	fake.ImageIDs[image] = "sha256:antiga"
-	fake.PulledImageIDs[image] = "sha256:antiga"
+	fake.ImageIDs[image] = "sha256:old"
+	fake.PulledImageIDs[image] = "sha256:old"
 	before := len(fake.Calls)
 
 	if err := m.UpdateImage(context.Background(), "smp"); err != nil {
 		t.Fatalf("UpdateImage: %v", err)
 	}
-	waitFor(t, "checagem terminar", func() bool {
+	waitFor(t, "the check to finish", func() bool {
 		i, _ := m.Get(context.Background(), "smp")
 		return i.Operation == nil
 	})
 
 	for _, c := range fake.Calls[before:] {
 		if strings.HasPrefix(c, "up:") {
-			t.Errorf("recriou sem imagem nova; chamadas: %v", fake.Calls[before:])
+			t.Errorf("recreated without a new image, calls: %v", fake.Calls[before:])
 		}
 	}
 
-	fake.PulledImageIDs[image] = "sha256:nova"
+	fake.PulledImageIDs[image] = "sha256:new"
 	before = len(fake.Calls)
 	if err := m.UpdateImage(context.Background(), "smp"); err != nil {
 		t.Fatalf("UpdateImage: %v", err)
 	}
-	waitFor(t, "recriar", func() bool {
+	waitFor(t, "the recreate", func() bool {
 		i, _ := m.Get(context.Background(), "smp")
 		return i.Operation == nil
 	})
@@ -528,7 +528,7 @@ func TestUpdateImageRecreatesOnlyWhenTheImageChanged(t *testing.T) {
 		}
 	}
 	if !recreated {
-		t.Errorf("imagem nova devia recriar o container; chamadas: %v", fake.Calls[before:])
+		t.Errorf("a new image should recreate the container, calls: %v", fake.Calls[before:])
 	}
 }
 
@@ -538,8 +538,8 @@ func TestUpdateImagePublishesWhatHappened(t *testing.T) {
 		t.Fatalf("Create: %v", err)
 	}
 	image := "itzg/minecraft-server:java21"
-	fake.ImageIDs[image] = "sha256:antiga"
-	fake.PulledImageIDs[image] = "sha256:antiga"
+	fake.ImageIDs[image] = "sha256:old"
+	fake.PulledImageIDs[image] = "sha256:old"
 
 	events, cancel := m.Events().Subscribe()
 	defer cancel()
@@ -553,13 +553,13 @@ func TestUpdateImagePublishesWhatHappened(t *testing.T) {
 		select {
 		case ev := <-events:
 			if ev.Type == "instance.uptodate" && ev.Instance == "smp" {
-				if !strings.Contains(ev.Message, "mais nova") {
-					t.Errorf("mensagem pouco clara: %q", ev.Message)
+				if !strings.Contains(ev.Message, "newest image") {
+					t.Errorf("unclear message: %q", ev.Message)
 				}
 				return
 			}
 		case <-deadline:
-			t.Fatal("nenhum evento dizendo que já estava atualizada")
+			t.Fatal("no event saying it was already up to date")
 		}
 	}
 }
@@ -573,7 +573,7 @@ func TestUpdateImageRefusesArchived(t *testing.T) {
 		t.Fatalf("SetArchived: %v", err)
 	}
 	if err := m.UpdateImage(context.Background(), "smp"); err == nil {
-		t.Error("instância arquivada não devia ser atualizada sem restaurar")
+		t.Error("an archived instance must not be updated before being restored")
 	}
 }
 
@@ -590,7 +590,7 @@ func hostContainer(name, project string) dockerx.HostContainer {
 	}
 }
 
-func TestListMostraContainerQueJaExistia(t *testing.T) {
+func TestListShowsAContainerThatWasAlreadyThere(t *testing.T) {
 	m, fake := newManager(t, 16*gb)
 	fake.HostList = []dockerx.HostContainer{hostContainer("jellyfin", "media")}
 
@@ -599,22 +599,22 @@ func TestListMostraContainerQueJaExistia(t *testing.T) {
 		t.Fatalf("List: %v", err)
 	}
 	if len(list) != 1 {
-		t.Fatalf("esperava 1 instância, veio %d", len(list))
+		t.Fatalf("expected 1 instance, got %d", len(list))
 	}
 
 	got := list[0]
 	if !got.External || got.Name != "jellyfin" || got.Project != "media" {
-		t.Errorf("container externo veio errado: %+v", got)
+		t.Errorf("the external container came out wrong: %+v", got)
 	}
 	if got.State != instance.StateRunning {
 		t.Errorf("state = %q", got.State)
 	}
 	if len(got.Ports) != 1 || got.Ports[0].Host != 8096 {
-		t.Errorf("portas = %+v", got.Ports)
+		t.Errorf("ports = %+v", got.Ports)
 	}
 }
 
-func TestListNaoDuplicaInstanciaDoPainel(t *testing.T) {
+func TestListDoesNotDuplicateAPanelInstance(t *testing.T) {
 	m, fake := newManager(t, 16*gb)
 	inst, err := m.Create(t.Context(), SpecRequest{Name: "smp", TemplateID: "minecraft-java"})
 	if err != nil {
@@ -631,14 +631,14 @@ func TestListNaoDuplicaInstanciaDoPainel(t *testing.T) {
 		t.Fatalf("List: %v", err)
 	}
 	if len(list) != 1 {
-		t.Fatalf("a instância do painel foi listada duas vezes: %+v", list)
+		t.Fatalf("the panel instance was listed twice: %+v", list)
 	}
 	if list[0].External {
-		t.Error("instância criada pelo painel não é externa")
+		t.Error("an instance created by the panel is not external")
 	}
 }
 
-func TestListNaoMostraOProprioPainel(t *testing.T) {
+func TestListHidesThePanelItself(t *testing.T) {
 	m, fake := newManager(t, 16*gb)
 	self, err := os.Hostname()
 	if err != nil {
@@ -655,21 +655,21 @@ func TestListNaoMostraOProprioPainel(t *testing.T) {
 	}
 	for _, inst := range list {
 		if inst.Name == "okdock" {
-			t.Fatal("o painel não pode aparecer no próprio quadro com botão de parar")
+			t.Fatal("the panel must not show up on its own board with a stop button")
 		}
 	}
 	if len(list) != 1 {
-		t.Errorf("esperava só o jellyfin: %+v", list)
+		t.Errorf("expected only jellyfin: %+v", list)
 	}
 }
 
-func TestAcoesEmContainerExterno(t *testing.T) {
+func TestActionsOnAnExternalContainer(t *testing.T) {
 	m, fake := newManager(t, 16*gb)
 	fake.HostList = []dockerx.HostContainer{hostContainer("jellyfin", "media")}
 	ctx := t.Context()
 
-	acoes := []struct {
-		nome string
+	actions := []struct {
+		name string
 		run  func(context.Context, string) error
 		call string
 	}{
@@ -677,19 +677,19 @@ func TestAcoesEmContainerExterno(t *testing.T) {
 		{"Start", m.Start, "container-start:jellyfin"},
 		{"Restart", m.Restart, "container-restart:jellyfin"},
 	}
-	for _, a := range acoes {
+	for _, a := range actions {
 		if err := a.run(ctx, "jellyfin"); err != nil {
-			t.Fatalf("%s: %v", a.nome, err)
+			t.Fatalf("%s: %v", a.name, err)
 		}
-		// a operacao some do mapa quando a goroutine termina; so ai Calls esta estavel
-		waitFor(t, "fim da operação de "+a.nome, func() bool { return m.operation("jellyfin") == nil })
+		// the operation leaves the map when the goroutine ends, only then Calls is stable
+		waitFor(t, "the "+a.name+" operation to finish", func() bool { return m.operation("jellyfin") == nil })
 		if !containsCall(fake.Calls, a.call) {
-			t.Errorf("faltou a chamada %q: %v", a.call, fake.Calls)
+			t.Errorf("missing call %q: %v", a.call, fake.Calls)
 		}
 	}
 }
 
-func TestFalhaEmContainerExternoViraErroNoQuadro(t *testing.T) {
+func TestAFailureOnAnExternalContainerBecomesAnErrorOnTheBoard(t *testing.T) {
 	m, fake := newManager(t, 16*gb)
 	fake.HostList = []dockerx.HostContainer{hostContainer("jellyfin", "media")}
 	fake.FailAction = map[string]error{"jellyfin": errors.New("permission denied")}
@@ -698,7 +698,7 @@ func TestFalhaEmContainerExternoViraErroNoQuadro(t *testing.T) {
 	if err := m.Stop(ctx, "jellyfin"); err != nil {
 		t.Fatalf("Stop: %v", err)
 	}
-	waitFor(t, "o erro do docker chegar na operação", func() bool {
+	waitFor(t, "the docker error to reach the operation", func() bool {
 		op := m.operation("jellyfin")
 		return op != nil && op.Error != ""
 	})
@@ -708,34 +708,34 @@ func TestFalhaEmContainerExternoViraErroNoQuadro(t *testing.T) {
 		t.Fatalf("List: %v", err)
 	}
 	if list[0].State != instance.StateError {
-		t.Errorf("estado = %q; a recusa do docker não pode passar em silêncio", list[0].State)
+		t.Errorf("state = %q, a docker refusal must not pass in silence", list[0].State)
 	}
 	if !strings.Contains(list[0].Status, "permission denied") {
-		t.Errorf("status = %q, queria o que o docker disse", list[0].Status)
+		t.Errorf("status = %q, wanted what docker said", list[0].Status)
 	}
 
 	m.ClearError("jellyfin")
 	if m.operation("jellyfin") != nil {
-		t.Error("limpar o erro precisa destravar o container externo")
+		t.Error("clearing the error must unblock the external container")
 	}
 }
 
-func TestEditarContainerExternoNaoPassa(t *testing.T) {
+func TestEditingAnExternalContainerIsRefused(t *testing.T) {
 	m, fake := newManager(t, 16*gb)
 	fake.HostList = []dockerx.HostContainer{hostContainer("jellyfin", "media")}
 	ctx := t.Context()
 
 	if _, err := m.Update(ctx, "jellyfin", SpecRequest{Name: "jellyfin"}); !errors.Is(err, ErrExternal) {
-		t.Errorf("Update = %v, queria ErrExternal", err)
+		t.Errorf("Update = %v, wanted ErrExternal", err)
 	}
 	if err := m.Delete(ctx, "jellyfin", true); !errors.Is(err, ErrExternal) {
-		t.Errorf("Delete = %v, queria ErrExternal", err)
+		t.Errorf("Delete = %v, wanted ErrExternal", err)
 	}
 	if err := m.SetArchived(ctx, "jellyfin", true); !errors.Is(err, ErrExternal) {
-		t.Errorf("SetArchived = %v, queria ErrExternal", err)
+		t.Errorf("SetArchived = %v, wanted ErrExternal", err)
 	}
 	if err := m.UpdateImage(ctx, "jellyfin"); !errors.Is(err, ErrExternal) {
-		t.Errorf("UpdateImage = %v, queria ErrExternal", err)
+		t.Errorf("UpdateImage = %v, wanted ErrExternal", err)
 	}
 }
 
@@ -748,11 +748,11 @@ func containsCall(calls []string, want string) bool {
 	return false
 }
 
-func TestContainerExternoNuncaTemListaNula(t *testing.T) {
+func TestAnExternalContainerNeverHasANullList(t *testing.T) {
 	m, fake := newManager(t, 16*gb)
-	sem := hostContainer("duckdns", "duckdns")
-	sem.Ports = nil
-	fake.HostList = []dockerx.HostContainer{sem}
+	noPorts := hostContainer("duckdns", "duckdns")
+	noPorts.Ports = nil
+	fake.HostList = []dockerx.HostContainer{noPorts}
 
 	list, err := m.List(t.Context())
 	if err != nil {
@@ -769,12 +769,12 @@ func TestContainerExternoNuncaTemListaNula(t *testing.T) {
 	}
 	for _, field := range []string{"ports", "mounts"} {
 		if body[field] == nil {
-			t.Errorf("%s veio null; a tela conta os itens sem checar: %s", field, raw)
+			t.Errorf("%s came as null, the screen counts the items without checking: %s", field, raw)
 		}
 	}
 }
 
-func TestContainerExternoCaiNaCategoriaDaImagem(t *testing.T) {
+func TestAnExternalContainerLandsInTheImageCategory(t *testing.T) {
 	m, fake := newManager(t, 16*gb)
 	jelly := hostContainer("jellyfin", "media")
 	db := hostContainer("nextcloud-mysql", "nextcloud")
@@ -790,27 +790,27 @@ func TestContainerExternoCaiNaCategoriaDaImagem(t *testing.T) {
 		byName[inst.Name] = inst.Category
 	}
 	if byName["jellyfin"] != "media" {
-		t.Errorf("jellyfin caiu em %q; sem categoria o quadro joga tudo em Outros", byName["jellyfin"])
+		t.Errorf("jellyfin landed in %q, with no category the board dumps everything in Other", byName["jellyfin"])
 	}
 	if byName["nextcloud-mysql"] != "database" {
-		t.Errorf("mariadb caiu em %q", byName["nextcloud-mysql"])
+		t.Errorf("mariadb landed in %q", byName["nextcloud-mysql"])
 	}
 }
 
-func TestContainerExternoUsaRotuloEPortaQuandoONomeNaoDiz(t *testing.T) {
+func TestAnExternalContainerUsesLabelAndPortWhenTheNameSaysNothing(t *testing.T) {
 	m, fake := newManager(t, 16*gb)
-	rotulo := hostContainer("interno", "caseiro")
-	rotulo.Image = "registro.local/interno:1"
-	rotulo.Labels = map[string]string{
+	labeled := hostContainer("internal", "homemade")
+	labeled.Image = "registry.local/internal:1"
+	labeled.Labels = map[string]string{
 		"org.opencontainers.image.source": "https://github.com/jellyfin/jellyfin",
 	}
-	rotulo.Ports = nil
+	labeled.Ports = nil
 
-	porta := hostContainer("servidor", "caseiro")
-	porta.Image = "registro.local/servidor:1"
-	porta.Ports = []dockerx.HostPort{{Host: 30000, Container: 25565, Protocol: "tcp"}}
+	ported := hostContainer("server", "homemade")
+	ported.Image = "registry.local/server:1"
+	ported.Ports = []dockerx.HostPort{{Host: 30000, Container: 25565, Protocol: "tcp"}}
 
-	fake.HostList = []dockerx.HostContainer{rotulo, porta}
+	fake.HostList = []dockerx.HostContainer{labeled, ported}
 
 	list, err := m.List(t.Context())
 	if err != nil {
@@ -820,10 +820,10 @@ func TestContainerExternoUsaRotuloEPortaQuandoONomeNaoDiz(t *testing.T) {
 	for _, inst := range list {
 		byName[inst.Name] = inst.Category
 	}
-	if byName["interno"] != "media" {
-		t.Errorf("o rótulo da imagem devia valer: categoria = %q", byName["interno"])
+	if byName["internal"] != "media" {
+		t.Errorf("the image label should win: category = %q", byName["internal"])
 	}
-	if byName["servidor"] != "games" {
-		t.Errorf("a porta 25565 devia valer: categoria = %q", byName["servidor"])
+	if byName["server"] != "games" {
+		t.Errorf("port 25565 should win: category = %q", byName["server"])
 	}
 }

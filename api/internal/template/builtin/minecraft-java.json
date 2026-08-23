@@ -4,7 +4,7 @@
   "category": "games",
   "short": "MC",
   "image": "itzg/minecraft-server:java21",
-  "description": "Servidor Java com suporte a vanilla, Paper, Fabric, Forge e modpacks.",
+  "description": "Java server supporting vanilla, Paper, Fabric, Forge and modpacks.",
   "docs": "https://docker-minecraft-server.readthedocs.io/",
   "ports": [
     {
@@ -39,11 +39,11 @@
       "type": "bool",
       "default": "true",
       "required": true,
-      "help": "A imagem não sobe sem isto aceito."
+      "help": "The image does not start unless this is accepted."
     },
     {
       "key": "TYPE",
-      "label": "Distribuição",
+      "label": "Distribution",
       "type": "enum",
       "default": "VANILLA",
       "options": [
@@ -71,17 +71,17 @@
     },
     {
       "key": "VERSION",
-      "label": "Versão",
+      "label": "Version",
       "type": "text",
       "default": "LATEST",
-      "help": "LATEST, SNAPSHOT ou uma versão exata como 1.21.1."
+      "help": "LATEST, SNAPSHOT or an exact version such as 1.21.1."
     },
     {
       "key": "MEMORY",
       "label": "Heap da JVM",
       "type": "text",
       "default": "3G",
-      "help": "Deixe pelo menos 1 GB abaixo do limite de RAM do container, senão o kernel mata o processo (exit 137)."
+      "help": "Keep it at least 1 GB below the container RAM limit, or the kernel kills the process (exit 137)."
     },
     {
       "key": "MOTD",
@@ -139,7 +139,7 @@
     },
     {
       "key": "MAX_PLAYERS",
-      "label": "Máximo de jogadores",
+      "label": "Max players",
       "type": "int",
       "default": "10",
       "min": 1,
@@ -161,7 +161,7 @@
       "key": "OPS",
       "label": "Operadores",
       "type": "text",
-      "help": "Nicks separados por vírgula."
+      "help": "Nicknames separated by commas."
     },
     {
       "key": "LEVEL_SEED",
@@ -171,7 +171,7 @@
     },
     {
       "key": "VIEW_DISTANCE",
-      "label": "Distância de render",
+      "label": "Render distance",
       "type": "int",
       "default": "10",
       "min": 3,

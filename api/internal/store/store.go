@@ -17,9 +17,9 @@ import (
 )
 
 var (
-	ErrNotFound    = errors.New("instância não encontrada")
-	ErrExists      = errors.New("já existe uma instância com esse nome")
-	ErrInvalidRoot = errors.New("raiz inválida")
+	ErrNotFound    = errors.New("instance not found")
+	ErrExists      = errors.New("an instance with that name already exists")
+	ErrInvalidRoot = errors.New("invalid root")
 )
 
 type NotFoundError struct{ Name string }
@@ -73,12 +73,12 @@ func New(root string) (*Store, error) {
 
 	cfg, err := s.LoadPanel()
 	if err != nil {
-		slog.Warn("configuração do painel ilegível; seguindo na raiz de boot", "err", err)
+		slog.Warn("unreadable panel config, staying on the boot root", "err", err)
 		return s, nil
 	}
 	if cfg.Root != "" && cfg.Root != abs {
 		if err := prepareRoot(cfg.Root); err != nil {
-			slog.Warn("raiz gravada não pôde ser usada; seguindo na raiz de boot",
+			slog.Warn("the saved root could not be used, staying on the boot root",
 				"root", cfg.Root, "err", err)
 			return s, nil
 		}

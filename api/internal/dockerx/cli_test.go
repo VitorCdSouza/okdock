@@ -19,7 +19,7 @@ func TestParsePSAcceptsBothComposeFormats(t *testing.T) {
 		t.Fatalf("parsePS array: %v", err)
 	}
 	if len(got) != 1 || got[0].State != "running" {
-		t.Fatalf("parsePS array = %+v; State precisa vir normalizado em minúsculas", got)
+		t.Fatalf("parsePS array = %+v, State must come normalized to lowercase", got)
 	}
 }
 
@@ -42,7 +42,7 @@ func TestParsePercent(t *testing.T) {
 		t.Errorf("parsePercent = %v", got)
 	}
 	if got := parsePercent("--"); got != 0 {
-		t.Errorf("valor ilegível devia virar 0, veio %v", got)
+		t.Errorf("an unreadable value should become 0, got %v", got)
 	}
 }
 
@@ -80,7 +80,7 @@ func TestParseHostPS(t *testing.T) {
 
 	jelly := list[0]
 	if jelly.Name != "jellyfin" || jelly.Project != "media" || jelly.Service != "jellyfin" {
-		t.Errorf("identificação errada: %+v", jelly)
+		t.Errorf("wrong identification: %+v", jelly)
 	}
 	if jelly.WorkDir != "/home/vitorcds/servidor/media" {
 		t.Errorf("workDir = %q", jelly.WorkDir)
@@ -89,7 +89,7 @@ func TestParseHostPS(t *testing.T) {
 		t.Errorf("health = %q", jelly.Health)
 	}
 	if len(jelly.Ports) != 1 {
-		t.Fatalf("o docker publica a mesma porta em IPv4 e IPv6; para a tela é uma só: %+v", jelly.Ports)
+		t.Fatalf("docker publishes the same port on IPv4 and IPv6, for the screen it is one: %+v", jelly.Ports)
 	}
 	if jelly.Ports[0] != (HostPort{Host: 8096, Container: 8096, Protocol: "tcp"}) {
 		t.Errorf("porta = %+v", jelly.Ports[0])
@@ -100,6 +100,6 @@ func TestParseHostPS(t *testing.T) {
 		t.Errorf("exitCode = %d, queria 137 tirado do Status", db.ExitCode)
 	}
 	if len(db.Ports) != 0 {
-		t.Errorf("porta exposta e não publicada não chega ao host: %+v", db.Ports)
+		t.Errorf("a port exposed but not published never reaches the host: %+v", db.Ports)
 	}
 }

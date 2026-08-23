@@ -54,14 +54,14 @@ func TestDNSVazio(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got.Suffix != duckdns.Suffix {
-		t.Errorf("o sufixo vem da API para o frontend não repetir a regra: %q", got.Suffix)
+		t.Errorf("the suffix comes from the API so the frontend does not repeat the rule: %q", got.Suffix)
 	}
 	if got.Links == nil {
 		t.Error("links devia vir como lista vazia")
 	}
 }
 
-func TestDNSFluxoCompleto(t *testing.T) {
+func TestDNSFullFlow(t *testing.T) {
 	s, _ := newDNSServer(t)
 	createForDNS(t, s, "smp")
 
@@ -83,7 +83,7 @@ func TestDNSFluxoCompleto(t *testing.T) {
 		t.Fatal(err)
 	}
 	if inst.DNS == nil || inst.DNS.Hostname != "casa.duckdns.org" || inst.DNS.LastIP == "" {
-		t.Fatalf("dns da instância: %+v", inst.DNS)
+		t.Fatalf("instance dns: %+v", inst.DNS)
 	}
 
 	if got := do(t, s, "DELETE", "/api/v1/instances/smp/dns", nil).Code; got != 204 {
@@ -91,18 +91,18 @@ func TestDNSFluxoCompleto(t *testing.T) {
 	}
 }
 
-func TestDNSDominioInvalido(t *testing.T) {
+func TestDNSInvalidDomain(t *testing.T) {
 	s, _ := newDNSServer(t)
 	createForDNS(t, s, "smp")
 	do(t, s, "PUT", "/api/v1/dns", map[string]string{"token": "tok"})
 
-	w := do(t, s, "PUT", "/api/v1/instances/smp/dns", map[string]string{"domain": "não vale"})
+	w := do(t, s, "PUT", "/api/v1/instances/smp/dns", map[string]string{"domain": "not valid"})
 	if w.Code != 422 {
 		t.Fatalf("status = %d, queria 422", w.Code)
 	}
 }
 
-func TestDNSRecusado(t *testing.T) {
+func TestDNSRejected(t *testing.T) {
 	s, fake := newDNSServer(t)
 	createForDNS(t, s, "smp")
 	fake.Token = "certo"
@@ -121,7 +121,7 @@ func TestDNSRecusado(t *testing.T) {
 	}
 }
 
-func TestDNSSemToken(t *testing.T) {
+func TestDNSWithoutAToken(t *testing.T) {
 	s, _ := newDNSServer(t)
 	createForDNS(t, s, "smp")
 	w := do(t, s, "PUT", "/api/v1/instances/smp/dns", map[string]string{"domain": "casa"})
@@ -130,7 +130,7 @@ func TestDNSSemToken(t *testing.T) {
 	}
 }
 
-func TestDNSInstanciaInexistente(t *testing.T) {
+func TestDNSUnknownInstance(t *testing.T) {
 	s, _ := newDNSServer(t)
 	do(t, s, "PUT", "/api/v1/dns", map[string]string{"token": "tok"})
 	w := do(t, s, "PUT", "/api/v1/instances/fantasma/dns", map[string]string{"domain": "casa"})
@@ -139,7 +139,7 @@ func TestDNSInstanciaInexistente(t *testing.T) {
 	}
 }
 
-func TestDNSDominioCadastrado(t *testing.T) {
+func TestDNSRegisteredDomain(t *testing.T) {
 	s, fake := newDNSServer(t)
 	fake.Domains = map[string]bool{"casa": true}
 	if got := do(t, s, "PUT", "/api/v1/dns", map[string]string{"token": "tok"}).Code; got != 200 {
@@ -159,7 +159,7 @@ func TestDNSDominioCadastrado(t *testing.T) {
 	}
 
 	if got := do(t, s, "DELETE", "/api/v1/dns/domains/casa", nil).Code; got != 204 {
-		t.Fatalf("remoção: status %d", got)
+		t.Fatalf("removal: status %d", got)
 	}
 	if err := json.Unmarshal(do(t, s, "GET", "/api/v1/dns", nil).Body.Bytes(), &status); err != nil {
 		t.Fatal(err)
@@ -169,7 +169,7 @@ func TestDNSDominioCadastrado(t *testing.T) {
 	}
 }
 
-func TestDNSDominioCadastradoRecusado(t *testing.T) {
+func TestDNSRegisteredDomainRejected(t *testing.T) {
 	s, fake := newDNSServer(t)
 	fake.Domains = map[string]bool{"casa": true}
 	if got := do(t, s, "PUT", "/api/v1/dns", map[string]string{"token": "tok"}).Code; got != 200 {

@@ -31,17 +31,17 @@ type Catalog struct {
 
 type NotFoundError struct{ ID string }
 
-func (e *NotFoundError) Error() string { return fmt.Sprintf("template %q não existe", e.ID) }
+func (e *NotFoundError) Error() string { return fmt.Sprintf("template %q does not exist", e.ID) }
 
-var ErrNotFound = errors.New("template não existe")
+var ErrNotFound = errors.New("template does not exist")
 
 func (e *NotFoundError) Is(target error) bool { return target == ErrNotFound }
 
 type BuiltinError struct{ ID string }
 
-func (e *BuiltinError) Error() string { return fmt.Sprintf("template %q vem com o OkDock", e.ID) }
+func (e *BuiltinError) Error() string { return fmt.Sprintf("template %q ships with OkDock", e.ID) }
 
-var ErrBuiltin = errors.New("template de fábrica")
+var ErrBuiltin = errors.New("builtin template")
 
 func (e *BuiltinError) Is(target error) bool { return target == ErrBuiltin }
 
@@ -68,10 +68,10 @@ func loadBuiltin() (map[string]Template, error) {
 		}
 		var t Template
 		if err := json.Unmarshal(raw, &t); err != nil {
-			return nil, fmt.Errorf("template de fábrica %s: %w", name, err)
+			return nil, fmt.Errorf("builtin template %s: %w", name, err)
 		}
 		if problems := t.Check(); len(problems) > 0 {
-			return nil, fmt.Errorf("template de fábrica %s: %v", name, problems)
+			return nil, fmt.Errorf("builtin template %s: %v", name, problems)
 		}
 		out[t.ID] = t
 	}
@@ -111,7 +111,7 @@ func (c *Catalog) Reload() error {
 	c.mu.Unlock()
 
 	if len(bad) > 0 {
-		return fmt.Errorf("templates ilegíveis, ignorados: %s", strings.Join(bad, ", "))
+		return fmt.Errorf("unreadable templates, skipped: %s", strings.Join(bad, ", "))
 	}
 	return nil
 }

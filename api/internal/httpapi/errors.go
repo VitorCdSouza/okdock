@@ -161,7 +161,7 @@ func writeError(w http.ResponseWriter, err error) {
 			Params:  map[string]any{"detail": dockerDetail(dockerErr)},
 		})
 	default:
-		slog.Error("erro não tratado", "err", err)
+		slog.Error("unhandled error", "err", err)
 		writeJSON(w, http.StatusInternalServerError, apiError{Error: "internal", Message: err.Error()})
 	}
 }
@@ -191,7 +191,7 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, v any) bool {
 	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(v); err != nil {
-		badRequest(w, "corpo inválido: "+err.Error())
+		badRequest(w, "invalid body: "+err.Error())
 		return false
 	}
 	return true

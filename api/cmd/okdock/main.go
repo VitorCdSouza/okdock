@@ -34,11 +34,11 @@ func main() {
 
 func run() error {
 	var (
-		addr        = flag.String("addr", env("OKDOCK_ADDR", ":8080"), "endereço de escuta")
-		root        = flag.String("root", env("OKDOCK_ROOT", "/srv/games"), "raiz dos diretórios de instância")
-		reserveFlag = flag.String("memory-reserve", env("OKDOCK_MEMORY_RESERVE", "2g"), "RAM reservada ao host, fora do orçamento das instâncias")
+		addr        = flag.String("addr", env("OKDOCK_ADDR", ":8080"), "listen address")
+		root        = flag.String("root", env("OKDOCK_ROOT", "/srv/games"), "root of the instance directories")
+		reserveFlag = flag.String("memory-reserve", env("OKDOCK_MEMORY_RESERVE", "2g"), "RAM reserved for the host, outside the instance budget")
 		allowOrigin = flag.String("allow-origin", env("OKDOCK_ALLOW_ORIGIN", ""), "origem liberada por CORS; use http://localhost:4200 com o ng serve")
-		dockerBin   = flag.String("docker-bin", env("OKDOCK_DOCKER_BIN", "docker"), "executável do docker")
+		dockerBin   = flag.String("docker-bin", env("OKDOCK_DOCKER_BIN", "docker"), "docker executable")
 		logLevel    = flag.String("log-level", env("OKDOCK_LOG_LEVEL", "info"), "debug, info, warn ou error")
 	)
 	flag.Parse()
@@ -81,7 +81,7 @@ func run() error {
 
 	var web fs.FS
 	if webui.Placeholder() {
-		slog.Warn("frontend não embutido; só a API responde. Rode `make build` para embutir")
+		slog.Warn("frontend not embedded, only the API answers; run `make build` to embed it")
 	}
 	web = webui.FS()
 
@@ -99,7 +99,7 @@ func run() error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	if v, err := docker.Version(ctx); err != nil {
-		slog.Warn("docker não respondeu; monte /var/run/docker.sock no container", "err", err)
+		slog.Warn("docker did not answer, mount /var/run/docker.sock in the container", "err", err)
 	} else {
 		slog.Info("docker encontrado", "version", v)
 	}
@@ -135,7 +135,7 @@ func env(key, def string) string {
 	}
 	if legacy, ok := strings.CutPrefix(key, "OKDOCK_"); ok {
 		if v := os.Getenv("GAMEDOCK_" + legacy); v != "" {
-			slog.Warn("variável de ambiente com o nome antigo", "usada", "GAMEDOCK_"+legacy, "nova", key)
+			slog.Warn("environment variable with the old name", "used", "GAMEDOCK_"+legacy, "new", key)
 			return v
 		}
 	}

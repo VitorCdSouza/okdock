@@ -40,7 +40,7 @@ func (s *Server) spa() http.Handler {
 func serveIndex(w http.ResponseWriter, fsys fs.FS) {
 	f, err := fsys.Open("index.html")
 	if err != nil {
-		http.Error(w, "frontend não foi embutido neste binário", http.StatusNotFound)
+		http.Error(w, "the frontend was not embedded in this binary", http.StatusNotFound)
 		return
 	}
 	defer f.Close()
