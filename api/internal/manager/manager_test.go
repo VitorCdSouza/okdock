@@ -740,3 +740,26 @@ func TestContainerExternoNuncaTemListaNula(t *testing.T) {
 		}
 	}
 }
+
+func TestContainerExternoCaiNaCategoriaDaImagem(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	jelly := hostContainer("jellyfin", "media")
+	db := hostContainer("nextcloud-mysql", "nextcloud")
+	db.Image = "mariadb:10.6"
+	fake.HostList = []dockerx.HostContainer{jelly, db}
+
+	list, err := m.List(t.Context())
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	byName := map[string]string{}
+	for _, inst := range list {
+		byName[inst.Name] = inst.Category
+	}
+	if byName["jellyfin"] != "media" {
+		t.Errorf("jellyfin caiu em %q; sem categoria o quadro joga tudo em Outros", byName["jellyfin"])
+	}
+	if byName["nextcloud-mysql"] != "database" {
+		t.Errorf("mariadb caiu em %q", byName["nextcloud-mysql"])
+	}
+}

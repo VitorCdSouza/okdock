@@ -523,3 +523,41 @@ func TestReloadIgnoraArquivoIlegivel(t *testing.T) {
 		t.Error("os templates de fábrica precisam continuar valendo")
 	}
 }
+
+func TestGuessCategoryPeloNomeDaImagem(t *testing.T) {
+	casos := map[string]Category{
+		"jellyfin/jellyfin:latest":        CategoryMedia,
+		"lscr.io/linuxserver/sonarr":      CategoryMedia,
+		"mariadb:10.6":                    CategoryDatabase,
+		"redis:alpine":                    CategoryDatabase,
+		"linuxserver/duckdns":             CategoryNetwork,
+		"nextcloud:apache":                CategoryUtilities,
+		"itzg/minecraft-server:java21":    CategoryGames,
+		"vitorcds/telegram-promo-bot:1.0": CategoryOther,
+	}
+	for image, want := range casos {
+		got, known := GuessCategory(image)
+		if got != want {
+			t.Errorf("GuessCategory(%q) = %q, queria %q", image, got, want)
+		}
+		if known != (want != CategoryOther) {
+			t.Errorf("GuessCategory(%q): reconhecida = %v", image, known)
+		}
+	}
+}
+
+func TestCategoryForImagePrefereOTemplate(t *testing.T) {
+	c := testCatalog(t)
+
+	// A imagem casa com o imagePattern de um template: vale a categoria dele.
+	if got := c.CategoryForImage("itzg/minecraft-server:java21"); got != CategoryGames {
+		t.Errorf("categoria = %q", got)
+	}
+	// Sem template que a configure, sobra o palpite pelo nome.
+	if got := c.CategoryForImage("jellyfin/jellyfin:10.9"); got != CategoryMedia {
+		t.Errorf("categoria = %q", got)
+	}
+	if got := c.CategoryForImage("coisa/desconhecida:1"); got != CategoryOther {
+		t.Errorf("categoria = %q", got)
+	}
+}
