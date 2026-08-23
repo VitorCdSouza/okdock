@@ -3,7 +3,8 @@ name: okdock
 services:
   okdock:
     build: .
-    image: okdock:local
+    image: ghcr.io/vitorcdsouza/okdock:latest
+    pull_policy: always
     container_name: okdock
     restart: unless-stopped
     ports:

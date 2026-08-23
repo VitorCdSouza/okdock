@@ -51,12 +51,20 @@ make lint    # go vet + gofmt
 ## Running on the server
 
 ```bash
-make deploy
+docker compose up -d
 ```
 
-Which is `docker compose up -d --build` plus a wait until `/api/v1/health`
-answers. It runs on the server itself, the machine that has the daemon; there is
-no remote deploy in the repo.
+Every push to `main` builds the image on GitHub Actions, runs the smoke test on
+it and publishes `ghcr.io/vitorcdsouza/okdock:latest` (also tagged with the
+commit sha). The service says `pull_policy: always`, so the line above pulls
+whatever is current and recreates the container when it changed. Nothing is
+built on the server.
+
+`docker compose restart` is not enough: it restarts the container with the image
+it already has. What updates is `up -d`.
+
+To build on your own machine instead of taking the published image, the
+`build: .` is still there: `docker compose up -d --build`.
 
 The panel comes up on `:8080` with the frontend embedded in the binary itself:
 one container, no separate web server.
