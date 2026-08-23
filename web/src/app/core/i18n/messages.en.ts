@@ -67,14 +67,14 @@ export const en: Record<MessageKey, string> = {
   'kanban.deleteTitle': 'Delete {name}?',
   'kanban.deleteBody':
     'Tears down the container and deletes docker-compose.yml. The world stays on disk, at',
-  'kanban.deleteWorldToo': 'delete the world too — ',
+  'kanban.deleteWorldToo': 'delete the world too: ',
   'kanban.noUndo': 'there is no undo',
   'kanban.deleteAndWorld': 'Delete and erase the world',
   'kanban.deleteKeepWorld': 'Delete, keep the world',
   'kanban.updateTitle': 'Update {name}?',
   'kanban.updateBodyPre': 'Looks for a newer image of',
   'kanban.updateBodyPost':
-    '. The container is recreated only if there is one — and the world in the volumes is preserved.',
+    '. The container is recreated only if there is one, and the world in the volumes is preserved.',
   'kanban.updateWarnRunning': 'The instance is up: recreating drops whoever is playing.',
   'kanban.doUpdate': 'Look for an update',
   'kanban.stopTitle': 'Stop {name}?',
@@ -132,7 +132,7 @@ export const en: Record<MessageKey, string> = {
   'detail.resourcesTitle': 'RESOURCES & NETWORK',
   'detail.ramLimit': 'RAM limit',
   'detail.ramLimitTip': 'The container ceiling. The JVM heap goes in the template fields.',
-  'detail.hostPort': 'Host port — {label}',
+  'detail.hostPort': 'Host port ({label})',
   'detail.portFallbackLabel': 'game',
   'detail.inContainer': 'Inside the container: {port}/{protocol}',
   'detail.volumes': 'VOLUMES',
@@ -144,16 +144,16 @@ export const en: Record<MessageKey, string> = {
   'detail.checkNow': 'Check now',
   'detail.unlink': 'Unlink',
   'detail.dnsTip':
-    'The name resolves to this house’s IP, and the panel resends it every 5 minutes. Port {port} still has to be open on the router — that part the panel cannot check from here.',
+    'The name resolves to the IP of this house, and the panel resends it every 5 minutes. Port {port} still has to be open on the router, and that part the panel cannot check from here.',
   'detail.pointsTo': 'points to {ip} · checked {when}',
   'detail.neverChecked': 'not checked yet',
   'detail.verifyAndLink': 'Check and link',
   'detail.linkTip':
-    'The subdomain has to exist in your account already: the DuckDNS API does not create names, it only updates the IP of one that exists. Create it at duckdns.org and come back — checking is the panel itself trying to update it.',
+    'The subdomain has to exist in your account already: the DuckDNS API does not create names, it only updates the IP of one that exists. Create it at duckdns.org and come back: checking is the panel itself trying to update it.',
   'detail.syncing': 'checking the address on duckdns…',
-  'detail.consoleEmpty': 'no output yet — the instance has to be up.',
+  'detail.consoleEmpty': 'no output yet, the instance has to be up.',
   'detail.composeLead':
-    'This is the file as it is on disk. Editing it by hand works — the panel rereads it. But Save and recreate overwrites it.',
+    'This is the file as it is on disk. Editing it by hand works, the panel rereads it. But Save and recreate overwrites it.',
   'detail.recreate.one':
     'change requires recreating the container. The world in the volumes is preserved.',
   'detail.recreate.other':
@@ -167,19 +167,19 @@ export const en: Record<MessageKey, string> = {
   'new.templateMeta': '{fields} fields · minimum RAM {memory}',
   'new.name': 'Instance name',
   'new.nameTip':
-    'It becomes the directory, the compose project name and the container name — always the same text in all three.',
+    'It becomes the directory, the compose project name and the container name, always the same text in all three.',
   'new.nameInvalid':
     'lowercase, digits, - and _; 2 to 39 characters, starting with a letter or a digit',
   'new.nameTaken': 'an instance with this name already exists',
   'new.image': 'Image',
   'new.imageTip':
-    'The repository comes from the template; only the tag changes. Any tag that exists on the image works, latest included — the list is only a suggestion.',
+    'The repository comes from the template; only the tag changes. Any tag that exists on the image works, latest included: the list is only a suggestion.',
   'new.memoryLimit': 'Container RAM limit',
   'new.memoryTip': 'The container ceiling, not the JVM heap. Minimum for this image: {memory}',
   'new.dns': 'Name to invite people with',
   'new.dnsTip':
-    'Links one of the names already registered in the settings; the link keeps the IP up to date on its own. What you pass along is always name:port — duckdns does not store a port, and forwarding it on the router is still manual.',
-  'new.dnsNone': 'no name — by IP only',
+    'Links one of the names already registered in the settings; the link keeps the IP up to date on its own. What you pass along is always name:port, because duckdns does not store a port, and forwarding it on the router is still manual.',
+  'new.dnsNone': 'no name, by IP only',
   'new.dnsAllTaken':
     'every registered name already belongs to another instance; register another one in the settings',
   'new.dnsNoToken': 'set the duckdns token in the settings to link a name here',
@@ -190,7 +190,7 @@ export const en: Record<MessageKey, string> = {
   'new.hint': 'generates {name}/docker-compose.yml',
   'new.startAfterCreate': 'start the instance right after creating it (pulls the image first)',
   'new.footerTip':
-    'Passwords never enter docker-compose.yml: secret fields go to an .env next to it, with 0600 permissions and out of version control. The generated file shows up in the instance’s compose.yml tab.',
+    'Passwords never enter docker-compose.yml: secret fields go to an .env next to it, with 0600 permissions and out of version control. The generated file shows up in the compose.yml tab of the instance.',
   'new.back': 'Back',
   'new.wait': 'please wait…',
   'new.create': 'Create instance',
@@ -215,7 +215,7 @@ export const en: Record<MessageKey, string> = {
   'templates.tagsTip': 'Comma separated. They become the suggestion list when creating the instance; any other tag still works.',
   'templates.imagePattern': 'Image pattern',
   'templates.imagePatternTip':
-    'Regular expression. The panel refuses to create an instance with an image that does not match — that is what stops the wrong template being picked. Empty accepts any image.',
+    'Regular expression. The panel refuses to create an instance with an image that does not match, and that is what stops the wrong template being picked. Empty accepts any image.',
   'templates.description': 'Description',
   'templates.docs': 'Documentation',
   'templates.resources': 'RESOURCES',
@@ -239,6 +239,7 @@ export const en: Record<MessageKey, string> = {
     'Each field becomes an environment variable of the image, named after the key. Mark it secret so the value only goes to .env.',
   'templates.fieldKey': 'key',
   'templates.fieldLabel': 'label',
+  'templates.fieldLabelExample': 'Timezone',
   'templates.fieldDefault': 'default value',
   'templates.fieldRequired': 'required',
   'templates.fieldSecret': 'secret',
@@ -283,7 +284,7 @@ export const en: Record<MessageKey, string> = {
   'settings.languageTitle': 'LANGUAGE',
   'settings.languageAuto': 'Automatic (system)',
   'settings.languageTip':
-    'Applies to this browser only, like the numbers in the bar: with no login, a choice saved on the server would apply to everyone in the house. What docker itself writes — log lines and container status — shows up as it came.',
+    'Applies to this browser only, like the numbers in the bar: with no login, a choice saved on the server would apply to everyone in the house. What docker itself writes (log lines and container status) shows up as it came.',
   'settings.dockerTitle': 'DOCKER',
   'settings.dockerVersion': 'version {version}',
   'settings.dockerSilent': 'did not answer',
@@ -304,10 +305,10 @@ export const en: Record<MessageKey, string> = {
   'error.invalid_root.not_dir': '{path} is not a directory',
   'error.invalid_root.unwritable': 'no write permission in {path}',
   'error.memory_budget':
-    '{instance} asks for {requested}, but only {free} are free in the {budget} budget — instances already up take {committed}.',
+    '{instance} asks for {requested}, but only {free} are free in the {budget} budget: instances already up take {committed}.',
   'error.port_taken': 'port {port}/{proto} already belongs to {owner}',
   'error.invalid_domain':
-    'invalid name: lowercase letters, digits and hyphen only — the part before {suffix}',
+    'invalid name: lowercase letters, digits and hyphen only, the part before {suffix}',
   'error.dns_rejected':
     'duckdns refused it: check that the token is right and that the name is in your account',
   'error.dns_unreachable': 'could not reach duckdns.org ({detail})',
@@ -332,7 +333,7 @@ export const en: Record<MessageKey, string> = {
   'problem.image_owned_by':
     '{image} is configured by the {owner} template, not {template}. Create the instance by picking {owner} from the list, leaving the Image field alone: the two variants bootstrap differently, changing the tag is not enough.',
   'problem.image_not_accepted':
-    '{template} does not know how to configure {image}. It expects an image matching {pattern} — switching the tag to another version works. For an image outside the catalog, use the custom image template, where you set the variables by hand.',
+    '{template} does not know how to configure {image}. It expects an image matching {pattern}, and switching the tag to another version works. For an image outside the catalog, use the custom image template, where you set the variables by hand.',
 
   'op.preparing': 'preparing',
   'op.creating': 'creating container',
@@ -352,7 +353,7 @@ export const en: Record<MessageKey, string> = {
   'template.minecraft-java.desc':
     'Java server with vanilla, Paper, Fabric, Forge and modpack support.',
   'template.terraria-tshock.desc':
-    'Terraria 1.4.5.6 with TShock 6.1.0 — plugins, permissions and admin commands. TShock usually takes weeks to catch up with a Terraria release; if the client complains about the version, use the vanilla variant.',
+    'Terraria 1.4.5.6 with TShock 6.1.0: plugins, permissions and admin commands. TShock usually takes weeks to catch up with a Terraria release; if the client complains about the version, use the vanilla variant.',
   'template.terraria-vanilla.desc':
     'Terraria 1.4.5.7 without TShock: no plugins and no admin commands, but it follows the client version much faster.',
   'template.custom.desc': 'Any image. You set ports, volumes and variables by hand.',
@@ -376,6 +377,6 @@ export const en: Record<MessageKey, string> = {
   'field.terraria-vanilla.NOUPNP.help':
     'The panel already publishes the port; letting the server touch the router only gets in the way.',
 
-  'api.offline': 'could not reach the OkDock API — is it up?',
+  'api.offline': 'could not reach the OkDock API, is it up?',
   'api.httpError': 'error {status}',
 };

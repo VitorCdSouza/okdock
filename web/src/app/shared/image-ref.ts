@@ -9,7 +9,7 @@ export function splitImage(ref: string): { repo: string; tag: string } {
 }
 
 @Component({
-  selector: 'gd-image-ref',
+  selector: 'ok-image-ref',
   imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

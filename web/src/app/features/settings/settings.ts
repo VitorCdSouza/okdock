@@ -9,7 +9,7 @@ import { MessageKey } from '../../core/i18n/messages.pt';
 import { InfoDot } from '../../shared/info-dot';
 
 @Component({
-  selector: 'gd-settings',
+  selector: 'ok-settings',
   imports: [FormsModule, InfoDot],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
@@ -61,7 +61,7 @@ export class Settings {
 
   readonly dockerLabel = computed(() => {
     const s = this.system();
-    if (!s) return '—';
+    if (!s) return '-';
     return s.dockerVersion
       ? this.t('settings.dockerVersion', { version: s.dockerVersion })
       : this.t('settings.dockerSilent');

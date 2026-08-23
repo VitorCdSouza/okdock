@@ -15,7 +15,7 @@
         <div class="category-title">{{ t(categoryKey(group.category)) }}</div>
         @for (tmpl of group.templates; track tmpl.id) {
           <button class="row" [class.on]="draft()?.id === tmpl.id && !isNew()" (click)="edit(tmpl)">
-            <gd-game-icon class="badge" [template]="tmpl.id" [fallback]="tmpl.short" />
+            <ok-game-icon class="badge" [template]="tmpl.id" [fallback]="tmpl.short" />
             <span class="ident">
               <span class="name">{{ tmpl.name }}</span>
               <span class="image mono">{{ tmpl.image || t('templates.noImage') }}</span>
@@ -47,7 +47,7 @@
           <div class="field">
             <label for="tpl-id">
               {{ t('templates.id') }} <span class="req">*</span>
-              <gd-info [text]="t('templates.idTip')" />
+              <ok-info [text]="t('templates.idTip')" />
             </label>
             <input id="tpl-id" class="mono" [disabled]="!isNew()" [ngModel]="d.id"
                    (ngModelChange)="patch({ id: $event })" placeholder="jellyfin">
@@ -71,7 +71,7 @@
           <div class="field">
             <label for="tpl-short">
               {{ t('templates.short') }}
-              <gd-info [text]="t('templates.shortTip')" />
+              <ok-info [text]="t('templates.shortTip')" />
             </label>
             <input id="tpl-short" class="mono" maxlength="3" [ngModel]="d.short"
                    (ngModelChange)="patch({ short: $event })" placeholder="JF">
@@ -86,7 +86,7 @@
           <div class="field">
             <label for="tpl-tags">
               {{ t('templates.tags') }}
-              <gd-info [text]="t('templates.tagsTip')" />
+              <ok-info [text]="t('templates.tagsTip')" />
             </label>
             <input id="tpl-tags" class="mono" [ngModel]="tagsText()"
                    (ngModelChange)="setTags($event)" placeholder="10.9, 10.8, latest">
@@ -95,7 +95,7 @@
           <div class="field">
             <label for="tpl-pattern">
               {{ t('templates.imagePattern') }}
-              <gd-info [text]="t('templates.imagePatternTip')" />
+              <ok-info [text]="t('templates.imagePatternTip')" />
             </label>
             <input id="tpl-pattern" class="mono" [ngModel]="d.imagePattern ?? ''"
                    (ngModelChange)="patch({ imagePattern: $event })" placeholder="^jellyfin/jellyfin(:|$)">
@@ -124,7 +124,7 @@
           <div class="field">
             <label for="tpl-min">
               {{ t('templates.minMemory') }}
-              <gd-info [text]="t('templates.minMemoryTip')" />
+              <ok-info [text]="t('templates.minMemoryTip')" />
             </label>
             <input id="tpl-min" class="mono" [ngModel]="d.minMemory"
                    (ngModelChange)="patch({ minMemory: $event })" placeholder="512m">
@@ -137,7 +137,7 @@
           <div class="field">
             <label for="tpl-grace">
               {{ t('templates.stopGrace') }}
-              <gd-info [text]="t('templates.stopGraceTip')" />
+              <ok-info [text]="t('templates.stopGraceTip')" />
             </label>
             <input id="tpl-grace" type="number" min="0" class="mono" [ngModel]="d.stopGraceSeconds"
                    (ngModelChange)="patch({ stopGraceSeconds: +$event })">
@@ -191,7 +191,7 @@
         <div class="section-title">
           {{ t('templates.fields') }}
           <button class="btn btn-sm" (click)="addField()">{{ t('templates.add') }}</button>
-          <gd-info [text]="t('templates.fieldsTip')" />
+          <ok-info [text]="t('templates.fieldsTip')" />
         </div>
         @for (field of d.fields ?? []; track $index) {
           <div class="field-card">
@@ -199,7 +199,7 @@
               <input class="mono" [ngModel]="field.key" (ngModelChange)="patchField($index, { key: $event })"
                      [attr.aria-label]="t('templates.fieldKey')" placeholder="TZ">
               <input [ngModel]="field.label" (ngModelChange)="patchField($index, { label: $event })"
-                     [attr.aria-label]="t('templates.fieldLabel')" placeholder="Fuso horário">
+                     [attr.aria-label]="t('templates.fieldLabel')" [placeholder]="t('templates.fieldLabelExample')">
               <select [ngModel]="field.type" (ngModelChange)="patchField($index, { type: $event })">
                 @for (type of fieldTypes; track type) {
                   <option [value]="type">{{ type }}</option>

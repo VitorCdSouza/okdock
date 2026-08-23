@@ -21,7 +21,7 @@ import { ActionVerb, InstanceCard } from './instance-card';
 type HiddenColumn = { title: string; count: number };
 
 @Component({
-  selector: 'gd-kanban',
+  selector: 'ok-kanban',
   imports: [InstanceCard],
   templateUrl: './kanban.html',
   styleUrl: './kanban.css',
@@ -97,7 +97,7 @@ export class Kanban {
     });
   }
 
-  // quais colunas ficaram fora da parte visivel do quadro
+  // which columns fell outside the visible part of the board
   measure(): void {
     const board = this.board()?.nativeElement;
     if (!board) return;

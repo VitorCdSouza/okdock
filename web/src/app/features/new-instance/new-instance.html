@@ -33,7 +33,7 @@
             @for (p of group.templates; track p.id) {
               <button class="template" [class.on]="template()?.id === p.id" (click)="pick(p)">
                 <div class="head">
-                  <gd-game-icon class="short" [template]="p.id" [fallback]="p.short" />
+                  <ok-game-icon class="short" [template]="p.id" [fallback]="p.short" />
                   <span class="name">{{ p.name }}</span>
                 </div>
                 <div class="id mono">{{ p.image || p.id }}</div>
@@ -54,7 +54,7 @@
               <div class="field" [class.has-error]="!!nameError()">
                 <label for="inst-name">
                   {{ t('new.name') }} <span class="req">*</span>
-                  <gd-info [text]="t('new.nameTip')" />
+                  <ok-info [text]="t('new.nameTip')" />
                 </label>
                 <input id="inst-name" class="mono" [ngModel]="name()"
                        (ngModelChange)="name.set($event)" placeholder="smp-familia" autofocus>
@@ -66,16 +66,16 @@
               <div class="field">
                 <label>
                   {{ t('new.image') }}
-                  <gd-info [text]="t('new.imageTip')" />
+                  <ok-info [text]="t('new.imageTip')" />
                 </label>
-                <gd-image-ref [(image)]="image" [tags]="p.tags ?? []" [free]="p.id === 'custom'"
+                <ok-image-ref [(image)]="image" [tags]="p.tags ?? []" [free]="p.id === 'custom'"
                               listId="inst-image-tags" />
               </div>
 
               <div class="field">
                 <label for="inst-mem">
                   {{ t('new.memoryLimit') }}
-                  <gd-info [text]="t('new.memoryTip', { memory: p.minMemory })" />
+                  <ok-info [text]="t('new.memoryTip', { memory: p.minMemory })" />
                 </label>
                 <input id="inst-mem" class="mono" [ngModel]="memoryLimit()"
                        (ngModelChange)="memoryLimit.set($event)" placeholder="4g">
@@ -84,7 +84,7 @@
               <div class="field">
                 <label for="inst-dns">
                   {{ t('new.dns') }}
-                  <gd-info [text]="t('new.dnsTip')" />
+                  <ok-info [text]="t('new.dnsTip')" />
                 </label>
                 @if (dnsOptions().length) {
                   <select id="inst-dns" class="mono" [ngModel]="dnsDomain()"
@@ -105,7 +105,7 @@
                 <div class="field">
                   <label>
                     {{ t('detail.hostPort', { label: portLabel(port.label) }) }}
-                    <gd-info [text]="t('detail.inContainer', { port: port.container, protocol: port.protocol })" />
+                    <ok-info [text]="t('detail.inContainer', { port: port.container, protocol: port.protocol })" />
                   </label>
                   <input type="number" class="mono" [value]="port.host"
                          (input)="setPort(port.container, port.protocol, $any($event.target).value)">
@@ -122,7 +122,7 @@
             <div class="section-title">{{ t('detail.templateFields') }}
               <span class="badge-count mono">{{ p.id }} · {{ (p.fields ?? []).length }} vars</span>
             </div>
-            <gd-template-form [template]="p" [(values)]="values" [problems]="error()?.problems ?? []" />
+            <ok-template-form [template]="p" [(values)]="values" [problems]="error()?.problems ?? []" />
           </section>
 
           <label class="check">
@@ -139,7 +139,7 @@
     <span class="hint mono">
       {{ hint() }}
       @if (template()) {
-        <gd-info [text]="t('new.footerTip')" />
+        <ok-info [text]="t('new.footerTip')" />
       }
     </span>
     <div class="actions">

@@ -37,13 +37,13 @@ export class App {
 
   readonly memoryLabel = computed(() => {
     const s = this.system();
-    if (!s) return '—';
+    if (!s) return '-';
     return `${gigabytes(s.memoryUsed)}/${gigabytes(s.memoryTotal)} GB`;
   });
 
   readonly diskLabel = computed(() => {
     const s = this.system();
-    if (!s) return '—';
+    if (!s) return '-';
     return `${gigabytes(s.diskUsed)}/${gigabytes(s.diskTotal)} GB`;
   });
 
@@ -87,7 +87,7 @@ export class App {
     const failed = d.domains.filter((n) => n.lastError);
     if (failed.length) return failed.map((n) => `${n.hostname}: ${n.lastError}`).join('\n');
     if (!d.domains.length) return this.t('app.dns.titleNoNames');
-    return d.domains.map((n) => `${n.hostname} → ${n.lastIp || '—'}`).join('\n');
+    return d.domains.map((n) => `${n.hostname} → ${n.lastIp || '-'}`).join('\n');
   });
 
   readonly apiError = computed(() => this.api.lastError());

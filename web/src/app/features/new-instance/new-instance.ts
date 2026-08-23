@@ -13,7 +13,7 @@ import { ImageRef } from '../../shared/image-ref';
 type Step = 1 | 2;
 
 @Component({
-  selector: 'gd-new-instance',
+  selector: 'ok-new-instance',
   imports: [FormsModule, TemplateForm, GameIcon, InfoDot, ImageRef],
   templateUrl: './new-instance.html',
   styleUrl: './new-instance.css',

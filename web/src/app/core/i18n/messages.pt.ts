@@ -64,14 +64,14 @@ export const pt = {
   'kanban.confirmDeleteAria': 'Confirmar exclusão',
   'kanban.deleteTitle': 'Excluir {name}?',
   'kanban.deleteBody': 'Derruba o container e apaga o docker-compose.yml. O mundo continua no disco, em',
-  'kanban.deleteWorldToo': 'apagar também o mundo — ',
+  'kanban.deleteWorldToo': 'apagar também o mundo: ',
   'kanban.noUndo': 'isto não tem volta',
   'kanban.deleteAndWorld': 'Excluir e apagar o mundo',
   'kanban.deleteKeepWorld': 'Excluir, manter o mundo',
   'kanban.updateTitle': 'Atualizar {name}?',
   'kanban.updateBodyPre': 'Procura uma imagem mais nova de',
   'kanban.updateBodyPost':
-    '. O container só é recriado se houver — e o mundo nos volumes é preservado.',
+    '. O container só é recriado se houver, e o mundo nos volumes é preservado.',
   'kanban.updateWarnRunning': 'A instância está de pé: recriar derruba quem estiver jogando.',
   'kanban.doUpdate': 'Procurar atualização',
   'kanban.stopTitle': 'Parar {name}?',
@@ -129,7 +129,7 @@ export const pt = {
   'detail.resourcesTitle': 'RECURSOS E REDE',
   'detail.ramLimit': 'Limite de RAM',
   'detail.ramLimitTip': 'Teto do container. O heap da JVM vai nos campos do template.',
-  'detail.hostPort': 'Porta host — {label}',
+  'detail.hostPort': 'Porta host ({label})',
   'detail.portFallbackLabel': 'jogo',
   'detail.inContainer': 'Dentro do container: {port}/{protocol}',
   'detail.volumes': 'VOLUMES',
@@ -141,16 +141,16 @@ export const pt = {
   'detail.checkNow': 'Conferir agora',
   'detail.unlink': 'Desvincular',
   'detail.dnsTip':
-    'O nome resolve para o IP desta casa, e o painel o reenvia de 5 em 5 minutos. A porta {port} ainda precisa estar liberada no roteador — isso o painel não tem como conferir daqui.',
+    'O nome resolve para o IP desta casa, e o painel o reenvia de 5 em 5 minutos. A porta {port} ainda precisa estar liberada no roteador, e isso o painel não tem como conferir daqui.',
   'detail.pointsTo': 'aponta para {ip} · conferido {when}',
   'detail.neverChecked': 'ainda não conferido',
   'detail.verifyAndLink': 'Verificar e vincular',
   'detail.linkTip':
-    'O subdomínio precisa já existir na sua conta: a API do DuckDNS não cria nome, só atualiza o IP de um que existe. Crie em duckdns.org e volte aqui — verificar é o próprio painel tentando atualizá-lo.',
+    'O subdomínio precisa já existir na sua conta: a API do DuckDNS não cria nome, só atualiza o IP de um que existe. Crie em duckdns.org e volte aqui: verificar é o próprio painel tentando atualizá-lo.',
   'detail.syncing': 'conferindo o endereço no duckdns…',
-  'detail.consoleEmpty': 'sem saída ainda — a instância precisa estar de pé.',
+  'detail.consoleEmpty': 'sem saída ainda, a instância precisa estar de pé.',
   'detail.composeLead':
-    'Este é o arquivo como está no disco. Editar à mão funciona — o painel relê. Mas Salvar e recriar sobrescreve.',
+    'Este é o arquivo como está no disco. Editar à mão funciona, o painel relê. Mas Salvar e recriar sobrescreve.',
   'detail.recreate.one': 'mudança exige recriar o container. O mundo nos volumes é preservado.',
   'detail.recreate.other': 'mudanças exigem recriar o container. O mundo nos volumes é preservado.',
   'detail.saveAndRecreate': 'Salvar e recriar',
@@ -162,18 +162,18 @@ export const pt = {
   'new.templateMeta': '{fields} campos · RAM mínima {memory}',
   'new.name': 'Nome da instância',
   'new.nameTip':
-    'Vira o diretório, o nome do projeto no compose e o nome do container — os três sempre o mesmo texto.',
+    'Vira o diretório, o nome do projeto no compose e o nome do container, os três sempre o mesmo texto.',
   'new.nameInvalid': 'minúsculas, dígitos, - e _; 2 a 39 caracteres, começando por letra ou dígito',
   'new.nameTaken': 'já existe uma instância com esse nome',
   'new.image': 'Imagem',
   'new.imageTip':
-    'O repositório vem do template; só a etiqueta muda. Vale qualquer etiqueta que exista na imagem, latest inclusive — a lista é só sugestão.',
+    'O repositório vem do template; só a etiqueta muda. Vale qualquer etiqueta que exista na imagem, latest inclusive: a lista é só sugestão.',
   'new.memoryLimit': 'Limite de RAM do container',
   'new.memoryTip': 'Teto do container, não o heap da JVM. Mínimo desta imagem: {memory}',
   'new.dns': 'Nome para convidar',
   'new.dnsTip':
-    'Vincula um dos nomes já cadastrados nas configurações; o vínculo mantém o IP em dia sozinho. O que se passa adiante é sempre nome:porta — o duckdns não guarda porta, e encaminhá-la no roteador continua sendo manual.',
-  'new.dnsNone': 'sem nome — só pelo IP',
+    'Vincula um dos nomes já cadastrados nas configurações; o vínculo mantém o IP em dia sozinho. O que se passa adiante é sempre nome:porta, porque o duckdns não guarda porta, e encaminhá-la no roteador continua sendo manual.',
+  'new.dnsNone': 'sem nome, só pelo IP',
   'new.dnsAllTaken':
     'todos os nomes cadastrados já são de outra instância; cadastre outro nas configurações',
   'new.dnsNoToken': 'configure o token do duckdns nas configurações para vincular um nome aqui',
@@ -209,7 +209,7 @@ export const pt = {
   'templates.tagsTip': 'Separadas por vírgula. Viram a lista de sugestões na hora de criar a instância; qualquer outra etiqueta continua valendo.',
   'templates.imagePattern': 'Padrão da imagem',
   'templates.imagePatternTip':
-    'Expressão regular. O painel recusa criar a instância com imagem que não case — é o que impede escolher o template errado. Em branco, aceita qualquer imagem.',
+    'Expressão regular. O painel recusa criar a instância com imagem que não case, e é isso que impede escolher o template errado. Em branco, aceita qualquer imagem.',
   'templates.description': 'Descrição',
   'templates.docs': 'Documentação',
   'templates.resources': 'RECURSOS',
@@ -233,6 +233,7 @@ export const pt = {
     'Cada campo vira uma variável de ambiente da imagem, com o nome que está na chave. Marque secreto para o valor ir só para o .env.',
   'templates.fieldKey': 'chave',
   'templates.fieldLabel': 'rótulo',
+  'templates.fieldLabelExample': 'Fuso horário',
   'templates.fieldDefault': 'valor padrão',
   'templates.fieldRequired': 'obrigatório',
   'templates.fieldSecret': 'secreto',
@@ -277,7 +278,7 @@ export const pt = {
   'settings.languageTitle': 'IDIOMA',
   'settings.languageAuto': 'Automático (do sistema)',
   'settings.languageTip':
-    'Vale só para este navegador, como os números da barra: sem login, uma escolha gravada no servidor valeria para todo mundo da casa. O que o docker escreve — linha de log e status do container — aparece como veio.',
+    'Vale só para este navegador, como os números da barra: sem login, uma escolha gravada no servidor valeria para todo mundo da casa. O que o docker escreve (linha de log e status do container) aparece como veio.',
   'settings.dockerTitle': 'DOCKER',
   'settings.dockerVersion': 'versão {version}',
   'settings.dockerSilent': 'não respondeu',
@@ -298,10 +299,10 @@ export const pt = {
   'error.invalid_root.not_dir': '{path} não é um diretório',
   'error.invalid_root.unwritable': 'sem permissão de escrita em {path}',
   'error.memory_budget':
-    '{instance} pede {requested}, mas só há {free} livres no orçamento de {budget} — as instâncias de pé já usam {committed}.',
+    '{instance} pede {requested}, mas só há {free} livres no orçamento de {budget}: as instâncias de pé já usam {committed}.',
   'error.port_taken': 'a porta {port}/{proto} já é de {owner}',
   'error.invalid_domain':
-    'nome inválido: use só letras minúsculas, dígitos e hífen — o que vem antes de {suffix}',
+    'nome inválido: use só letras minúsculas, dígitos e hífen, o que vem antes de {suffix}',
   'error.dns_rejected':
     'o duckdns recusou: confira se o token está certo e se esse nome é da sua conta',
   'error.dns_unreachable': 'não consegui falar com o duckdns.org ({detail})',
@@ -326,7 +327,7 @@ export const pt = {
   'problem.image_owned_by':
     'quem configura {image} é o template {owner}, não {template}. Crie a instância escolhendo {owner} na lista, sem mexer no campo Imagem: as duas variantes têm bootstrap diferente, não basta trocar a tag.',
   'problem.image_not_accepted':
-    '{template} não sabe configurar {image}. Ele espera uma imagem que case com {pattern} — trocar a tag para outra versão funciona. Para uma imagem fora do catálogo, use o template Imagem custom, onde você define as variáveis à mão.',
+    '{template} não sabe configurar {image}. Ele espera uma imagem que case com {pattern}, e trocar a tag para outra versão funciona. Para uma imagem fora do catálogo, use o template Imagem custom, onde você define as variáveis à mão.',
 
   'op.preparing': 'preparando',
   'op.creating': 'criando container',
@@ -346,7 +347,7 @@ export const pt = {
   'template.minecraft-java.desc':
     'Servidor Java com suporte a vanilla, Paper, Fabric, Forge e modpacks.',
   'template.terraria-tshock.desc':
-    'Terraria 1.4.5.6 com TShock 6.1.0 — plugins, permissões e comandos de admin. O TShock costuma demorar semanas para acompanhar um lançamento do Terraria; se o cliente reclamar de versão, use a variante vanilla.',
+    'Terraria 1.4.5.6 com TShock 6.1.0: plugins, permissões e comandos de admin. O TShock costuma demorar semanas para acompanhar um lançamento do Terraria; se o cliente reclamar de versão, use a variante vanilla.',
   'template.terraria-vanilla.desc':
     'Terraria 1.4.5.7 sem TShock: sem plugins nem comandos de admin, mas acompanha a versão do cliente muito mais rápido.',
   'template.custom.desc': 'Qualquer imagem. Você informa portas, volumes e variáveis à mão.',
@@ -370,7 +371,7 @@ export const pt = {
   'field.terraria-vanilla.NOUPNP.help':
     'O painel já publica a porta; deixar o servidor mexer no roteador só atrapalha.',
 
-  'api.offline': 'não consegui falar com a API do OkDock — ela está de pé?',
+  'api.offline': 'não consegui falar com a API do OkDock, ela está de pé?',
   'api.httpError': 'erro {status}',
 } as const;
 

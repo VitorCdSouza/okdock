@@ -51,17 +51,17 @@ describe('Store', () => {
 
   afterEach(() => localStorage.removeItem('okdock.locale'));
 
-  it('filtra por nome, porta e imagem', () => {
+  it('filters by name, port and image', () => {
     store.instances.set([instance(), instance({ name: 'terra', templateId: 'terraria-tshock', ports: [] })]);
 
     store.search.set('25565');
     expect(store.filtered().map((i) => i.name)).toEqual(['smp']);
 
     store.search.set('TERRA');
-    expect(store.filtered().map((i) => i.name)).withContext('busca é sem caixa').toEqual(['terra']);
+    expect(store.filtered().map((i) => i.name)).withContext('the search is case-insensitive').toEqual(['terra']);
   });
 
-  it('o filtro de categoria e o de texto valem juntos', () => {
+  it('the category filter and the text filter apply together', () => {
     store.instances.set([instance(), instance({ name: 'outro' })]);
     store.categoryFilter.set('games');
     store.search.set('outro');
@@ -69,7 +69,7 @@ describe('Store', () => {
     expect(store.filtered().map((i) => i.name)).toEqual(['outro']);
   });
 
-  it('conta por categoria, na ordem que a API mandou', () => {
+  it('counts by category, in the order the API sent', () => {
     store.categories.set(['games', 'media', 'other']);
     store.instances.set([
       instance(),
@@ -83,7 +83,7 @@ describe('Store', () => {
     ]);
   });
 
-  it('agrupa os templates por categoria, pulando a que ninguém usa', () => {
+  it('groups templates by category, skipping the ones nobody uses', () => {
     store.categories.set(['games', 'media', 'other']);
     store.templates.set([
       { id: 'minecraft-java', category: 'games' } as Template,
@@ -97,7 +97,7 @@ describe('Store', () => {
     ]);
   });
 
-  it('põe provisionando e iniciando na coluna de rodando', () => {
+  it('puts provisioning and starting in the running column', () => {
     store.instances.set([
       instance({ name: 'a', state: 'starting' }),
       instance({ name: 'b', state: 'provisioning' }),
@@ -109,7 +109,7 @@ describe('Store', () => {
     expect(store.byColumn('stopped').map((i) => i.name)).toEqual(['d']);
   });
 
-  it('monta o aviso de fim de operação pelo tipo do evento', () => {
+  it('builds the end-of-operation notice from the event type', () => {
     store.start();
     http.expectOne('/api/v1/templates').flush({ templates: [], categories: [] });
     http.expectOne('/api/v1/instances').flush({ instances: [], states: [] });

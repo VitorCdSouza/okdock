@@ -3,7 +3,7 @@
 @if (instance(); as inst) {
   <div class="dialog" role="dialog" [attr.aria-label]="t('detail.aria', { name: inst.name })">
     <header>
-      <gd-game-icon class="badge" [template]="instance()?.templateId ?? ''" [fallback]="template()?.short ?? '··'"
+      <ok-game-icon class="badge" [template]="instance()?.templateId ?? ''" [fallback]="template()?.short ?? '··'"
                   [style.background]="colors().bg" [style.color]="colors().fg" />
 
       <div class="ident">
@@ -81,7 +81,7 @@
                 {{ t('detail.templateFields') }}
                 <span class="badge-count mono">{{ p.id }} · {{ (p.fields ?? []).length }} vars</span>
               </div>
-              <gd-template-form [template]="p" [(values)]="values"
+              <ok-template-form [template]="p" [(values)]="values"
                                 [problems]="error()?.problems ?? []" />
             } @else {
               <p class="none">{{ t('detail.templateGone', { id: inst.templateId }) }}</p>
@@ -91,7 +91,7 @@
           @case ('recursos') {
             @if (inst.external) {
               <div class="alert warn">
-                {{ t('detail.externalNote', { project: inst.project || '—', dir: inst.dir || '—' }) }}
+                {{ t('detail.externalNote', { project: inst.project || '-', dir: inst.dir || '-' }) }}
               </div>
               <div class="section-title">{{ t('detail.resourcesTitle') }}</div>
               <ul class="mounts mono">
@@ -112,7 +112,7 @@
               <div class="field">
                 <label for="mem">
                   {{ t('detail.ramLimit') }}
-                  <gd-info [text]="t('detail.ramLimitTip')" />
+                  <ok-info [text]="t('detail.ramLimitTip')" />
                 </label>
                 <input id="mem" class="mono" [ngModel]="memoryLimit()"
                        (ngModelChange)="memoryLimit.set($event); refreshRecreate()">
@@ -126,7 +126,7 @@
                 <div class="field">
                   <label>
                     {{ t('detail.hostPort', { label: portLabel(p.label) }) }}
-                    <gd-info [text]="t('detail.inContainer', { port: p.container, protocol: p.protocol })" />
+                    <ok-info [text]="t('detail.inContainer', { port: p.container, protocol: p.protocol })" />
                   </label>
                   <input type="number" class="mono" [value]="p.host"
                          (input)="setPort(p.container, p.protocol, $any($event.target).value)">
@@ -161,7 +161,7 @@
                   <button class="btn btn-sm" (click)="unlinkDns()" [disabled]="dnsBusy()">
                     {{ t('detail.unlink') }}
                   </button>
-                  <gd-info [text]="t('detail.dnsTip', { port: mainPort() })" />
+                  <ok-info [text]="t('detail.dnsTip', { port: mainPort() })" />
                 </div>
 
                 @if (d.lastError) {
@@ -169,7 +169,7 @@
                 } @else {
                   <div class="dns-state mono">
                     <span class="dot"></span>
-                    {{ t('detail.pointsTo', { ip: d.lastIp || '—', when: dnsSyncLabel() }) }}
+                    {{ t('detail.pointsTo', { ip: d.lastIp || '-', when: dnsSyncLabel() }) }}
                   </div>
                 }
 
@@ -185,7 +185,7 @@
                           [disabled]="dnsBusy() || !dnsDomain().trim()">
                     {{ dnsBusy() ? t('common.checking') : t('detail.verifyAndLink') }}
                   </button>
-                  <gd-info [text]="t('detail.linkTip')" />
+                  <ok-info [text]="t('detail.linkTip')" />
                 </div>
               }
 

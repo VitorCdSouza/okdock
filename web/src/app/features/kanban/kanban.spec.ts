@@ -32,7 +32,7 @@ function dragEvent(): DragEvent {
   return new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: new DataTransfer() });
 }
 
-describe('Kanban — arrastar card para uma coluna', () => {
+describe('Kanban: dragging a card into a column', () => {
   let kanban: Kanban;
   let store: Store;
   let http: HttpTestingController;
@@ -49,20 +49,20 @@ describe('Kanban — arrastar card para uma coluna', () => {
 
   afterEach(() => http.verify());
 
-  it('abre a confirmação ao soltar uma instância de pé em ATUALIZANDO', () => {
+  it('opens the confirmation when a running instance is dropped on UPDATING', () => {
     store.instances.set([instance()]);
     store.dragging.set('smp');
 
     kanban.onDrop(dragEvent(), 'updating');
 
     const pending = kanban.pendingAction();
-    expect(pending).withContext('confirmação não abriu').not.toBeNull();
+    expect(pending).withContext('the confirmation did not open').not.toBeNull();
     expect(pending!.instance.name).toBe('smp');
     expect(pending!.target).toBe('updating');
-    expect(store.dragging()).withContext('estado de arrasto devia ter sido limpo').toBeNull();
+    expect(store.dragging()).withContext('the drag state should have been cleared').toBeNull();
   });
 
-  it('abre a confirmação ao soltar em PARADO', () => {
+  it('opens the confirmation when dropped on STOPPED', () => {
     store.instances.set([instance()]);
     store.dragging.set('smp');
 
@@ -71,7 +71,7 @@ describe('Kanban — arrastar card para uma coluna', () => {
     expect(kanban.pendingAction()?.target).toBe('stopped');
   });
 
-  it('abre a confirmação ao soltar uma instância parada em RODANDO', () => {
+  it('opens the confirmation when a stopped instance is dropped on RUNNING', () => {
     store.instances.set([instance({ state: 'stopped' })]);
     store.dragging.set('smp');
 
@@ -80,7 +80,7 @@ describe('Kanban — arrastar card para uma coluna', () => {
     expect(kanban.pendingAction()?.target).toBe('running');
   });
 
-  it('aceita em RODANDO uma instância em erro', () => {
+  it('accepts an instance in error on RUNNING', () => {
     store.instances.set([instance({ state: 'error' })]);
     store.dragging.set('smp');
 
@@ -89,7 +89,7 @@ describe('Kanban — arrastar card para uma coluna', () => {
     expect(kanban.pendingAction()?.target).toBe('running');
   });
 
-  it('não aceita em RODANDO uma instância que já está de pé', () => {
+  it('refuses on RUNNING an instance that is already up', () => {
     store.instances.set([instance()]);
     store.dragging.set('smp');
 
@@ -98,7 +98,7 @@ describe('Kanban — arrastar card para uma coluna', () => {
     expect(kanban.pendingAction()).toBeNull();
   });
 
-  it('confirmar em RODANDO chama start', () => {
+  it('confirming on RUNNING calls start', () => {
     store.instances.set([instance({ state: 'stopped' })]);
     store.dragging.set('smp');
     kanban.onDrop(dragEvent(), 'running');
@@ -114,7 +114,7 @@ describe('Kanban — arrastar card para uma coluna', () => {
     http.expectOne('/api/v1/system').flush({});
   });
 
-  it('arquiva ao soltar em ARQUIVADA, venha a instância de onde vier', () => {
+  it('archives on a drop into ARCHIVED, wherever the instance comes from', () => {
     store.instances.set([instance()]);
     store.dragging.set('smp');
     kanban.onDrop(dragEvent(), 'archived');
@@ -131,7 +131,7 @@ describe('Kanban — arrastar card para uma coluna', () => {
     http.expectOne('/api/v1/system').flush({});
   });
 
-  it('não aceita em ARQUIVADA uma instância já arquivada', () => {
+  it('refuses on ARCHIVED an instance that is already archived', () => {
     store.instances.set([instance({ state: 'archived', archived: true })]);
     store.dragging.set('smp');
 
@@ -140,23 +140,23 @@ describe('Kanban — arrastar card para uma coluna', () => {
     expect(kanban.pendingAction()).toBeNull();
   });
 
-  it('container externo não aceita atualizar nem arquivar, mas aceita parar', () => {
+  it('an external container takes neither update nor archive, but takes stop', () => {
     store.instances.set([instance({ external: true, project: 'media' })]);
     store.dragging.set('smp');
 
     kanban.onDrop(dragEvent(), 'updating');
-    expect(kanban.pendingAction()).withContext('externo não tem imagem para atualizar').toBeNull();
+    expect(kanban.pendingAction()).withContext('an external container has no image to update').toBeNull();
 
     store.dragging.set('smp');
     kanban.onDrop(dragEvent(), 'archived');
-    expect(kanban.pendingAction()).withContext('externo não se arquiva').toBeNull();
+    expect(kanban.pendingAction()).withContext('an external container is not archived').toBeNull();
 
     store.dragging.set('smp');
     kanban.onDrop(dragEvent(), 'stopped');
     expect(kanban.pendingAction()?.target).toBe('stopped');
   });
 
-  it('ignora o drop quando a ação não faria nada', () => {
+  it('ignores the drop when the action would do nothing', () => {
     store.instances.set([instance({ state: 'stopped' })]);
     store.dragging.set('smp');
 
@@ -165,7 +165,7 @@ describe('Kanban — arrastar card para uma coluna', () => {
     expect(kanban.pendingAction()).toBeNull();
   });
 
-  it('não aceita instância arquivada em ATUALIZANDO', () => {
+  it('refuses an archived instance on UPDATING', () => {
     store.instances.set([instance({ state: 'archived', archived: true })]);
     store.dragging.set('smp');
 
@@ -174,7 +174,7 @@ describe('Kanban — arrastar card para uma coluna', () => {
     expect(kanban.pendingAction()).toBeNull();
   });
 
-  it('o botão do card recarrega o quadro quando a chamada vai', () => {
+  it('the card button reloads the board when the call goes through', () => {
     const inst = instance({ external: true, project: 'media' });
     store.instances.set([inst]);
 
@@ -185,7 +185,7 @@ describe('Kanban — arrastar card para uma coluna', () => {
     http.expectOne('/api/v1/system').flush({});
   });
 
-  it('o botão do card avisa quando a chamada é recusada', () => {
+  it('the card button warns when the call is refused', () => {
     const inst = instance({ external: true, project: 'media' });
     store.instances.set([inst]);
 
@@ -196,11 +196,11 @@ describe('Kanban — arrastar card para uma coluna', () => {
       { status: 409, statusText: 'Conflict' },
     );
 
-    expect(store.toast()).withContext('recusa engolida faz o botão parecer morto').toContain('container externo');
+    expect(store.toast()).withContext('a swallowed refusal makes the button look dead').toContain('container externo');
     expect(store.toastBad()).toBeTrue();
   });
 
-  it('a coluna cheia fica mais larga que a vazia', () => {
+  it('the full column ends up wider than the empty one', () => {
     store.states.set(['running', 'stopped']);
     store.instances.set(
       Array.from({ length: 12 }, (_, i) => instance({ name: `smp-${i}` })),
@@ -212,7 +212,7 @@ describe('Kanban — arrastar card para uma coluna', () => {
     expect(grow.get('stopped')).toBe(1);
   });
 
-  it('confirmar dispara a chamada certa e fecha o diálogo', () => {
+  it('confirming fires the right call and closes the dialog', () => {
     store.instances.set([instance()]);
     store.dragging.set('smp');
     kanban.onDrop(dragEvent(), 'updating');

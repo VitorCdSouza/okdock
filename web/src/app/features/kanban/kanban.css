@@ -23,8 +23,7 @@
 
 .cards {
   display: grid;
-  /* o min() é o que deixa a tira encolher junto com a coluna: sem ele o card
-     mantém 216px e vaza para fora quando a coluna fica estreita */
+  /* min() lets the track shrink with the column, without it the card keeps 216px and overflows */
   grid-template-columns: repeat(auto-fill, minmax(min(216px, 100%), 1fr));
   align-items: start;
   gap: 10px;

@@ -7,16 +7,16 @@ import { Template } from '../core/models';
 const minecraft = {
   id: 'minecraft-java',
   fields: [
-    { key: 'EULA', label: 'EULA da Mojang', type: 'bool', default: 'true', required: true,
-      help: 'A imagem não sobe sem isto aceito.' },
-    { key: 'MAX_PLAYERS', label: 'Máximo de jogadores', type: 'int', default: '10' },
-    { key: 'VIEW_DISTANCE', label: 'Distância de render', type: 'int', default: '10', advanced: true },
+    { key: 'EULA', label: 'Mojang EULA', type: 'bool', default: 'true', required: true,
+      help: 'catalog help for EULA' },
+    { key: 'MAX_PLAYERS', label: 'Max players', type: 'int', default: '10' },
+    { key: 'VIEW_DISTANCE', label: 'Render distance', type: 'int', default: '10', advanced: true },
   ],
 } as Template;
 
-const desconhecido = {
-  id: 'algum/jogo-novo',
-  fields: [{ key: 'SEED', label: 'Seed', type: 'text', help: 'texto que só o catálogo tem' }],
+const unknownGame = {
+  id: 'some/new-game',
+  fields: [{ key: 'SEED', label: 'Seed', type: 'text', help: 'text only the catalog has' }],
 } as Template;
 
 describe('TemplateForm', () => {
@@ -35,14 +35,14 @@ describe('TemplateForm', () => {
 
   afterEach(() => localStorage.removeItem('okdock.locale'));
 
-  it('separa campos básicos dos avançados', () => {
+  it('separates basic fields from advanced ones', () => {
     const f = form(minecraft);
 
     expect(f.basic().map((x) => x.key)).toEqual(['EULA', 'MAX_PLAYERS']);
     expect(f.advanced().map((x) => x.key)).toEqual(['VIEW_DISTANCE']);
   });
 
-  it('escreve o problema do campo pelo código que a API mandou', () => {
+  it('writes the field problem from the code the API sent', () => {
     const fixture = TestBed.createComponent(TemplateForm);
     fixture.componentRef.setInput('template', minecraft);
     fixture.componentRef.setInput('values', {});
@@ -54,16 +54,16 @@ describe('TemplateForm', () => {
     expect(fixture.componentInstance.error(minecraft.fields![0])).toBeUndefined();
   });
 
-  it('mostra o código quando o problema é de uma versão mais nova da API', () => {
+  it('shows the code when the problem comes from a newer API', () => {
     const fixture = TestBed.createComponent(TemplateForm);
     fixture.componentRef.setInput('template', minecraft);
     fixture.componentRef.setInput('values', {});
-    fixture.componentRef.setInput('problems', [{ field: 'EULA', code: 'regra_nova' }]);
+    fixture.componentRef.setInput('problems', [{ field: 'EULA', code: 'new_rule' }]);
 
-    expect(fixture.componentInstance.error(minecraft.fields![0])).toBe('regra_nova');
+    expect(fixture.componentInstance.error(minecraft.fields![0])).toBe('new_rule');
   });
 
-  it('prefere a ajuda traduzida à do catálogo', () => {
+  it('prefers the translated help over the catalog one', () => {
     const f = form(minecraft);
 
     expect(f.fieldHelp(minecraft.fields![0])).toBe('A imagem não sobe sem isto aceito.');
@@ -72,14 +72,14 @@ describe('TemplateForm', () => {
     expect(f.fieldHelp(minecraft.fields![0])).toBe('The image does not start without this accepted.');
   });
 
-  it('cai na ajuda do catálogo para jogo que a tela ainda não traduziu', () => {
-    const f = form(desconhecido);
+  it('falls back to the catalog help for a game the screen has not translated yet', () => {
+    const f = form(unknownGame);
     TestBed.inject(I18n).setPref('en');
 
-    expect(f.fieldHelp(desconhecido.fields![0])).toBe('texto que só o catálogo tem');
+    expect(f.fieldHelp(unknownGame.fields![0])).toBe('text only the catalog has');
   });
 
-  it('usa o default do campo enquanto ninguém digitou', () => {
+  it('uses the field default until someone types', () => {
     const f = form(minecraft);
 
     expect(f.value(minecraft.fields![1])).toBe('10');
@@ -87,7 +87,7 @@ describe('TemplateForm', () => {
     expect(f.value(minecraft.fields![1])).toBe('20');
   });
 
-  it('grava booleano como texto, que é o que vai para o compose', () => {
+  it('stores a boolean as text, which is what goes to the compose', () => {
     const f = form(minecraft);
 
     f.set(minecraft.fields![0], false);

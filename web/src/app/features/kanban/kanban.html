@@ -31,7 +31,7 @@
 
           <div class="cards">
             @for (card of col.cards; track card.name) {
-              <gd-instance-card
+              <ok-instance-card
                 [instance]="card"
                 [short]="short(card)"
                 (open)="open.emit($event)"

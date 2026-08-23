@@ -14,23 +14,23 @@ describe('readSetting', () => {
     localStorage.removeItem(legacy);
   });
 
-  it('resgata o valor gravado com o nome antigo e migra a chave', () => {
+  it('rescues the value saved under the old name and migrates the key', () => {
     localStorage.setItem(legacy, 'en');
 
     expect(readSetting(key)).toBe('en');
-    expect(localStorage.getItem(key)).withContext('não migrou para a chave nova').toBe('en');
-    expect(localStorage.getItem(legacy)).withContext('a chave antiga ficou para trás').toBeNull();
+    expect(localStorage.getItem(key)).withContext('did not migrate to the new key').toBe('en');
+    expect(localStorage.getItem(legacy)).withContext('the old key was left behind').toBeNull();
   });
 
-  it('a chave nova ganha da antiga', () => {
+  it('the new key wins over the old one', () => {
     localStorage.setItem(legacy, 'en');
     localStorage.setItem(key, 'pt');
 
     expect(readSetting(key)).toBe('pt');
-    expect(localStorage.getItem(legacy)).withContext('não devia mexer na antiga').toBe('en');
+    expect(localStorage.getItem(legacy)).withContext('must not touch the old one').toBe('en');
   });
 
-  it('devolve null quando nenhuma das duas existe', () => {
+  it('returns null when neither exists', () => {
     expect(readSetting(key)).toBeNull();
   });
 });

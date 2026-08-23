@@ -16,7 +16,7 @@ describe('I18n', () => {
 
   afterEach(() => localStorage.removeItem('okdock.locale'));
 
-  it('traduz a mesma chave nos dois idiomas', () => {
+  it('translates the same key in both languages', () => {
     expect(i18n.t('common.save')).toBe('Salvar');
 
     i18n.setPref('en');
@@ -24,23 +24,23 @@ describe('I18n', () => {
     expect(i18n.t('common.save')).toBe('Save');
   });
 
-  it('preenche os parâmetros da mensagem', () => {
+  it('fills in the message parameters', () => {
     expect(i18n.t('app.created', { name: 'smp' })).toBe('smp foi criada');
   });
 
-  it('escolhe singular ou plural pelo número', () => {
+  it('picks singular or plural by the number', () => {
     expect(i18n.plural('app.dns.names', 1)).toBe('duckdns 1 nome');
     expect(i18n.plural('app.dns.names', 3)).toBe('duckdns 3 nomes');
   });
 
-  it('grava a preferência para a próxima sessão', () => {
+  it('saves the preference for the next session', () => {
     i18n.setPref('en');
     TestBed.tick();
 
     expect(localStorage.getItem('okdock.locale')).toBe('en');
   });
 
-  it('tem as mesmas chaves nas duas tabelas', () => {
+  it('has the same keys in both tables', () => {
     expect(Object.keys(en).sort()).toEqual(Object.keys(pt).sort());
   });
 });

@@ -17,7 +17,7 @@
                 [disabled]="rootBusy() || !rootChanged()">
           {{ rootBusy() ? t('common.saving') : t('common.save') }}
         </button>
-        <gd-info [text]="t('settings.rootTip')" />
+        <ok-info [text]="t('settings.rootTip')" />
       </div>
       @if (rootError(); as e) { <div class="alert bad">{{ e }}</div> }
       @if (rootSaved()) { <div class="ok-note">{{ t('settings.rootSaved') }}</div> }
@@ -39,7 +39,7 @@
             {{ tokenBusy() ? t('settings.validating') : t('common.save') }}
           </button>
         }
-        <gd-info [text]="t('settings.tokenTip')" />
+        <ok-info [text]="t('settings.tokenTip')" />
 
         @for (d of domains(); track d.domain) {
           <div class="name-input"
@@ -118,7 +118,7 @@
           <option value="pt">Português</option>
           <option value="en">English</option>
         </select>
-        <gd-info [text]="t('settings.languageTip')" />
+        <ok-info [text]="t('settings.languageTip')" />
       </div>
     </section>
 
@@ -126,7 +126,7 @@
       <div class="section-title">{{ t('settings.dockerTitle') }}</div>
       <div class="docker" [class.bad]="!system()?.dockerVersion">
         {{ dockerLabel() }}
-        @if (dockerDetail(); as d) { <gd-info [text]="d" /> }
+        @if (dockerDetail(); as d) { <ok-info [text]="d" /> }
       </div>
     </section>
   </div>

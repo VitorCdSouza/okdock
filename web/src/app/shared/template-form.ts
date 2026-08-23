@@ -6,7 +6,7 @@ import { I18n } from '../core/i18n/i18n';
 import { InfoDot } from './info-dot';
 
 @Component({
-  selector: 'gd-template-form',
+  selector: 'ok-template-form',
   imports: [FormsModule, InfoDot],
   templateUrl: './template-form.html',
   styleUrl: './template-form.css',

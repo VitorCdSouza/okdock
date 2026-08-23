@@ -37,7 +37,7 @@ function blank(): Template {
 }
 
 @Component({
-  selector: 'gd-templates',
+  selector: 'ok-templates',
   imports: [FormsModule, GameIcon, InfoDot],
   templateUrl: './templates.html',
   styleUrl: './templates.css',

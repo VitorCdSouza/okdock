@@ -26,7 +26,7 @@ function template(over: Partial<Template> = {}): Template {
   };
 }
 
-describe('Templates — cadastro de template', () => {
+describe('Templates: registering a template', () => {
   let screen: Templates;
   let store: Store;
   let http: HttpTestingController;
@@ -46,7 +46,7 @@ describe('Templates — cadastro de template', () => {
     http.verify();
   });
 
-  it('template novo vai por POST e recarrega o catálogo', () => {
+  it('a new template goes by POST and reloads the catalog', () => {
     screen.create();
     screen.patch({ id: 'jellyfin', name: 'Jellyfin', category: 'media', image: 'jellyfin/jellyfin:10.9' });
     screen.save();
@@ -56,11 +56,11 @@ describe('Templates — cadastro de template', () => {
     expect(req.request.body.id).toBe('jellyfin');
     req.flush(template({ id: 'jellyfin', name: 'Jellyfin', category: 'media', builtin: false }));
 
-    expect(screen.isNew()).withContext('depois de gravar deixa de ser novo').toBeFalse();
+    expect(screen.isNew()).withContext('after saving it is no longer new').toBeFalse();
     http.expectOne('/api/v1/templates').flush({ templates: [], categories: [] });
   });
 
-  it('editar template existente vai por PUT no id dele', () => {
+  it('editing an existing template goes by PUT on its id', () => {
     screen.edit(template());
     screen.patch({ defaultMemory: '8g' });
     screen.save();
@@ -73,7 +73,7 @@ describe('Templates — cadastro de template', () => {
     http.expectOne('/api/v1/templates').flush({ templates: [], categories: [] });
   });
 
-  it('editar não mexe no template do store antes de gravar', () => {
+  it('editing does not touch the store template before saving', () => {
     const original = template();
     store.templates.set([original]);
 
@@ -83,7 +83,7 @@ describe('Templates — cadastro de template', () => {
     expect(store.templates()[0].name).toBe('Minecraft (Java)');
   });
 
-  it('opções do enum entram como texto valor=rótulo', () => {
+  it('enum options come in as value=label text', () => {
     screen.create();
     screen.addField();
     screen.patchField(0, { key: 'MODE', type: 'enum' });
@@ -95,21 +95,21 @@ describe('Templates — cadastro de template', () => {
     ]);
   });
 
-  it('erro de validação da API fica na tela e o rascunho continua aberto', () => {
+  it('an API validation error stays on screen and the draft stays open', () => {
     screen.create();
     screen.patch({ id: 'x y', name: '' });
     screen.save();
 
     http.expectOne('/api/v1/templates').flush(
-      { error: 'invalid_fields', message: 'inválido', problems: [{ field: 'id', code: 'bad_template_id' }] },
+      { error: 'invalid_fields', message: 'invalid', problems: [{ field: 'id', code: 'bad_template_id' }] },
       { status: 422, statusText: 'Unprocessable Entity' },
     );
 
     expect(screen.error()?.problems.length).toBe(1);
-    expect(screen.draft()).withContext('o rascunho não pode se perder no erro').not.toBeNull();
+    expect(screen.draft()).withContext('the draft must not be lost on the error').not.toBeNull();
   });
 
-  it('apagar a edição de um template de fábrica chama DELETE e fecha o editor', () => {
+  it('deleting the edit of a builtin template calls DELETE and closes the editor', () => {
     screen.edit(template({ builtin: false }));
     screen.remove();
 

@@ -5,7 +5,7 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { Api, OkDockError } from './api';
 import { I18n } from './i18n/i18n';
 
-describe('Api — erro vem em código, frase é montada aqui', () => {
+describe('Api: the error comes as a code, the sentence is built here', () => {
   let api: Api;
   let http: HttpTestingController;
 
@@ -30,10 +30,10 @@ describe('Api — erro vem em código, frase é montada aqui', () => {
     return caught!;
   }
 
-  it('usa o código e os params, não a mensagem da API', () => {
+  it('uses the code and the params, not the API message', () => {
     const err = failStart({
       error: 'port_taken',
-      message: 'a porta 25565/tcp já é de outro',
+      message: 'port 25565/tcp already belongs to someone else',
       params: { port: 25565, proto: 'tcp', owner: 'outro' },
     });
 
@@ -41,11 +41,11 @@ describe('Api — erro vem em código, frase é montada aqui', () => {
     expect(err.message).toBe('port 25565/tcp already belongs to outro');
   });
 
-  it('escolhe a variante pelo reason quando existe', () => {
+  it('picks the variant by reason when there is one', () => {
     const err = failStart(
       {
         error: 'invalid_root',
-        message: 'raiz inválida',
+        message: 'invalid root',
         params: { reason: 'not_dir', path: '/srv/games/arquivo' },
       },
       422,
@@ -54,17 +54,17 @@ describe('Api — erro vem em código, frase é montada aqui', () => {
     expect(err.message).toBe('/srv/games/arquivo is not a directory');
   });
 
-  it('cai no texto da API quando o código é desconhecido', () => {
-    const err = failStart({ error: 'algo_novo', message: 'motivo que só a API sabe' });
+  it('falls back to the API text when the code is unknown', () => {
+    const err = failStart({ error: 'something_new', message: 'a reason only the API knows' });
 
-    expect(err.message).toBe('motivo que só a API sabe');
+    expect(err.message).toBe('a reason only the API knows');
   });
 
-  it('entrega os problemas estruturados para o formulário', () => {
+  it('hands the structured problems to the form', () => {
     const err = failStart(
       {
         error: 'invalid_fields',
-        message: 'alguns campos não passaram',
+        message: 'some fields did not pass',
         problems: [{ field: 'MAX_PLAYERS', code: 'below_min', params: { min: 1 } }],
       },
       422,

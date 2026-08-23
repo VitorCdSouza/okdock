@@ -4,7 +4,7 @@
       <label [for]="'f-' + f.key">
         {{ f.key }}
         @if (f.required) { <span class="req" [title]="t('form.required')">*</span> }
-        @if (fieldHelp(f); as help) { <gd-info [text]="help" /> }
+        @if (fieldHelp(f); as help) { <ok-info [text]="help" /> }
       </label>
 
       @switch (f.type) {
@@ -62,7 +62,7 @@
         <div class="field" [class.has-error]="!!error(f)">
           <label [for]="'a-' + f.key">
             {{ f.key }}
-            @if (fieldHelp(f); as help) { <gd-info [text]="help" /> }
+            @if (fieldHelp(f); as help) { <ok-info [text]="help" /> }
           </label>
 
           @switch (f.type) {

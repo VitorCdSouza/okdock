@@ -73,7 +73,7 @@
 </div>
 
 <main>
-  <gd-kanban (open)="openDetail($event)" (create)="creating.set(true)" />
+  <ok-kanban (open)="openDetail($event)" (create)="creating.set(true)" />
 </main>
 
 @if (store.toast(); as message) {
@@ -81,17 +81,17 @@
 }
 
 @if (detailFor(); as name) {
-  <gd-instance-detail [name]="name" (close)="detailFor.set(null)" />
+  <ok-instance-detail [name]="name" (close)="detailFor.set(null)" />
 }
 
 @if (settingsOpen()) {
-  <gd-settings (close)="settingsOpen.set(false)" />
+  <ok-settings (close)="settingsOpen.set(false)" />
 }
 
 @if (templatesOpen()) {
-  <gd-templates (close)="templatesOpen.set(false)" />
+  <ok-templates (close)="templatesOpen.set(false)" />
 }
 
 @if (creating()) {
-  <gd-new-instance (close)="creating.set(false)" (created)="onCreated($event)" />
+  <ok-new-instance (close)="creating.set(false)" (created)="onCreated($event)" />
 }

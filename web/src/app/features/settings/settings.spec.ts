@@ -33,7 +33,7 @@ describe('Settings', () => {
 
   afterEach(() => localStorage.removeItem('okdock.locale'));
 
-  it('renomear é cadastrar o novo e só então soltar o antigo', () => {
+  it('renaming adds the new name and only then drops the old one', () => {
     settings.rename('smp', 'novo');
 
     const add = http.expectOne('/api/v1/dns/domains');
@@ -46,14 +46,14 @@ describe('Settings', () => {
     drop.flush(null);
 
     http.expectOne('/api/v1/dns').flush(dns);
-    expect(settings.busyDomain()).withContext('a linha ficou travada').toBeNull();
+    expect(settings.busyDomain()).withContext('the row stayed stuck').toBeNull();
   });
 
-  it('nome novo recusado não apaga o que já funcionava', () => {
-    settings.rename('smp', 'ocupado');
+  it('a rejected new name does not erase what already worked', () => {
+    settings.rename('smp', 'taken');
 
     http.expectOne('/api/v1/dns/domains').flush(
-      { error: 'dns_rejected', message: 'o duckdns recusou' },
+      { error: 'dns_rejected', message: 'duckdns said KO' },
       { status: 422, statusText: 'Unprocessable Entity' },
     );
 
@@ -64,7 +64,7 @@ describe('Settings', () => {
     http.expectOne('/api/v1/dns').flush(dns);
   });
 
-  it('token novo com nomes na lista manda conferir todos', () => {
+  it('a new token with names on the list checks every one of them', () => {
     settings.tokenDraft.set('token-novo');
 
     settings.saveToken();
@@ -75,15 +75,15 @@ describe('Settings', () => {
     http.expectOne('/api/v1/dns/sync').flush(null);
 
     expect(settings.tokenNote()).toBe('token gravado; conferindo os nomes da lista…');
-    expect(settings.tokenHidden()).withContext('o token devia voltar a ficar escondido').toBeTrue();
+    expect(settings.tokenHidden()).withContext('the token should go back to hidden').toBeTrue();
   });
 
-  it('diz de quem é o nome já vinculado', () => {
+  it('says who owns a name that is already linked', () => {
     expect(settings.instanceFor('smp')).toBe('smp-familia');
     expect(settings.instanceFor('outro')).toBe('');
   });
 
-  it('só oferece salvar a raiz quando ela mudou', () => {
+  it('only offers to save the root once it changed', () => {
     store.system.set({ root: '/srv/games' } as SystemInfo);
 
     settings.rootDraft.set('/srv/games');
@@ -93,7 +93,7 @@ describe('Settings', () => {
     expect(settings.rootChanged()).toBeTrue();
   });
 
-  it('mostra a versão do docker, ou que ele não respondeu', () => {
+  it('shows the docker version, or that it did not answer', () => {
     store.system.set({ dockerVersion: '27.1.1' } as SystemInfo);
     expect(settings.dockerLabel()).toBe('versão 27.1.1');
 

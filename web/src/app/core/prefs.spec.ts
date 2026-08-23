@@ -14,11 +14,11 @@ describe('Prefs', () => {
     return TestBed.inject(Prefs);
   }
 
-  it('começa com todos os números na barra', () => {
+  it('starts with every number in the bar', () => {
     expect(prefs().metrics()).toEqual({ cpu: true, memory: true, disk: true, budget: true });
   });
 
-  it('grava o que foi desligado', () => {
+  it('saves what was turned off', () => {
     const p = prefs();
 
     p.toggle('disk');
@@ -28,17 +28,17 @@ describe('Prefs', () => {
     expect(JSON.parse(localStorage.getItem(KEY)!).disk).toBeFalse();
   });
 
-  it('completa com os padrões o que o storage não traz', () => {
+  it('fills in the defaults the storage does not carry', () => {
     localStorage.setItem(KEY, JSON.stringify({ cpu: false }));
 
     const p = prefs();
 
     expect(p.metrics().cpu).withContext('escolha gravada perdida').toBeFalse();
-    expect(p.metrics().budget).withContext('chave ausente devia cair no padrão').toBeTrue();
+    expect(p.metrics().budget).withContext('a missing key should fall back to the default').toBeTrue();
   });
 
-  it('ignora storage corrompido em vez de quebrar a tela', () => {
-    localStorage.setItem(KEY, 'isto não é json');
+  it('ignores corrupted storage instead of breaking the screen', () => {
+    localStorage.setItem(KEY, 'this is not json');
 
     expect(prefs().metrics().cpu).toBeTrue();
   });

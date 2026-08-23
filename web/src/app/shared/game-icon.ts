@@ -35,7 +35,7 @@ export function templateColors(templateId: string, category = 'other'): { bg: st
 }
 
 @Component({
-  selector: 'gd-game-icon',
+  selector: 'ok-game-icon',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: grid; place-items: center; line-height: 0; }

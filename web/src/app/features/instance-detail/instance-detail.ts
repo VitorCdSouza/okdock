@@ -36,7 +36,7 @@ const STATE_CHIP: Record<State, { bg: string; line: string; fg: string }> = {
 };
 
 @Component({
-  selector: 'gd-instance-detail',
+  selector: 'ok-instance-detail',
   imports: [FormsModule, TemplateForm, GameIcon, InfoDot],
   templateUrl: './instance-detail.html',
   styleUrl: './instance-detail.css',

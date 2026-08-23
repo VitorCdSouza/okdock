@@ -10,7 +10,7 @@ type Action = { label: string; kind: 'go' | 'bad' | 'flat'; verb: ActionVerb };
 export type ActionVerb = 'start' | 'stop' | 'restart' | 'logs' | 'fix' | 'unarchive' | 'cancel';
 
 @Component({
-  selector: 'gd-instance-card',
+  selector: 'ok-instance-card',
   imports: [GameIcon],
   templateUrl: './instance-card.html',
   styleUrl: './instance-card.css',
@@ -84,7 +84,7 @@ export class InstanceCard {
 
   readonly portList = computed(() => {
     const ports = this.instance().ports ?? [];
-    if (!ports.length) return '—';
+    if (!ports.length) return '-';
     return ports.map((p) => `${p.host}${p.protocol === 'udp' ? '/udp' : ''}`).join(', ');
   });
 

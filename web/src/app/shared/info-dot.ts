@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 
 @Component({
-  selector: 'gd-info',
+  selector: 'ok-info',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     'tabindex': '0',
