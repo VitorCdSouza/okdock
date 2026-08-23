@@ -148,6 +148,8 @@ export class InstanceDetail {
       const i = this.instance();
       if (!i || this.loadedFor === i.name) return;
       this.loadedFor = i.name;
+      // container externo nao tem campos para editar, entao a primeira aba util e a de recursos
+      if (i.external && this.tab() === 'config') this.select('recursos');
       this.values.set({ ...i.env });
       this.memoryLimit.set(i.memoryLimit);
       this.cpus.set(i.cpus);

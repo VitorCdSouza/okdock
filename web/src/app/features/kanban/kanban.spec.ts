@@ -138,6 +138,22 @@ describe('Kanban — arrastar card para uma coluna', () => {
     expect(kanban.pendingAction()).toBeNull();
   });
 
+  it('container externo não aceita atualizar nem arquivar, mas aceita parar', () => {
+    store.instances.set([instance({ external: true, project: 'media' })]);
+    store.dragging.set('smp');
+
+    kanban.onDrop(dragEvent(), 'updating');
+    expect(kanban.pendingAction()).withContext('externo não tem imagem para atualizar').toBeNull();
+
+    store.dragging.set('smp');
+    kanban.onDrop(dragEvent(), 'archived');
+    expect(kanban.pendingAction()).withContext('externo não se arquiva').toBeNull();
+
+    store.dragging.set('smp');
+    kanban.onDrop(dragEvent(), 'stopped');
+    expect(kanban.pendingAction()?.target).toBe('stopped');
+  });
+
   it('ignora o drop quando a ação não faria nada', () => {
     store.instances.set([instance({ state: 'stopped' })]);
     store.dragging.set('smp');

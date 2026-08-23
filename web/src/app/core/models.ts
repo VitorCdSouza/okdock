@@ -153,6 +153,11 @@ export interface Instance {
   exitCode?: number;
   stats?: Stats;
   operation?: Operation;
+
+  /** Container que já existia no servidor: o painel enxerga e controla, mas não edita. */
+  external?: boolean;
+  project?: string;
+  service?: string;
   dns?: InstanceDNS;
 }
 

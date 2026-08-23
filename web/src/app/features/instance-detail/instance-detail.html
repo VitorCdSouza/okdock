@@ -47,16 +47,20 @@
     </header>
 
     <nav class="tabs">
-      <button [class.on]="tab() === 'config'" (click)="select('config')">
-        {{ t('detail.tab.config') }}
-      </button>
+      @if (!inst.external) {
+        <button [class.on]="tab() === 'config'" (click)="select('config')">
+          {{ t('detail.tab.config') }}
+        </button>
+      }
       <button [class.on]="tab() === 'recursos'" (click)="select('recursos')">
         {{ t('detail.tab.resources') }}
       </button>
       <button [class.on]="tab() === 'console'" (click)="select('console')">
         {{ t('detail.tab.console') }}
       </button>
-      <button [class.on]="tab() === 'compose'" (click)="select('compose')">compose.yml</button>
+      @if (!inst.external) {
+        <button [class.on]="tab() === 'compose'" (click)="select('compose')">compose.yml</button>
+      }
     </nav>
 
     @if (error(); as err) {
@@ -85,6 +89,24 @@
           }
 
           @case ('recursos') {
+            @if (inst.external) {
+              <div class="alert warn">
+                {{ t('detail.externalNote', { project: inst.project || '—', dir: inst.dir || '—' }) }}
+              </div>
+              <div class="section-title">{{ t('detail.resourcesTitle') }}</div>
+              <ul class="mounts mono">
+                @for (p of inst.ports; track p.container + '/' + p.protocol) {
+                  <li>
+                    <span class="host">{{ p.host }}</span>
+                    <span class="arrow">→</span>
+                    <span>{{ p.container }}/{{ p.protocol }}</span>
+                  </li>
+                }
+                @if (!inst.ports.length) {
+                  <li>{{ t('detail.noPublishedPorts') }}</li>
+                }
+              </ul>
+            } @else {
             <div class="section-title">{{ t('detail.resourcesTitle') }}</div>
             <div class="grid">
               <div class="field">
@@ -169,6 +191,7 @@
 
               @if (dnsError(); as e) { <div class="alert bad">{{ e }}</div> }
             </div>
+            }
           }
 
           @case ('console') {
@@ -190,7 +213,7 @@
       </div>
     </div>
 
-    @if (tab() === 'config' || tab() === 'recursos') {
+    @if (!inst.external && (tab() === 'config' || tab() === 'recursos')) {
       <footer class="edit-bar">
         @if (recreate().length) {
           <div class="alert warn">

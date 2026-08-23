@@ -42,6 +42,7 @@ func writeError(w http.ResponseWriter, err error) {
 		tmplMissing *template.NotFoundError
 		tmplBuiltin *template.BuiltinError
 		budget      *manager.ErrBudget
+		external    *manager.ExternalError
 		port        *manager.ErrPortTaken
 		dnsTaken    *manager.DNSTakenError
 		unreachable *duckdns.UnreachableError
@@ -94,6 +95,12 @@ func writeError(w http.ResponseWriter, err error) {
 			Error:    "invalid_fields",
 			Message:  err.Error(),
 			Problems: validation.Problems,
+		})
+	case errors.As(err, &external):
+		writeJSON(w, http.StatusConflict, apiError{
+			Error:   "external_instance",
+			Message: err.Error(),
+			Params:  map[string]any{"name": external.Name},
 		})
 	case errors.As(err, &budget):
 		writeJSON(w, http.StatusConflict, apiError{

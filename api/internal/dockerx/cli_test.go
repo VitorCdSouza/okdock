@@ -65,3 +65,42 @@ func indexOf(s, sub string) int {
 	}
 	return -1
 }
+
+func TestParseHostPS(t *testing.T) {
+	// Uma linha por container, como o docker ps --format json entrega.
+	out := []byte(`{"Names":"jellyfin","Image":"jellyfin/jellyfin:latest","State":"running","Status":"Up 35 hours (healthy)","Ports":"0.0.0.0:8096->8096/tcp, [::]:8096->8096/tcp","Labels":"com.docker.compose.project=media,com.docker.compose.service=jellyfin,com.docker.compose.project.working_dir=/home/vitorcds/servidor/media"}
+{"Names":"nextcloud-mysql","Image":"mariadb:10.6","State":"exited","Status":"Exited (137) 2 hours ago","Ports":"3306/tcp","Labels":"com.docker.compose.project=nextcloud,com.docker.compose.service=db"}`)
+
+	list, err := parseHostPS(out)
+	if err != nil {
+		t.Fatalf("parseHostPS: %v", err)
+	}
+	if len(list) != 2 {
+		t.Fatalf("esperava 2 containers, veio %d", len(list))
+	}
+
+	jelly := list[0]
+	if jelly.Name != "jellyfin" || jelly.Project != "media" || jelly.Service != "jellyfin" {
+		t.Errorf("identificação errada: %+v", jelly)
+	}
+	if jelly.WorkDir != "/home/vitorcds/servidor/media" {
+		t.Errorf("workDir = %q", jelly.WorkDir)
+	}
+	if jelly.Health != "healthy" {
+		t.Errorf("health = %q", jelly.Health)
+	}
+	if len(jelly.Ports) != 1 {
+		t.Fatalf("o docker publica a mesma porta em IPv4 e IPv6; para a tela é uma só: %+v", jelly.Ports)
+	}
+	if jelly.Ports[0] != (HostPort{Host: 8096, Container: 8096, Protocol: "tcp"}) {
+		t.Errorf("porta = %+v", jelly.Ports[0])
+	}
+
+	db := list[1]
+	if db.ExitCode != 137 {
+		t.Errorf("exitCode = %d, queria 137 tirado do Status", db.ExitCode)
+	}
+	if len(db.Ports) != 0 {
+		t.Errorf("porta exposta e não publicada não chega ao host: %+v", db.Ports)
+	}
+}

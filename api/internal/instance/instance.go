@@ -109,6 +109,12 @@ type Instance struct {
 	Stats     *Stats     `json:"stats,omitempty"`
 	Operation *Operation `json:"operation,omitempty"`
 	DNS       *DNS       `json:"dns,omitempty"`
+
+	// External marca o container que ja existia: da para controlar, nao para editar
+	External bool `json:"external,omitempty"`
+	// Project e o projeto compose do container externo, vazio para quem veio de docker run
+	Project string `json:"project,omitempty"`
+	Service string `json:"service,omitempty"`
 }
 
 // code e a etapa da operacao, message so vem quando o texto e a linha crua do docker

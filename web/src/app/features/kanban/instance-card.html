@@ -6,10 +6,18 @@
     <gd-game-icon class="badge" [template]="instance().templateId" [fallback]="short()"
                   [style.background]="colors().bg" [style.color]="colors().fg" />
     <div class="ident">
-      <div class="name">{{ instance().name }}</div>
+      <div class="name">
+        {{ instance().name }}
+        @if (instance().external) {
+          <span class="ext mono" [title]="t('card.externalTip')">
+            {{ instance().project || t('card.external') }}
+          </span>
+        }
+      </div>
       <div class="sub mono">{{ instance().image }}</div>
     </div>
 
+    @if (!instance().external) {
     <div class="menu-wrap">
       <button class="menu-btn" (click)="toggleMenu($event)"
               [attr.aria-expanded]="menuOpen()"
@@ -23,13 +31,16 @@
         </div>
       }
     </div>
+    }
   </header>
 
   <dl class="specs mono">
     <dt>{{ instance().ports.length > 1 ? t('card.port.other') : t('card.port.one') }}</dt>
     <dd>{{ portList() }}</dd>
-    <dt>{{ t('card.ramAllocated') }}</dt>
-    <dd>{{ memoryAlloc() }}</dd>
+    @if (!instance().external) {
+      <dt>{{ t('card.ramAllocated') }}</dt>
+      <dd>{{ memoryAlloc() }}</dd>
+    }
   </dl>
 
   @if (address(); as addr) {

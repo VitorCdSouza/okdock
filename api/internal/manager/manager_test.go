@@ -575,3 +575,115 @@ func TestUpdateImageRefusesArchived(t *testing.T) {
 		t.Error("instância arquivada não devia ser atualizada sem restaurar")
 	}
 }
+
+func hostContainer(name, project string) dockerx.HostContainer {
+	return dockerx.HostContainer{
+		Name:    name,
+		Image:   "jellyfin/jellyfin:latest",
+		State:   "running",
+		Status:  "Up 35 hours",
+		Project: project,
+		Service: name,
+		WorkDir: "/home/vitorcds/servidor/" + project,
+		Ports:   []dockerx.HostPort{{Host: 8096, Container: 8096, Protocol: "tcp"}},
+	}
+}
+
+func TestListMostraContainerQueJaExistia(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	fake.HostList = []dockerx.HostContainer{hostContainer("jellyfin", "media")}
+
+	list, err := m.List(t.Context())
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(list) != 1 {
+		t.Fatalf("esperava 1 instância, veio %d", len(list))
+	}
+
+	got := list[0]
+	if !got.External || got.Name != "jellyfin" || got.Project != "media" {
+		t.Errorf("container externo veio errado: %+v", got)
+	}
+	if got.State != instance.StateRunning {
+		t.Errorf("state = %q", got.State)
+	}
+	if len(got.Ports) != 1 || got.Ports[0].Host != 8096 {
+		t.Errorf("portas = %+v", got.Ports)
+	}
+}
+
+func TestListNaoDuplicaInstanciaDoPainel(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	inst, err := m.Create(t.Context(), SpecRequest{Name: "smp", TemplateID: "minecraft-java"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// O docker enxerga o container da instancia do painel como qualquer outro.
+	fake.HostList = []dockerx.HostContainer{{
+		Name: "smp", Image: inst.Image, State: "running", Status: "Up 1 minute",
+		Project: "smp", Service: "smp", WorkDir: m.store.Dir("smp"),
+	}}
+
+	list, err := m.List(t.Context())
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(list) != 1 {
+		t.Fatalf("a instância do painel foi listada duas vezes: %+v", list)
+	}
+	if list[0].External {
+		t.Error("instância criada pelo painel não é externa")
+	}
+}
+
+func TestAcoesEmContainerExterno(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	fake.HostList = []dockerx.HostContainer{hostContainer("jellyfin", "media")}
+	ctx := t.Context()
+
+	if err := m.Stop(ctx, "jellyfin"); err != nil {
+		t.Fatalf("Stop: %v", err)
+	}
+	if err := m.Start(ctx, "jellyfin"); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	if err := m.Restart(ctx, "jellyfin"); err != nil {
+		t.Fatalf("Restart: %v", err)
+	}
+
+	for _, want := range []string{"container-stop:jellyfin", "container-start:jellyfin", "container-restart:jellyfin"} {
+		if !containsCall(fake.Calls, want) {
+			t.Errorf("faltou a chamada %q: %v", want, fake.Calls)
+		}
+	}
+}
+
+func TestEditarContainerExternoNaoPassa(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	fake.HostList = []dockerx.HostContainer{hostContainer("jellyfin", "media")}
+	ctx := t.Context()
+
+	if _, err := m.Update(ctx, "jellyfin", SpecRequest{Name: "jellyfin"}); !errors.Is(err, ErrExternal) {
+		t.Errorf("Update = %v, queria ErrExternal", err)
+	}
+	if err := m.Delete(ctx, "jellyfin", true); !errors.Is(err, ErrExternal) {
+		t.Errorf("Delete = %v, queria ErrExternal", err)
+	}
+	if err := m.SetArchived(ctx, "jellyfin", true); !errors.Is(err, ErrExternal) {
+		t.Errorf("SetArchived = %v, queria ErrExternal", err)
+	}
+	if err := m.UpdateImage(ctx, "jellyfin"); !errors.Is(err, ErrExternal) {
+		t.Errorf("UpdateImage = %v, queria ErrExternal", err)
+	}
+}
+
+func containsCall(calls []string, want string) bool {
+	for _, c := range calls {
+		if c == want {
+			return true
+		}
+	}
+	return false
+}

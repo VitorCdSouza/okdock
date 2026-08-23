@@ -155,7 +155,7 @@ func (m *Manager) LinkDNS(ctx context.Context, name, domain string) (instance.DN
 		return instance.DNS{}, ErrDNSDisabled
 	}
 	if _, err := m.store.Get(name); err != nil {
-		return instance.DNS{}, err
+		return instance.DNS{}, m.notManaged(ctx, name, err)
 	}
 	domain, err := duckdns.Normalize(domain)
 	if err != nil {

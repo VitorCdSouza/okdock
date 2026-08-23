@@ -157,3 +157,14 @@ footer {
 .addr:hover { border-color: var(--ok); }
 .addr .copy { color: var(--fg-dim); margin-left: 6px; }
 .addr.stale { color: var(--fg-muted); background: var(--bg-chip); border-color: var(--line-strong); }
+
+.ext {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-xs);
+  font-size: var(--fs-2xs);
+  font-weight: 500;
+  color: var(--fg-dim);
+  vertical-align: middle;
+}

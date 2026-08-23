@@ -12,6 +12,7 @@ type Fake struct {
 	mu sync.Mutex
 
 	Containers     map[string][]Container
+	HostList       []HostContainer
 	LogText        map[string]string
 	StatsByName    map[string]Stats
 	FailUp         map[string]error
@@ -136,4 +137,41 @@ func nameFromDir(dir string) string {
 		return dir[i+1:]
 	}
 	return dir
+}
+
+func (f *Fake) PSAll(_ context.Context) ([]HostContainer, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.record("ps-all", "")
+	out := make([]HostContainer, len(f.HostList))
+	copy(out, f.HostList)
+	return out, nil
+}
+
+func (f *Fake) ContainerAction(_ context.Context, name, verb string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.record("container-"+verb, name)
+	for i, c := range f.HostList {
+		if c.Name != name {
+			continue
+		}
+		switch verb {
+		case "stop":
+			f.HostList[i].State = "exited"
+			f.HostList[i].Status = "Exited (0) 1 second ago"
+		default:
+			f.HostList[i].State = "running"
+			f.HostList[i].Status = "Up 1 second"
+		}
+		return nil
+	}
+	return fmt.Errorf("container %q não existe", name)
+}
+
+func (f *Fake) ContainerLogs(_ context.Context, name string, _ int, _ bool) (io.ReadCloser, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.record("container-logs", name)
+	return io.NopCloser(strings.NewReader(f.LogText[name])), nil
 }

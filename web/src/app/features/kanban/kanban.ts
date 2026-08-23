@@ -77,6 +77,8 @@ export class Kanban {
   });
 
   allows(inst: Instance, target: State): boolean {
+    // container externo nao tem Spec: da para subir e parar, nao para atualizar nem arquivar
+    if (inst.external && target !== 'running' && target !== 'stopped') return false;
     switch (target) {
       case 'updating':
         return !inst.archived && inst.state !== 'updating';

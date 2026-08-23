@@ -89,6 +89,9 @@ export const en: Record<MessageKey, string> = {
     'Tears down the container and takes the instance off the board, keeping the volumes. The world stays in',
   'kanban.doArchive': 'Archive',
 
+  'card.external': 'external',
+  'card.externalTip':
+    'Container that already existed on the server, outside OkDock. The panel starts, stops and shows the console; editing fields, updating the image and deleting stay in the terminal.',
   'card.optionsAria': 'Options for {name}',
   'card.edit': 'Edit',
   'card.delete': 'Delete',
@@ -122,6 +125,9 @@ export const en: Record<MessageKey, string> = {
   'detail.templateFields': 'TEMPLATE FIELDS',
   'detail.templateGone':
     'Template {id} is no longer in the catalog. Edit it through docker-compose.yml.',
+  'detail.externalNote':
+    'External container, from the {project} compose project in {dir}. OkDock starts, stops, restarts and shows the console; the rest stays with the original compose.',
+  'detail.noPublishedPorts': 'no port published on the host',
   'detail.resourcesTitle': 'RESOURCES & NETWORK',
   'detail.ramLimit': 'RAM limit',
   'detail.ramLimitTip': 'The container ceiling. The JVM heap goes in the template fields.',
@@ -308,6 +314,8 @@ export const en: Record<MessageKey, string> = {
   'error.dns_disabled': 'this panel started with no DNS client',
   'error.dns_taken': '{domain} is already linked to {instance}',
   'error.docker_failed': 'docker refused the command: {detail}',
+  'error.external_instance':
+    '{name} is an external container: OkDock starts, stops and shows the console, but the original compose is what edits it.',
   'error.invalid_fields': 'some fields did not pass the template validation',
   'error.bad_request': 'the request was malformed',
   'error.internal': 'internal panel error',

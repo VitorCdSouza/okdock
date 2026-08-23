@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -177,6 +178,11 @@ func (c CLI) Logs(ctx context.Context, dir string, tail int, follow bool) (io.Re
 	if follow {
 		args = append(args, "--follow")
 	}
+	return c.stream(ctx, args...)
+}
+
+// stream deixa o comando rodando, quem fecha o reader mata o processo
+func (c CLI) stream(ctx context.Context, args ...string) (io.ReadCloser, error) {
 	cmd := exec.CommandContext(ctx, c.bin(), args...)
 	pipe, err := cmd.StdoutPipe()
 	if err != nil {
@@ -292,4 +298,140 @@ func (c CLI) Version(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(out)), nil
+}
+
+type hostPSLine struct {
+	Names  string `json:"Names"`
+	Image  string `json:"Image"`
+	State  string `json:"State"`
+	Status string `json:"Status"`
+	Ports  string `json:"Ports"`
+	Labels string `json:"Labels"`
+}
+
+// PSAll fala com o docker, nao com o compose: e a unica forma de ver container de fora
+func (c CLI) PSAll(ctx context.Context) ([]HostContainer, error) {
+	out, err := c.run(ctx, shortTimeout, "ps", "--all", "--no-trunc", "--format", "json")
+	if err != nil {
+		return nil, err
+	}
+	return parseHostPS(out)
+}
+
+func parseHostPS(out []byte) ([]HostContainer, error) {
+	sc := bufio.NewScanner(bytes.NewReader(bytes.TrimSpace(out)))
+	sc.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
+
+	var list []HostContainer
+	for sc.Scan() {
+		line := bytes.TrimSpace(sc.Bytes())
+		if len(line) == 0 {
+			continue
+		}
+		var l hostPSLine
+		if err := json.Unmarshal(line, &l); err != nil {
+			return nil, fmt.Errorf("lendo docker ps: %w", err)
+		}
+		labels := parseLabels(l.Labels)
+		health, code := parseStatus(l.Status)
+		list = append(list, HostContainer{
+			// um container pode ter mais de um nome, o primeiro e o que o docker usa nos comandos
+			Name:     strings.TrimSpace(strings.Split(l.Names, ",")[0]),
+			Image:    l.Image,
+			State:    strings.ToLower(l.State),
+			Status:   l.Status,
+			Health:   health,
+			ExitCode: code,
+			Project:  labels["com.docker.compose.project"],
+			Service:  labels["com.docker.compose.service"],
+			WorkDir:  labels["com.docker.compose.project.working_dir"],
+			Ports:    parsePorts(l.Ports),
+		})
+	}
+	if err := sc.Err(); err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+// parseLabels le chave=valor do docker ps, so as chaves que interessam, nenhuma tem virgula
+func parseLabels(raw string) map[string]string {
+	out := map[string]string{}
+	for _, part := range strings.Split(raw, ",") {
+		key, value, ok := strings.Cut(part, "=")
+		if !ok {
+			continue
+		}
+		key = strings.TrimSpace(key)
+		if _, seen := out[key]; seen {
+			continue
+		}
+		out[key] = value
+	}
+	return out
+}
+
+var statusCode = regexp.MustCompile(`^Exited \((\d+)\)`)
+
+// parseStatus tira do texto do docker o que o compose entrega em campo proprio
+func parseStatus(status string) (health string, exitCode int) {
+	switch {
+	case strings.Contains(status, "(healthy)"):
+		health = "healthy"
+	case strings.Contains(status, "(unhealthy)"):
+		health = "unhealthy"
+	case strings.Contains(status, "(health: starting)"):
+		health = "starting"
+	}
+	if m := statusCode.FindStringSubmatch(status); m != nil {
+		exitCode, _ = strconv.Atoi(m[1])
+	}
+	return health, exitCode
+}
+
+// parsePorts le a lista do docker, e a mesma porta em IPv4 e IPv6 e uma porta so
+func parsePorts(raw string) []HostPort {
+	var out []HostPort
+	seen := map[HostPort]bool{}
+	for _, part := range strings.Split(raw, ",") {
+		part = strings.TrimSpace(part)
+		published, target, ok := strings.Cut(part, "->")
+		if !ok {
+			// Porta exposta e nao publicada ("8080/tcp"): o host nao alcanca.
+			continue
+		}
+		hostPort := published
+		if i := strings.LastIndex(published, ":"); i >= 0 {
+			hostPort = published[i+1:]
+		}
+		containerPort, protocol, _ := strings.Cut(target, "/")
+		host, err := strconv.Atoi(hostPort)
+		if err != nil {
+			continue
+		}
+		container, err := strconv.Atoi(containerPort)
+		if err != nil {
+			continue
+		}
+		p := HostPort{Host: host, Container: container, Protocol: protocol}
+		if seen[p] {
+			continue
+		}
+		seen[p] = true
+		out = append(out, p)
+	}
+	return out
+}
+
+func (c CLI) ContainerAction(ctx context.Context, name, verb string) error {
+	_, err := c.run(ctx, downTimeout, verb, name)
+	return err
+}
+
+func (c CLI) ContainerLogs(ctx context.Context, name string, tail int, follow bool) (io.ReadCloser, error) {
+	args := []string{"logs", "--tail", strconv.Itoa(tail)}
+	if follow {
+		args = append(args, "--follow")
+	}
+	return c.stream(ctx, append(args, name)...)
 }

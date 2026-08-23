@@ -86,6 +86,9 @@ export const pt = {
     'Derruba o container e tira a instância do quadro, mantendo os volumes. O mundo continua em',
   'kanban.doArchive': 'Arquivar',
 
+  'card.external': 'externo',
+  'card.externalTip':
+    'Container que já existia no servidor, fora do OkDock. O painel sobe, para e mostra o console; editar campos, atualizar imagem e excluir continuam no terminal.',
   'card.optionsAria': 'Opções de {name}',
   'card.edit': 'Editar',
   'card.delete': 'Excluir',
@@ -119,6 +122,9 @@ export const pt = {
   'detail.templateFields': 'CAMPOS DO TEMPLATE',
   'detail.templateGone':
     'O template {id} não está mais no catálogo. Edite pelo docker-compose.yml.',
+  'detail.externalNote':
+    'Container externo, do projeto compose {project} em {dir}. O OkDock sobe, para, reinicia e mostra o console; o resto continua sendo do compose original.',
+  'detail.noPublishedPorts': 'nenhuma porta publicada no host',
   'detail.resourcesTitle': 'RECURSOS E REDE',
   'detail.ramLimit': 'Limite de RAM',
   'detail.ramLimitTip': 'Teto do container. O heap da JVM vai nos campos do template.',
@@ -302,6 +308,8 @@ export const pt = {
   'error.dns_disabled': 'este painel subiu sem cliente de DNS',
   'error.dns_taken': '{domain} já está vinculado a {instance}',
   'error.docker_failed': 'o docker recusou o comando: {detail}',
+  'error.external_instance':
+    '{name} é um container externo: o OkDock sobe, para e mostra o console, mas quem edita é o compose original.',
   'error.invalid_fields': 'alguns campos não passaram na validação do template',
   'error.bad_request': 'a requisição veio malformada',
   'error.internal': 'erro interno no painel',

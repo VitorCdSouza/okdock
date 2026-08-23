@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -94,13 +95,120 @@ func (m *Manager) List(ctx context.Context) ([]instance.Instance, error) {
 		}
 		out = append(out, inst)
 	}
+	external, upExternal := m.listExternal(ctx, out)
+	out = append(out, external...)
+	running = append(running, upExternal...)
+
 	m.attachStats(ctx, out, running)
 	return out, nil
+}
+
+// listExternal traz o que ja rodava antes do painel, comparando pelo diretorio do projeto
+func (m *Manager) listExternal(ctx context.Context, managed []instance.Instance) (list []instance.Instance, running []string) {
+	containers, err := m.docker.PSAll(ctx)
+	if err != nil {
+		// sem docker nao ha externo para mostrar, e as instancias sabem se virar sozinhas
+		slog.Debug("não consegui listar os containers do host", "err", err)
+		return nil, nil
+	}
+
+	ours := make(map[string]bool, len(managed)*2)
+	for _, inst := range managed {
+		ours[filepath.Clean(inst.Dir)] = true
+		ours["name:"+inst.Name] = true
+	}
+
+	now := m.now()
+	for _, c := range containers {
+		if c.WorkDir != "" && ours[filepath.Clean(c.WorkDir)] {
+			continue
+		}
+		if ours["name:"+c.Name] {
+			continue
+		}
+
+		inst := instance.Instance{
+			Spec: instance.Spec{
+				Name:      c.Name,
+				Image:     c.Image,
+				Category:  string(template.CategoryOther),
+				Env:       map[string]string{},
+				CreatedAt: now,
+				UpdatedAt: now,
+			},
+			Dir:      c.WorkDir,
+			External: true,
+			Project:  c.Project,
+			Service:  c.Service,
+			Status:   c.Status,
+			Health:   c.Health,
+		}
+		for _, p := range c.Ports {
+			inst.Ports = append(inst.Ports, instance.PortBinding{
+				Host: p.Host, Container: p.Container, Protocol: p.Protocol,
+			})
+		}
+		inst.State = externalState(c)
+		if inst.State == instance.StateError && c.ExitCode != 0 {
+			code := c.ExitCode
+			inst.ExitCode = &code
+		}
+		if isUp(inst.State) {
+			running = append(running, c.Name)
+		}
+		list = append(list, inst)
+	}
+
+	sort.Slice(list, func(i, j int) bool { return list[i].Name < list[j].Name })
+	return list, running
+}
+
+// externalState traduz o estado do docker: externo nao tem operacao nem arquivamento
+func externalState(c dockerx.HostContainer) instance.State {
+	switch c.State {
+	case "running":
+		switch c.Health {
+		case "starting":
+			return instance.StateStarting
+		case "unhealthy":
+			return instance.StateError
+		default:
+			return instance.StateRunning
+		}
+	case "restarting":
+		return instance.StateStarting
+	case "created":
+		return instance.StateProvisioning
+	case "exited", "dead":
+		if c.ExitCode != 0 {
+			return instance.StateError
+		}
+		return instance.StateStopped
+	default:
+		return instance.StateStopped
+	}
+}
+
+// external acha um container externo pelo nome, para as acoes que nao passam pela Spec
+func (m *Manager) external(ctx context.Context, name string) (instance.Instance, bool) {
+	list, err := m.List(ctx)
+	if err != nil {
+		return instance.Instance{}, false
+	}
+	for _, inst := range list {
+		if inst.External && inst.Name == name {
+			return inst, true
+		}
+	}
+	return instance.Instance{}, false
 }
 
 func (m *Manager) Get(ctx context.Context, name string) (instance.Instance, error) {
 	spec, err := m.store.Get(name)
 	if err != nil {
+		if inst, ok := m.external(ctx, name); ok {
+			return inst, nil
+		}
 		return instance.Instance{}, err
 	}
 	list := []instance.Instance{m.hydrate(ctx, spec)}
@@ -628,10 +736,29 @@ func (m *Manager) provision(name string) {
 	m.endOp(name, err)
 }
 
+// ExternalError diz que o alvo existe, mas e container que o painel so enxerga
+type ExternalError struct{ Name string }
+
+func (e *ExternalError) Error() string {
+	return fmt.Sprintf("%q é um container externo; o painel só sobe, para e mostra o console", e.Name)
+}
+
+var ErrExternal = errors.New("container externo")
+
+func (e *ExternalError) Is(target error) bool { return target == ErrExternal }
+
+// notManaged troca o nao existe por um erro que diz a verdade quando o nome e de um externo
+func (m *Manager) notManaged(ctx context.Context, name string, err error) error {
+	if _, ok := m.external(ctx, name); ok {
+		return &ExternalError{Name: name}
+	}
+	return err
+}
+
 func (m *Manager) Update(ctx context.Context, name string, req SpecRequest) (instance.Spec, error) {
 	old, err := m.store.Get(name)
 	if err != nil {
-		return instance.Spec{}, err
+		return instance.Spec{}, m.notManaged(ctx, name, err)
 	}
 	req.Name = name
 	if req.TemplateID == "" {
@@ -769,6 +896,10 @@ func RecreateFields(old, new instance.Spec) []string {
 func (m *Manager) Start(ctx context.Context, name string) error {
 	spec, err := m.store.Get(name)
 	if err != nil {
+		// container externo sobe pelo docker, sem orcamento: o limite dele nao esta em Spec nenhuma
+		if _, ok := m.external(ctx, name); ok {
+			return m.docker.ContainerAction(ctx, name, "start")
+		}
 		return err
 	}
 	if spec.Archived {
@@ -791,7 +922,7 @@ func (m *Manager) Start(ctx context.Context, name string) error {
 func (m *Manager) UpdateImage(ctx context.Context, name string) error {
 	spec, err := m.store.Get(name)
 	if err != nil {
-		return err
+		return m.notManaged(ctx, name, err)
 	}
 	if spec.Archived {
 		return fmt.Errorf("%q está arquivada; restaure antes de atualizar", name)
@@ -843,6 +974,9 @@ func (m *Manager) pullAndRecreate(name string, spec instance.Spec) {
 
 func (m *Manager) Stop(ctx context.Context, name string) error {
 	if _, err := m.store.Get(name); err != nil {
+		if _, ok := m.external(ctx, name); ok {
+			return m.docker.ContainerAction(ctx, name, "stop")
+		}
 		return err
 	}
 	if err := m.beginOp(name, OpStop, "stopping"); err != nil {
@@ -858,6 +992,9 @@ func (m *Manager) Stop(ctx context.Context, name string) error {
 
 func (m *Manager) Restart(ctx context.Context, name string) error {
 	if _, err := m.store.Get(name); err != nil {
+		if _, ok := m.external(ctx, name); ok {
+			return m.docker.ContainerAction(ctx, name, "restart")
+		}
 		return err
 	}
 	if err := m.beginOp(name, OpStart, "restarting"); err != nil {
@@ -874,7 +1011,7 @@ func (m *Manager) Restart(ctx context.Context, name string) error {
 func (m *Manager) SetArchived(ctx context.Context, name string, archived bool) error {
 	spec, err := m.store.Get(name)
 	if err != nil {
-		return err
+		return m.notManaged(ctx, name, err)
 	}
 	if archived {
 		if err := m.docker.Down(ctx, m.store.Dir(name)); err != nil {
@@ -891,7 +1028,7 @@ func (m *Manager) SetArchived(ctx context.Context, name string, archived bool) e
 
 func (m *Manager) Delete(ctx context.Context, name string, keepData bool) error {
 	if _, err := m.store.Get(name); err != nil {
-		return err
+		return m.notManaged(ctx, name, err)
 	}
 	if err := m.docker.Down(ctx, m.store.Dir(name)); err != nil {
 		var de *dockerx.Error
@@ -912,6 +1049,9 @@ func (m *Manager) Delete(ctx context.Context, name string, keepData bool) error 
 
 func (m *Manager) Logs(ctx context.Context, name string, tail int, follow bool) (readCloser, error) {
 	if _, err := m.store.Get(name); err != nil {
+		if _, ok := m.external(ctx, name); ok {
+			return m.docker.ContainerLogs(ctx, name, tail, follow)
+		}
 		return nil, err
 	}
 	return m.docker.Logs(ctx, m.store.Dir(name), tail, follow)
