@@ -1,16 +1,16 @@
-# Contrato da API
+# API contract
 
-Base: `/api/v1`. Tudo JSON, exceto onde indicado. Sem autenticação — ver a
-seção final de `docs/arquitetura.md`.
+Base: `/api/v1`. Everything is JSON except where noted. No authentication, see
+the last section of `docs/architecture.md`.
 
-## Erros
+## Errors
 
-Todo erro devolve o mesmo corpo:
+Every error returns the same body:
 
 ```json
 {
   "error": "memory_budget",
-  "message": "smp pede 8g, mas só há 3 GB livres no orçamento de 13 GB (as instâncias de pé já usam 10 GB)",
+  "message": "smp asks for 8g, but only 3 GB is free in the 13 GB budget (running instances already use 10 GB)",
   "params": {
     "instance": "smp",
     "requested": "8g",
@@ -21,12 +21,14 @@ Todo erro devolve o mesmo corpo:
 }
 ```
 
-`error` é o código estável e `params` traz o que a frase precisa — é com esses
-dois que o painel escreve a mensagem no idioma de quem está olhando. `message`
-é a mesma frase em português, e serve de último recurso: para quem lê o JSON
-cru e para um cliente que ainda não conhece o código.
+`error` is the stable code and `params` carries what the sentence needs; those
+two are what the panel uses to write the message in the language of whoever is
+looking. `message` is the same sentence in English, and works as a last resort:
+for whoever reads the raw JSON, and for a client that does not know the code
+yet.
 
-`problems` só vem no 422 de `invalid_fields`, e cada item aponta o campo:
+`problems` only comes in the 422 of `invalid_fields`, and each item points at
+the field:
 
 ```json
 {
@@ -38,37 +40,37 @@ cru e para um cliente que ainda não conhece o código.
 }
 ```
 
-Códigos de problema: `required`, `unknown_field`, `not_int`, `not_number`,
-`not_bool`, `below_min`, `above_max`, `not_option`, `image_owned_by` e
+Problem codes: `required`, `unknown_field`, `not_int`, `not_number`, `not_bool`,
+`below_min`, `above_max`, `not_option`, `image_owned_by` and
 `image_not_accepted`.
 
-Alguns erros afinam o motivo dentro de `params.reason` — `invalid_root` usa
-`not_absolute`, `create_failed`, `unreadable`, `not_dir` ou `unwritable`.
+Some errors refine the reason inside `params.reason`: `invalid_root` uses
+`not_absolute`, `create_failed`, `unreadable`, `not_dir` or `unwritable`.
 
-| `error` | Status | Quando |
+| `error` | Status | When |
 |---|---|---|
-| `not_found` | 404 | instância ou template inexistente |
-| `already_exists` | 409 | já existe instância com esse nome |
-| `invalid_fields` | 422 | valores fora do schema do template |
-| `memory_budget` | 409 | não cabe na RAM do host |
-| `port_taken` | 409 | porta já usada por outra instância |
-| `docker_failed` | 409 | o `docker compose` falhou; `params.detail` traz o stderr |
-| `external_instance` | 409 | a ação não vale para container que não é do painel; `params.name` diz qual |
-| `bad_request` | 400 | corpo malformado ou campo desconhecido |
-| `dns_rejected` | 422 | o duckdns respondeu KO: token errado ou domínio que não é da conta |
-| `dns_unreachable` | 409 | o duckdns não respondeu; o servidor pode estar sem saída para a internet |
-| `dns_token_missing` | 409 | ainda não há token gravado |
-| `dns_taken` | 409 | outra instância já usa esse domínio |
-| `dns_disabled` | 409 | o painel subiu sem cliente de DNS |
-| `invalid_domain` | 422 | o nome não é um subdomínio válido |
-| `invalid_root` | 422 | a raiz pedida não serve; o motivo vem em `params.reason` |
-| `internal` | 500 | qualquer erro não previsto |
+| `not_found` | 404 | no such instance or template |
+| `already_exists` | 409 | an instance with that name already exists |
+| `invalid_fields` | 422 | values outside the template schema |
+| `memory_budget` | 409 | does not fit in the host RAM |
+| `port_taken` | 409 | port already used by another instance |
+| `docker_failed` | 409 | `docker compose` failed, `params.detail` carries the stderr |
+| `external_instance` | 409 | the action does not apply to a container the panel does not own, `params.name` says which |
+| `bad_request` | 400 | malformed body or unknown field |
+| `dns_rejected` | 422 | duckdns answered KO: wrong token or a domain outside the account |
+| `dns_unreachable` | 409 | duckdns did not answer, the server may have no way out to the internet |
+| `dns_token_missing` | 409 | no token saved yet |
+| `dns_taken` | 409 | another instance already uses that domain |
+| `dns_disabled` | 409 | the panel started with no DNS client |
+| `invalid_domain` | 422 | the name is not a valid subdomain |
+| `invalid_root` | 422 | the requested root does not work, the reason comes in `params.reason` |
+| `internal` | 500 | any unforeseen error |
 
-Campo desconhecido no corpo é rejeitado de propósito: costuma ser erro de
-digitação do cliente, e aceitar em silêncio faz a configuração sair diferente
-do que o usuário pediu.
+An unknown field in the body is rejected on purpose: it is usually a typo on the
+client side, and accepting it silently makes the configuration come out
+different from what the user asked for.
 
-## Sistema
+## System
 
 ### `GET /system`
 
@@ -87,39 +89,39 @@ do que o usuário pediu.
 }
 ```
 
-`root` é a raiz dos diretórios de instância — começa em `OKDOCK_ROOT` e pode
-ser trocada por `PUT /system/root`. `memoryBudget` é
-`memoryTotal − memoryReserve`. `memoryCommitted` soma o teto
-das instâncias de pé; `memoryPlanned` soma também as paradas. Sem daemon, vem
-`dockerError` no lugar de `dockerVersion`.
+`root` is the root of the instance directories: it starts at `OKDOCK_ROOT` and
+can be changed through `PUT /system/root`. `memoryBudget` is
+`memoryTotal - memoryReserve`. `memoryCommitted` adds up the cap of the running
+instances; `memoryPlanned` adds the stopped ones too. With no daemon,
+`dockerError` comes instead of `dockerVersion`.
 
 ### `PUT /system/root`
 
 ```json
-{"root": "/mnt/disco/jogos"}
+{"root": "/mnt/disk/games"}
 ```
 
-Passa a gravar as instâncias novas ali e devolve o `GET /system` já atualizado.
-O caminho tem que ser absoluto e gravável; o painel cria o diretório se faltar
-e responde `422 invalid_root` quando não dá.
+New instances start being written there, and the updated `GET /system` comes
+back. The path has to be absolute and writable; the panel creates the directory
+if it is missing and answers `422 invalid_root` when it cannot.
 
-As instâncias que já existem **não se movem**: o docker guarda o caminho
-absoluto dos bind mounts, então elas continuam de pé onde estão e somem da
-listagem até a raiz voltar. A escolha fica gravada em
-`<OKDOCK_ROOT>/.okdock/config.json` — na raiz de boot, e não na nova, senão
-o processo seguinte procuraria o arquivo no lugar errado.
+Instances that already exist **do not move**: docker keeps the absolute path of
+the bind mounts, so they stay up where they are and disappear from the listing
+until the root comes back. The choice is saved in
+`<OKDOCK_ROOT>/.okdock/config.json`, on the boot root and not on the new one,
+otherwise the next process would look for the file in the wrong place.
 
 ### `GET /health`
 
-`{"status":"ok"}`. Não toca no Docker — é o healthcheck do container.
+`{"status":"ok"}`. Does not touch Docker, it is the container healthcheck.
 
 ## Templates
 
-Um template descreve uma imagem: categoria, portas, volumes, RAM e os campos
-que o formulário mostra. Os que vêm com o OkDock são JSON embutidos no binário;
-os do usuário ficam em `<raiz de boot>/.okdock/templates/<id>.json`, e um
-arquivo com o mesmo id vence o de fábrica — é assim que se edita um template
-pronto sem perder o original.
+A template describes an image: category, ports, volumes, RAM and the fields the
+form shows. The ones shipping with OkDock are JSON embedded in the binary; the
+user ones live in `<boot root>/.okdock/templates/<id>.json`, and a file with the
+same id beats the builtin one, which is how a builtin template is edited without
+losing the original.
 
 ### `GET /templates`
 
@@ -130,57 +132,59 @@ pronto sem perder o original.
 }
 ```
 
-Ordenados por categoria e nome, com a imagem avulsa por último. `categories` vem
-junto para o frontend não repetir a lista. `builtin: true` marca o que veio com
-o OkDock e ainda não foi editado.
+Sorted by category and name, with the loose image last. `categories` comes along
+so the frontend does not repeat the list. `builtin: true` marks what shipped
+with OkDock and has not been edited yet.
 
 ### `GET /templates/{id}`
 
-O id é o nome do arquivo em disco: minúsculas, dígitos e hífen, 2 a 40
-caracteres. Instância criada quando o campo se chamava `providerId` guardou id
-com barra (`itzg/minecraft-server`); a busca traduz esses três ids antigos para
-os novos.
+The id is the file name on disk: lowercase, digits and hyphen, 2 to 40
+characters. An instance created when the field was called `providerId` saved an
+id with a slash (`itzg/minecraft-server`); the lookup translates those three old
+ids into the new ones.
 
 ### `POST /templates`
 
-Cria. `409 template_exists` se o id já existe — inclusive se for de fábrica.
+Creates. `409 template_exists` if the id already exists, builtin ones included.
 
 ### `PUT /templates/{id}`
 
-Grava por cima, inclusive de um template de fábrica: a edição vira arquivo em
-disco e passa a ser o que a API serve.
+Writes over, including over a builtin template: the edit becomes a file on disk
+and is what the API serves from then on.
 
 ### `DELETE /templates/{id}`
 
-Apaga o arquivo em disco. Se o id também é de fábrica, o template **volta ao
-original** em vez de sumir; se nunca houve arquivo, `409 template_builtin`.
+Deletes the file on disk. If the id is also a builtin one, the template **goes
+back to the original** instead of disappearing; if there never was a file,
+`409 template_builtin`.
 
-Template reprovado responde `422 invalid_fields` com a mesma lista de
-`problems` da criação de instância: `bad_template_id`, `unknown_category`,
-`bad_memory`, `bad_port`, `duplicate_port`, `container_path_not_absolute`,
+A rejected template answers `422 invalid_fields` with the same `problems` list
+as instance creation: `bad_template_id`, `unknown_category`, `bad_memory`,
+`bad_port`, `duplicate_port`, `container_path_not_absolute`,
 `many_data_volumes`, `duplicate_field`, `bad_field_type`,
 `enum_without_options`, `arg_without_flag`.
 
-Um `field`:
+A `field`:
 
 ```json
 {
-  "key": "MAX_PLAYERS", "label": "Máximo de jogadores", "type": "int",
+  "key": "MAX_PLAYERS", "label": "Max players", "type": "int",
   "default": "10", "min": 1, "max": 200,
   "help": "…", "required": false, "secret": false, "advanced": false
 }
 ```
 
-`type` é `text`, `password`, `int`, `float`, `bool` ou `enum`. Enum traz
-`options: [{value, label}]`. `secret: true` mantém o valor fora do compose.
+`type` is `text`, `password`, `int`, `float`, `bool` or `enum`. An enum carries
+`options: [{value, label}]`. `secret: true` keeps the value out of the compose.
 
-`label` e `help` vêm em português. Quem monta a tela procura primeiro pelo par
-template + chave (`field.minecraft-java.MEMORY.help`) na tabela do idioma
-escolhido, e só usa o texto daqui quando não acha — assim um template novo entra
-no catálogo sem depender do frontend, aparecendo em português até ganhar
-tradução. O `label` da porta é um código (`game`) pela mesma razão.
+`label` and `help` come in English. Whoever builds the screen looks first for
+the template + key pair (`field.minecraft-java.MEMORY.help`) in the table of the
+chosen language, and only uses the text from here when it finds nothing. That
+way a new template enters the catalog without depending on the frontend, showing
+up in English until it gets a translation. The port `label` is a code (`game`)
+for the same reason.
 
-## Instâncias
+## Instances
 
 ### `GET /instances`
 
@@ -191,15 +195,16 @@ tradução. O `label` da porta é um código (`game`) pela mesma razão.
 }
 ```
 
-`states` vem na ordem em que o painel apresenta os estados, para o frontend não
-repetir a lista. Nem todo estado vira coluna: `provisioning` e `starting` são
-passagem, e o quadro mostra esses cards já na coluna `running`.
+`states` comes in the order the panel presents the states, so the frontend does
+not repeat the list. Not every state becomes a column: `provisioning` and
+`starting` are transitions, and the board shows those cards in the `running`
+column already.
 
-Uma instância junta o que está em disco com o que o Docker respondeu agora:
+An instance joins what is on disk with what Docker answered just now:
 
 ```json
 {
-  "name": "smp-familia",
+  "name": "smp-family",
   "templateId": "minecraft-java",
   "category": "games",
   "image": "itzg/minecraft-server:java21",
@@ -211,7 +216,7 @@ Uma instância junta o que está em disco com o que o Docker respondeu agora:
   "stopGraceSeconds": 120,
   "createdAt": "2026-08-21T12:00:00Z", "updatedAt": "2026-08-21T12:00:00Z",
 
-  "dir": "/srv/games/smp-familia",
+  "dir": "/srv/games/smp-family",
   "state": "running",
   "status": "Up 3 days (healthy)",
   "health": "healthy",
@@ -219,38 +224,39 @@ Uma instância junta o que está em disco com o que o Docker respondeu agora:
 }
 ```
 
-A Spec gravada quando template se chamava provedor tem `providerId` e `game` no
-lugar dos dois primeiros; a leitura aceita os dois nomes e a próxima gravação
-troca pelos novos.
+A Spec saved when a template was called a provider has `providerId` and `game`
+in place of the first two; the read accepts both names and the next write swaps
+them for the new ones.
 
-`env` inclui os segredos — a API é local e o formulário precisa deles para
-editar. Eles só não vão para o `docker-compose.yml`.
+`env` includes the secrets: the API is local and the form needs them to edit.
+They are only kept out of `docker-compose.yml`.
 
-`dns` aparece quando a instância tem nome de DNS dinâmico vinculado:
+`dns` shows up when the instance has a dynamic DNS name linked:
 
 ```json
 {"domain": "smp", "hostname": "smp.duckdns.org", "lastIp": "187.12.3.4", "lastSync": "…"}
 ```
 
-Ele vem junto da instância porque o nome só serve colado na porta: o que o card
-mostra para copiar é `smp.duckdns.org:25565`.
+It comes along with the instance because the name is only useful glued to the
+port: what the card shows for copying is `smp.duckdns.org:25565`.
 
-`operation` aparece enquanto há algo em andamento:
+`operation` shows up while something is in flight:
 
 ```json
 {"kind": "provision", "message": "Pulling from itzg/minecraft-server", "startedAt": "…"}
 ```
 
-`code` é a etapa quando quem fala é o painel — `preparing`, `creating`,
+`code` is the step when the panel is the one speaking (`preparing`, `creating`,
 `starting`, `restarting`, `stopping`, `recreating`, `checking_update`,
-`recreating_new_image`, `starting_new_config` — e aí `message` vem vazia. Só a
-linha crua do `docker` viaja em `message`, porque não há o que traduzir nela.
+`recreating_new_image`, `starting_new_config`), and then `message` comes empty.
+Only the raw `docker` line travels in `message`, because there is nothing to
+translate in it.
 
 ### `POST /instances`
 
 ```json
 {
-  "name": "smp-familia",
+  "name": "smp-family",
   "templateId": "minecraft-java",
   "values": {"EULA": "true", "TYPE": "PAPER", "MAX_PLAYERS": "20"},
   "memoryLimit": "6g",
@@ -259,81 +265,85 @@ linha crua do `docker` viaja em `message`, porque não há o que traduzir nela.
 }
 ```
 
-Tudo além de `name`, `templateId` e `values` é opcional: portas, volumes, RAM e
-CPUs caem no default do template. `values` passa pelo schema — campo
-desconhecido é 422, exceto num template com `freeEnv`, como o `custom`.
+Everything beyond `name`, `templateId` and `values` is optional: ports, volumes,
+RAM and CPUs fall back to the template default. `values` goes through the
+schema, and an unknown field is a 422, except in a template with `freeEnv`, like
+`custom`.
 
-`start: true` sobe logo depois de criar; a resposta é `201` na hora e o `pull`
-segue em background. Sem `start`, a instância nasce parada e o orçamento de RAM
-não é conferido ainda.
+`start: true` brings it up right after creating; the answer is `201` right away
+and the `pull` goes on in the background. Without `start`, the instance is born
+stopped and the RAM budget is not checked yet.
 
 ### `PUT /instances/{name}`
 
-Mesmo corpo. Se a instância estiver de pé e a mudança exigir recriar o
-container, o painel derruba e sobe de novo em background (`state: updating`).
-Os volumes bind ficam, então o mundo é preservado.
+Same body. If the instance is up and the change requires recreating the
+container, the panel takes it down and brings it up again in the background
+(`state: updating`). The bind volumes stay, so the world is preserved.
 
-Mudança de variável de ambiente sempre exige recriar: env só entra no processo
-quando ele nasce.
+An environment variable change always requires a recreate: env only enters the
+process when it is born.
 
 ### `POST /instances/preview-compose`
 
-Mesmo corpo, não escreve nada:
+Same body, writes nothing:
 
 ```json
-{"compose": "name: smp-familia\nservices:\n  …", "recreate": ["MAX_PLAYERS", "limite de RAM"]}
+{"compose": "name: smp-family\nservices:\n  …", "recreate": ["MAX_PLAYERS", "RAM limit"]}
 ```
 
-`recreate` só vem quando já existe instância com aquele nome.
+`recreate` only comes when an instance with that name already exists.
 
 ### `DELETE /instances/{name}?keepData=false`
 
-`keepData` é `true` por padrão: apaga os arquivos gerados e preserva os
-diretórios de mundo. Apagar dados de jogo é irreversível e precisa ser pedido
-de propósito. `204`.
+`keepData` is `true` by default: it deletes the generated files and keeps the
+world directories. Deleting game data is irreversible and has to be asked for on
+purpose. `204`.
 
-### Ações
+### Actions
 
-`202 Accepted` — rodam em background, e o estado real chega pelo SSE.
+`202 Accepted`, they run in the background and the real state arrives over SSE.
 
-- `POST /instances/{name}/start` — confere o orçamento de RAM antes
+- `POST /instances/{name}/start`, checks the RAM budget first
 - `POST /instances/{name}/stop`
 - `POST /instances/{name}/restart`
-- `POST /instances/{name}/update-image` — procura imagem nova e recria **só se
-  houver**. Comparar o digest local antes e depois do `pull` é o que evita
-  derrubar um servidor cheio de jogadores para nada; a saída de texto do `pull`
-  muda entre versões do docker e não serve para isso. O resultado chega por
-  evento (`instance.updated` ou `instance.uptodate`), porque "nada a fazer" não
-  muda a listagem e sem aviso a ação pareceria não ter acontecido.
+- `POST /instances/{name}/update-image`, looks for a new image and recreates
+  **only if there is one**. Comparing the local digest before and after the
+  `pull` is what avoids taking a server full of players down for nothing; the
+  text output of `pull` changes between docker versions and is no good for that.
+  The result arrives as an event (`instance.updated` or `instance.uptodate`),
+  because "nothing to do" does not change the listing and without a notice the
+  action would look like it never happened.
 
 `204 No Content`:
 
-- `POST /instances/{name}/archive` — derruba e mantém os volumes
+- `POST /instances/{name}/archive`, takes it down and keeps the volumes
 - `POST /instances/{name}/unarchive`
-- `POST /instances/{name}/clear-error` — esquece uma operação que falhou
+- `POST /instances/{name}/clear-error`, forgets a failed operation
 
-Em container externo (`external: true` na listagem) valem `start`, `stop`,
-`restart` e `clear-error`: o painel chama `docker start/stop/restart` pelo nome
-do container, também em background, e a falha do docker vira operação com erro,
-visível no card. As outras ações respondem `409 external_instance` — recusa de
-propósito, não falha: quem edita, atualiza e apaga é o compose original.
+On an external container (`external: true` in the listing) only `start`, `stop`,
+`restart` and `clear-error` apply: the panel calls `docker start/stop/restart`
+by container name, in the background as well, and a docker failure becomes an
+operation with an error, visible on the card. The other actions answer
+`409 external_instance`, a refusal on purpose and not a failure: editing,
+updating and deleting belong to the original compose.
 
 ### `GET /instances/{name}/compose`
 
-O YAML como está no disco (`text/yaml`), que pode divergir do gerado se alguém
-editou à mão.
+The YAML as it is on disk (`text/yaml`), which may differ from the generated one
+if someone edited it by hand.
 
-## DNS dinâmico
+## Dynamic DNS
 
-Um nome fixo para um IP residencial que muda, via [duckdns.org](https://www.duckdns.org).
-Duas limitações do serviço atravessam todo este contrato:
+A fixed name for a residential IP that changes, through
+[duckdns.org](https://www.duckdns.org). Two limitations of the service run
+through this whole contract:
 
-- **A API do duckdns não cria subdomínio.** O nome nasce no site. Aqui só dá
-  para atualizar o IP de um que já existe — e é isso que serve de verificação:
-  `OK` quer dizer que aquele token controla aquele nome.
-- **Só existe nome → IP.** Não há SRV, então não há porta no DNS. Quem for
-  entrar precisa de `nome:porta`, e a porta ainda depende do roteador — o
-  painel não tem como conferir essa parte.
+- **The duckdns API does not create subdomains.** The name is born on the site.
+  Here it is only possible to update the IP of one that exists, and that is what
+  doubles as verification: `OK` means that token controls that name.
+- **There is only name to IP.** There is no SRV, so there is no port in DNS.
+  Whoever joins needs `name:port`, and the port still depends on the router,
+  which the panel has no way to check.
 
 ### `GET /dns`
 
@@ -342,7 +352,7 @@ Duas limitações do serviço atravessam todo este contrato:
   "token": "a1b2c3d4-…",
   "suffix": ".duckdns.org",
   "links": [
-    {"instance": "smp-familia", "domain": "smp", "hostname": "smp.duckdns.org",
+    {"instance": "smp-family", "domain": "smp", "hostname": "smp.duckdns.org",
      "lastIp": "187.12.3.4", "lastSync": "2026-08-21T12:00:00Z"}
   ],
   "domains": [
@@ -352,75 +362,76 @@ Duas limitações do serviço atravessam todo este contrato:
 }
 ```
 
-`links` é o nome de cada instância; `domains` é a lista de nomes da conta,
-cadastrada na tela de configurações, com ou sem instância usando cada um.
-Vincular um nome a uma instância também o cadastra.
+`links` is the name of each instance; `domains` is the list of names in the
+account, registered on the settings screen, with or without an instance using
+each one. Linking a name to an instance also registers it.
 
-O token vem na resposta pelo mesmo motivo que `env` traz os segredos: a API é
-local e o formulário precisa do valor para editar. Em disco ele fica em
-`<raiz de boot>/.okdock/dns.json`, com `0600`, e nunca entra em compose
-nenhum. `suffix` vem daqui para o frontend não repetir a regra.
+The token comes in the answer for the same reason `env` carries the secrets: the
+API is local and the form needs the value to edit. On disk it lives in
+`<boot root>/.okdock/dns.json`, with `0600`, and never enters any compose.
+`suffix` comes from here so the frontend does not repeat the rule.
 
 ### `PUT /dns`
 
-`{"token": "…"}`. Devolve o mesmo corpo do `GET`. Gravar um token novo dispara
-um sync dos domínios já vinculados.
+`{"token": "…"}`. Returns the same body as the `GET`. Saving a new token fires a
+sync of the domains already linked.
 
 ### `POST /dns/domains`
 
-`{"domain": "smp"}` — aceita `smp`, `SMP` ou `smp.duckdns.org`. Cadastrar **é**
-verificar, igual ao vínculo: a chamada atualiza o IP no duckdns e só grava se
-ele responder `OK`. `200` com o nome cadastrado, ou `422 dns_rejected`.
+`{"domain": "smp"}`, accepting `smp`, `SMP` or `smp.duckdns.org`. Registering
+**is** verifying, just like linking: the call updates the IP at duckdns and only
+saves if it answers `OK`. `200` with the registered name, or `422 dns_rejected`.
 
 ### `DELETE /dns/domains/{domain}`
 
-Tira o nome da lista do painel. `204`. O subdomínio continua existindo na conta
-do duckdns — a API deles não apaga nome, isso só dá para fazer no site —, e uma
-instância que já usa esse nome segue vinculada.
+Takes the name off the panel list. `204`. The subdomain keeps existing in the
+duckdns account, since their API does not delete names and only the site can do
+that, and an instance already using that name stays linked.
 
 ### `PUT /instances/{name}/dns`
 
-`{"domain": "smp"}` — aceita `smp`, `SMP` ou `smp.duckdns.org`, e guarda o
-rótulo. Vincular **é** verificar: a chamada atualiza o IP no duckdns e só grava
-se ele responder `OK`. `200` com o vínculo, ou `422 dns_rejected`.
+`{"domain": "smp"}`, accepting `smp`, `SMP` or `smp.duckdns.org`, and keeping
+the label. Linking **is** verifying: the call updates the IP at duckdns and only
+saves if it answers `OK`. `200` with the link, or `422 dns_rejected`.
 
 ### `DELETE /instances/{name}/dns`
 
-`204`. Desfaz o vínculo no painel; o nome continua existindo na conta do
-duckdns, que só o site apaga.
+`204`. Undoes the link in the panel; the name keeps existing in the duckdns
+account, which only the site deletes.
 
 ### `POST /dns/sync`
 
-`202`. Reenvia o IP de todos os domínios agora, sem esperar o ciclo de 5
-minutos. Excluir a instância também apaga o vínculo.
+`202`. Resends the IP of every domain now, without waiting for the 5 minute
+cycle. Deleting the instance also deletes the link.
 
 ## Streams
 
-Ambos são `text/event-stream`.
+Both are `text/event-stream`.
 
 ### `GET /events`
 
 ```
 event: instance.changed
-data: {"type":"instance.changed","instance":"smp-familia"}
+data: {"type":"instance.changed","instance":"smp-family"}
 ```
 
-Tipos: `instance.created`, `instance.changed`, `instance.deleted`,
+Types: `instance.created`, `instance.changed`, `instance.deleted`,
 `instance.failed`, `instance.progress`, `instance.updated`,
-`instance.uptodate`, `dns.changed`. O evento avisa que algo mudou; o dado vem de
-`GET /instances`. Os dois últimos descrevem o desfecho de uma operação, e não
-um estado consultável: o painel monta a frase a partir do tipo do evento e do
-nome da instância; a `message` que vem junto é a versão em português.
-`dns.changed` só sai quando o IP (ou a falha) de algum domínio muda de verdade
-— publicar a cada volta do ciclo faria o painel recarregar tudo de 5 em 5
-minutos sem nada ter acontecido. Comentário `: ping` a cada 25 s segura a conexão.
+`instance.uptodate`, `dns.changed`. The event says something changed; the data
+comes from `GET /instances`. The last two describe the outcome of an operation
+rather than a state that can be queried: the panel builds the sentence from the
+event type and the instance name, and the `message` coming along is the English
+version. `dns.changed` only goes out when the IP (or the failure) of some domain
+really changes, since publishing on every cycle would make the panel reload
+everything every 5 minutes with nothing having happened. A `: ping` comment
+every 25 s holds the connection.
 
 ### `GET /instances/{name}/logs?tail=300&follow=true`
 
 ```
 event: log
-data: "[11:04:07] joana entrou no jogo"
+data: "[11:04:07] joana joined the game"
 ```
 
-Cada linha vem como string JSON — log com quebra de linha quebraria o
-enquadramento do SSE. `event: end` fecha o stream.
+Every line comes as a JSON string, because a log with a line break would break
+the SSE framing. `event: end` closes the stream.

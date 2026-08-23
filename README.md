@@ -1,187 +1,188 @@
 # OkDock
 
-Painel para criar e administrar servidores de jogo em Docker num servidor
-caseiro. Cada instância vira um diretório com `docker-compose.yml` próprio, e o
-painel roda `docker compose` em cima dele — nada é criado pela SDK do Docker.
-Isso é de propósito: se o painel cair, tudo continua administrável pelo
+Panel to create and run game servers in Docker on a home server. Every instance
+becomes a directory with its own `docker-compose.yml`, and the panel runs
+`docker compose` on top of it. Nothing is created through the Docker SDK, and
+that is on purpose: if the panel goes down, everything stays manageable from the
 terminal.
 
 ```
 okdock/
-├── api/     API em Go — templates, geração de compose, orquestração
-├── web/     painel em Angular 20
-├── docs/    arquitetura, contrato da API, templates
+├── api/     Go API: templates, compose generation, orchestration
+├── web/     Angular 20 panel
+├── docs/    architecture, API contract, templates
 └── Dockerfile, docker-compose.yml, Makefile
 ```
 
-## Por que monorepo com uma branch só
+## Why a monorepo with a single branch
 
-`api/` e `web/` compartilham um contrato. Uma branch por app impediria o commit
-que muda a resposta da API e o cliente que a consome ao mesmo tempo — viraria
-sempre dois commits que nunca se encontram, e um merge entre eles não faria
-sentido. Com pastas na mesma branch a mudança é atômica, e os path filters do
-CI garantem que mexer no Angular não roda o CI do Go.
+`api/` and `web/` share a contract. One branch per app would rule out the commit
+that changes the API answer and the client consuming it at the same time: it
+would always be two commits that never meet, and a merge between them would make
+no sense. With folders on the same branch the change is atomic, and the CI path
+filters make sure touching Angular does not run the Go CI.
 
-## Rodando em desenvolvimento
+## Running in development
 
 ```bash
 make dev
 ```
 
-Sobe a API em `:8080` e o Angular em `:4200` no mesmo terminal, com a saída dos
-dois prefixada por `[api]` e `[web]`. Ctrl-C derruba os dois. Abra
-**http://localhost:4200** — use `localhost`, e não `127.0.0.1`: o `ng serve`
-escuta só em IPv6.
+Brings the API up on `:8080` and Angular on `:4200` in a single terminal, with
+the output of both prefixed by `[api]` and `[web]`. Ctrl-C takes both down. Open
+**http://localhost:4200**, using `localhost` and not `127.0.0.1`, because
+`ng serve` listens on IPv6 only.
 
-Se preferir um terminal para cada, `make dev-api` e `make dev-web` continuam lá.
+If you prefer one terminal each, `make dev-api` and `make dev-web` are still
+there.
 
-A API grava as instâncias em `./.data` por padrão nesse modo, então dá para
-mexer sem tocar em `/srv/games`.
+In this mode the API writes instances to `./.data`, so you can poke around
+without touching `/srv/games`.
 
-Nada disso exige Docker instalado na máquina de desenvolvimento: sem daemon o
-painel abre, lista vazio e avisa que o docker não respondeu. Os testes também
-passam sem daemon — o runner é uma interface com um `Fake`.
+None of this needs Docker installed on the development machine: with no daemon
+the panel opens, lists nothing and says docker did not answer. The tests pass
+without a daemon too, because the runner is an interface with a `Fake`.
 
 ```bash
-make test    # go test ./... + testes do Angular
+make test    # go test ./... + the Angular tests
 make lint    # go vet + gofmt
 ```
 
-## Rodando no servidor
+## Running on the server
 
 ```bash
 docker compose up -d --build
 ```
 
-O painel sobe em `:8080` com o frontend embutido no próprio binário — um
-container só, sem servidor web separado.
+The panel comes up on `:8080` with the frontend embedded in the binary itself:
+one container, no separate web server.
 
-Duas coisas no `docker-compose.yml` de deploy não são detalhe:
+Two things in the deploy `docker-compose.yml` are not details:
 
-- **`/var/run/docker.sock` montado.** É a única via até o Docker; o painel não
-  fala TCP nem SSH.
-- **`/srv/games:/srv/games`, com os dois lados iguais.** Os bind mounts do
-  compose gerado são resolvidos pelo daemon do *host*, que não enxerga o
-  sistema de arquivos do container. Se o caminho divergir, o mundo é criado no
-  lugar errado, silenciosamente.
+- **`/var/run/docker.sock` mounted.** It is the only road to Docker; the panel
+  speaks neither TCP nor SSH.
+- **`/srv/games:/srv/games`, the same path on both sides.** The bind mounts of
+  the generated compose are resolved by the *host* daemon, which cannot see the
+  container filesystem. If the path differs, the world is created in the wrong
+  place, silently.
 
-O container leva o próprio `docker compose` (plugin do Alpine), então não
-depende da versão instalada no host.
+The container carries its own `docker compose` (the Alpine plugin), so it does
+not depend on the version installed on the host.
 
-### Variáveis
+### Variables
 
-| Variável | Padrão | Para quê |
+| Variable | Default | What for |
 |---|---|---|
-| `OKDOCK_ADDR` | `:8080` | endereço de escuta |
-| `OKDOCK_ROOT` | `/srv/games` | raiz inicial das instâncias e casa do `.okdock/` |
-| `OKDOCK_MEMORY_RESERVE` | `2g` | RAM que fica fora do orçamento das instâncias |
-| `OKDOCK_ALLOW_ORIGIN` | vazio | libera CORS; só para o `ng serve` |
+| `OKDOCK_ADDR` | `:8080` | listen address |
+| `OKDOCK_ROOT` | `/srv/games` | initial instance root and home of `.okdock/` |
+| `OKDOCK_MEMORY_RESERVE` | `2g` | RAM kept outside the instance budget |
+| `OKDOCK_ALLOW_ORIGIN` | empty | opens CORS, only for `ng serve` |
 | `OKDOCK_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 
-## O que o painel faz
+## What the panel does
 
-- **Kanban por estado** — parado, provisionando, iniciando, rodando,
-  atualizando, erro, arquivado. Atualiza sozinho por SSE. A coluna cheia fica
-  mais larga e quebra os cards em tiras, em vez de virar um rolo vertical ao
-  lado de colunas vazias; se ainda assim o quadro passar da tela, uma etiqueta
-  na borda diz qual coluna ficou de fora.
-- **Templates por categoria** — jogos, mídia, banco de dados, rede,
-  utilidades. Quatro vêm prontos; os outros você cadastra pelo botão **Novo
-  template**, informando imagem, portas, volumes e os campos de configuração.
-  Editar um template pronto grava uma cópia sua, e apagar a cópia devolve o
-  original.
-- **Wizard de nova instância** — no `＋` da coluna PARADO. Os campos do
-  formulário vêm do template escolhido, não são fixos no frontend. O
-  repositório da imagem é o do template e só a etiqueta se escolhe, `latest`
-  inclusive. O `docker-compose.yml` gerado
-  fica na aba **compose.yml** da instância. Um dos nomes de DNS já cadastrados
-  nas configurações dá para vincular ali mesmo, sem passar pela tela da
-  instância.
-- **Orçamento de RAM** — o painel soma o teto de memória das instâncias de pé
-  antes de deixar subir mais uma. É o que evita descobrir o limite pelo
-  `Exited (137)`.
-- **Nome fixo para convidar** — vincula um subdomínio do
-  [duckdns.org](https://www.duckdns.org) à instância e mantém o IP em dia
-  sozinho, para o card mostrar `smp.duckdns.org:25565` pronto para copiar. O
-  subdomínio tem que existir na conta antes: a API do duckdns não cria nome, só
-  atualiza IP. E ela não conhece porta — encaminhar a porta no roteador
-  continua sendo trabalho manual.
-- **Console ao vivo** e leitura do `docker-compose.yml` como está no disco.
-- **O que já rodava no servidor** — container criado fora do painel aparece no
-  quadro do mesmo jeito, com a categoria adivinhada pelo nome da imagem, pelos
-  rótulos e pelas portas. Dá para parar, subir, reiniciar e ver o console; o
-  resto continua sendo do compose original, e o painel diz isso na tela em vez
-  de deixar o botão parecer morto.
-- **Configurações** (a engrenagem) — raiz das instâncias, versão do Docker,
-  token do duckdns com a lista de nomes da conta (cada um com o IP que o
-  serviço confirmou), quais números aparecem na barra de cima e o idioma da
-  interface (português, inglês ou o do navegador).
+- **Kanban by state**: stopped, provisioning, starting, running, updating,
+  error, archived. It refreshes itself over SSE. The full column gets wider and
+  breaks the cards into strips instead of becoming an endless vertical roll next
+  to empty columns; if the board still runs past the screen, a tag on the edge
+  says which column was left out.
+- **Templates by category**: games, media, database, network, utilities. Four
+  ship with the panel; the rest you register through the **New template**
+  button, giving image, ports, volumes and the configuration fields. Editing a
+  builtin template saves a copy of your own, and deleting the copy brings the
+  original back.
+- **New instance wizard**, on the `＋` of the STOPPED column. The form fields
+  come from the chosen template, they are not fixed in the frontend. The image
+  repository is the one from the template and only the tag is picked, `latest`
+  included. The generated `docker-compose.yml` sits in the **compose.yml** tab
+  of the instance. One of the DNS names already registered in the settings can
+  be linked right there, without going through the instance screen.
+- **RAM budget**: the panel adds up the memory cap of the running instances
+  before letting one more come up. That is what keeps you from discovering the
+  limit through `Exited (137)`.
+- **A fixed name to invite people to**: links a
+  [duckdns.org](https://www.duckdns.org) subdomain to the instance and keeps the
+  IP current on its own, so the card can show `smp.duckdns.org:25565` ready to
+  copy. The subdomain has to exist in the account first: the duckdns API does
+  not create names, it only updates IPs. And it knows nothing about ports, so
+  forwarding the port on the router is still manual work.
+- **Live console** and a read of `docker-compose.yml` as it is on disk.
+- **Whatever was already running on the server**: a container created outside
+  the panel shows up on the board all the same, with the category guessed from
+  the image name, the labels and the ports. It can be stopped, started,
+  restarted and its console read; the rest still belongs to the original
+  compose, and the panel says so on screen instead of leaving the button looking
+  dead.
+- **Settings** (the gear): instance root, Docker version, duckdns token with the
+  list of names in the account (each with the IP the service confirmed), which
+  numbers show up in the top bar, and the interface language (Portuguese,
+  English, or whatever the browser asks for).
 
-A escolha de idioma e a de quais números aparecem na barra ficam no
-`localStorage` do navegador, não no servidor: sem login, uma preferência
-gravada lá valeria para todo mundo da casa. A API não manda frase pronta para a
-tela: manda código e dados (`port_taken` com porta e dono, `below_min` com o
-mínimo), e o painel escreve no idioma escolhido. Só o que o docker escreve —
-linha de log, status do container — aparece como veio.
+The language choice and the choice of which numbers show in the bar live in the
+browser `localStorage`, not on the server: with no login, a preference saved
+there would apply to everyone in the house. The API never sends a finished
+sentence to the screen: it sends a code and data (`port_taken` with port and
+owner, `below_min` with the minimum), and the panel writes it in the chosen
+language. Only what docker itself writes, log lines and container status, shows
+up as it came.
 
-Senha nunca entra no `docker-compose.yml`: os campos marcados como secretos vão
-para um `.env` ao lado, com permissão `0600` e fora do controle de versão.
+A password never enters `docker-compose.yml`: fields marked as secret go to an
+`.env` next to it, with `0600` permissions and out of version control.
 
-## Um diretório de instância
+## An instance directory
 
 ```
-/srv/games/smp-familia/
-├── docker-compose.yml    gerado; é o que o Docker lê
-├── .env                  só os segredos; 0600; nunca versionado
-├── .okdock.json          de qual template isto veio
-└── data/                 o mundo
+/srv/games/smp-family/
+├── docker-compose.yml    generated, this is what Docker reads
+├── .env                  secrets only, 0600, never versioned
+├── .okdock.json          which template this came from
+└── data/                 the world
 ```
 
-A configuração do painel — o token do duckdns, os vínculos de domínio e a raiz
-escolhida na tela de configurações — fica fora disso, em `/srv/games/.okdock/`
-com `0600`. O ponto no nome não é enfeite: é o que impede a pasta de ser lida
-como instância.
+The panel configuration (the duckdns token, the domain links and the root chosen
+on the settings screen) lives outside of that, in `/srv/games/.okdock/` with
+`0600`. The dot in the name is not decoration: it is what stops the folder from
+being read as an instance.
 
-Essa pasta fica sempre na raiz com que o processo subiu (`OKDOCK_ROOT`),
-mesmo depois de trocar a raiz das instâncias pelo painel — é ela que guarda
-para onde a raiz mudou. Trocar a raiz não move o que já existe: o docker guarda
-o caminho absoluto dos bind mounts, então as instâncias antigas continuam de pé
-onde estão e voltam à lista se a raiz voltar. Dentro do container, só vale
-caminho que esteja montado lá com o mesmo nome de fora.
+That folder always stays on the root the process started with (`OKDOCK_ROOT`),
+even after the instance root is changed from the panel, because it is the file
+that records where the root went. Changing the root does not move what already
+exists: docker keeps the absolute path of the bind mounts, so old instances stay
+up where they are and come back to the list if the root comes back. Inside the
+container, only a path mounted there under the same name is worth anything.
 
-O nome do diretório, o `name:` do projeto no compose e o nome do container são
-sempre o mesmo texto. Quando divergem, `docker compose` age sobre um projeto
-diferente do que a pasta sugere.
+The directory name, the compose project `name:` and the container name are
+always the same text. When they diverge, `docker compose` acts on a project
+other than the one the folder suggests.
 
-## Documentação
+## Documentation
 
-- [`docs/arquitetura.md`](docs/arquitetura.md) — como as camadas se encaixam e
-  por quê
-- [`docs/api.md`](docs/api.md) — contrato REST + SSE
-- [`docs/templates.md`](docs/templates.md) — templates prontos e como escrever
-  outro
+- [`docs/architecture.md`](docs/architecture.md): how the layers fit together
+  and why
+- [`docs/api.md`](docs/api.md): REST + SSE contract
+- [`docs/templates.md`](docs/templates.md): the builtin templates and how to
+  write another
 
-## Vindo do GameDock
+## Coming from GameDock
 
-O projeto se chamava GameDock. O painel continua lendo o que ficou com o nome
-antigo, então uma instalação existente sobe sem passo manual:
+The project used to be called GameDock. The panel still reads whatever kept the
+old name, so an existing installation comes up with no manual step:
 
-| Antes | Agora | Como é lido |
+| Before | Now | How it is read |
 |---|---|---|
-| `GAMEDOCK_*` | `OKDOCK_*` | a variável antiga vale quando a nova não está definida, com aviso no log |
-| `<raiz>/.gamedock/` | `<raiz>/.okdock/` | a pasta antiga é lida quando a nova não existe |
-| `.gamedock.json` na instância | `.okdock.json` | o arquivo antigo é lido, e a primeira gravação troca pelo novo |
-| `gamedock.locale`, `gamedock.metrics` | `okdock.*` | a chave antiga do navegador migra na primeira leitura |
+| `GAMEDOCK_*` | `OKDOCK_*` | the old variable counts when the new one is not set, with a warning in the log |
+| `<root>/.gamedock/` | `<root>/.okdock/` | the old folder is read when the new one does not exist |
+| `.gamedock.json` in the instance | `.okdock.json` | the old file is read, and the first write swaps it for the new one |
+| `gamedock.locale`, `gamedock.metrics` | `okdock.*` | the old browser key migrates on the first read |
 
-O que **não** se renomeia sozinho: o diretório e o `container_name` das
-instâncias já criadas continuam com o texto que você deu a elas, e o label
-`gamedock.managed` fica nos containers antigos até a próxima recriação. Nenhum
-dos dois muda comportamento — o painel encontra a instância pelo diretório.
+What does **not** rename itself: the directory and the `container_name` of
+instances already created keep the text you gave them, and the
+`gamedock.managed` label stays on old containers until the next recreate.
+Neither changes behavior, because the panel finds the instance by its directory.
 
-## Melhorias planejadas
+## Planned improvements
 
-Lista de trabalho anotada, ainda não implementada.
+Work written down, not implemented yet.
 
-- Suporte a mods: descobrir de alguma forma se a imagem aceita mods e, quando
-  aceitar, mostrar uma aba **Mods** onde se arrasta arquivos soltos ou um
-  `.zip`.
+- Mod support: find out somehow whether the image takes mods and, when it does,
+  show a **Mods** tab where loose files or a `.zip` can be dropped.

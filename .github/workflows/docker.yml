@@ -20,7 +20,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: painel responde
+      - name: panel answers
         run: |
           docker run -d --name okdock -p 8080:8080 okdock:ci
           for i in $(seq 1 30); do

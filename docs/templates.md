@@ -1,171 +1,178 @@
 # Templates
 
-Um **template** é uma imagem Docker mais o schema dos campos que ela aceita. É
-daqui que o wizard tira o formulário — o frontend não conhece nenhuma variável
-de nenhuma imagem.
+A **template** is a Docker image plus the schema of the fields it accepts. This
+is where the wizard gets its form, since the frontend knows no variable of any
+image.
 
-Template é JSON. Os que vêm com o OkDock estão em
-[`api/internal/template/builtin/`](../api/internal/template/builtin/), embutidos
-no binário por `go:embed`. Os que você cadastra pela tela **Novo template** vão
-para `<raiz de boot>/.okdock/templates/<id>.json`, e um arquivo com o mesmo id
-vence o de fábrica: é assim que se edita um template pronto sem perder o
-original, que volta quando a edição é apagada.
+A template is JSON. The ones shipping with OkDock live in
+[`api/internal/template/builtin/`](../api/internal/template/builtin/), embedded
+in the binary through `go:embed`. The ones registered through the **New
+template** screen go to `<boot root>/.okdock/templates/<id>.json`, and a file
+with the same id beats the builtin one: that is how a builtin template is edited
+without losing the original, which comes back when the edit is deleted.
 
-## Categorias
+## Categories
 
-Lista fechada — `games`, `media`, `database`, `network`, `utilities`, `other` —
-porque cada uma tem cor, ícone e tradução própria no painel; texto livre viraria
-grupo duplicado à primeira diferença de acento. Categoria nova é uma constante
-em `internal/template/template.go` mais duas chaves em `messages.*.ts`.
+A closed list (`games`, `media`, `database`, `network`, `utilities`, `other`)
+because each one has its own color, icon and translation in the panel; free text
+would become a duplicate group at the first difference in spelling. A new
+category is one constant in `internal/template/template.go` plus two keys in
+`messages.*.ts`.
 
-## O que vem de fábrica
+## What ships with the panel
 
-| Template | Id | Categoria | Imagem | RAM padrão / mínima | Portas |
+| Template | Id | Category | Image | Default / minimum RAM | Ports |
 |---|---|---|---|---|---|
 | Minecraft (Java) | `minecraft-java` | games | `itzg/minecraft-server:java21` | 4g / 2g | 25565/tcp |
 | Terraria (TShock) | `terraria-tshock` | games | `ryshe/terraria:tshock-1.4.5.6-6.1.0` | 2g / 512m | 7777/tcp |
 | Terraria (vanilla) | `terraria-vanilla` | games | `ryshe/terraria:vanilla-1.4.5.7` | 2g / 512m | 7777/tcp |
-| Imagem custom | `custom` | other | qualquer | 2g / 256m | você define |
+| Custom image | `custom` | other | anything | 2g / 256m | you define |
 
-O id é o nome do arquivo em disco: minúsculas, dígitos e hífen. Instância criada
-antes disso gravou o id com barra (`itzg/minecraft-server`); a busca no catálogo
-traduz esses três ids antigos.
+The id is the file name on disk: lowercase, digits and hyphen. An instance
+created before that saved the id with a slash (`itzg/minecraft-server`), and the
+catalog lookup translates those three old ids.
 
-## As duas variantes de Terraria
+## The two Terraria variants
 
-O cliente do Terraria recusa entrar num servidor de versão diferente: *"You are
-not using the same version as this server"*. Isso importa porque as duas
-imagens andam em velocidades diferentes.
+The Terraria client refuses to join a server on a different version: *"You are
+not using the same version as this server"*. That matters because the two images
+move at different speeds.
 
-- **TShock** traz plugins, permissões e comandos de admin, mas leva semanas
-  para acompanhar um lançamento do Terraria.
-- **Vanilla** não tem nada disso e sai em dias.
+- **TShock** brings plugins, permissions and admin commands, but takes weeks to
+  catch up with a Terraria release.
+- **Vanilla** has none of that and ships in days.
 
-Quando o jogo atualiza e o cliente para de conectar, a saída é a variante
-vanilla — ou esperar o TShock.
+When the game updates and the client stops connecting, the way out is the
+vanilla variant, or waiting for TShock.
 
-Os dois templates existem separados porque **não são a mesma imagem com outra
-tag**: o `bootstrap.sh` é diferente. O da TShock aceita `WORLD_FILENAME` e cria
-o mundo se `-autocreate` estiver nos argumentos. O da vanilla **sai com erro**
-se `WORLD_FILENAME` estiver preenchido e o mundo não existir — lá o caminho do
-mundo vai por `-world`, e `WORLD_FILENAME` fica vazio.
+The two templates exist separately because they are **not the same image with
+another tag**: the `bootstrap.sh` differs. The TShock one accepts
+`WORLD_FILENAME` and creates the world if `-autocreate` is in the arguments. The
+vanilla one **exits with an error** if `WORLD_FILENAME` is filled and the world
+does not exist; there the world path goes through `-world`, and
+`WORLD_FILENAME` stays empty.
 
-Trocar só a tag de uma instância TShock para vanilla, portanto, não funciona: o
-container morre no boot e, com `restart: unless-stopped`, entra em crashloop. O
-`imagePattern` de cada template recusa essa combinação no momento de salvar,
-com uma mensagem que diz o que fazer. Para migrar de variante, crie outra
-instância apontando para a mesma pasta de mundo.
+Switching only the tag of a TShock instance to vanilla therefore does not work:
+the container dies at boot and, with `restart: unless-stopped`, enters a
+crashloop. The `imagePattern` of each template refuses that combination at save
+time, with a message that says what to do. To migrate between variants, create
+another instance pointing at the same world folder.
 
 ## imagePattern
 
-Cada template declara quais imagens sabe configurar, como expressão regular:
+Each template declares which images it knows how to configure, as a regular
+expression:
 
-| Template | Padrão |
+| Template | Pattern |
 |---|---|
 | Minecraft (Java) | `^itzg/minecraft-server(:\|$)` |
 | Terraria (TShock) | `^ryshe/terraria:tshock-` |
 | Terraria (vanilla) | `^ryshe/terraria:vanilla-` |
-| Imagem custom | vazio — aceita qualquer uma |
+| Custom image | empty, accepts anything |
 
-O padrão precisa ser largo o bastante para deixar trocar de versão (é assim que
-se atualiza uma instância) e estreito o bastante para barrar outra variante. Os
-testes cobrem os dois lados, e checam que nenhum padrão rejeita a própria
-imagem padrão do template. Template sem padrão aceita qualquer imagem.
+The pattern has to be wide enough to allow a version change (that is how an
+instance is updated) and narrow enough to block another variant. The tests cover
+both sides, and check that no pattern rejects the default image of its own
+template. A template with no pattern accepts any image.
 
-## Tags fixas
+## Pinned tags
 
-As imagens de jogo usam tag de versão, nunca `:latest`. Tag móvel troca a
-versão do servidor sozinha no próximo recreate, e o sintoma aparece longe da
-causa: o jogador é quem descobre, ao não conseguir entrar. `TestGameImagesArePinned`
-falha se alguém reintroduzir uma.
+The game images use a version tag, never `:latest`. A moving tag changes the
+server version on its own at the next recreate, and the symptom shows up far
+from the cause: the player is the one who finds out, by failing to join.
+`TestGameImagesArePinned` fails if anyone reintroduces one.
 
-Atualizar de versão é trocar o campo **Imagem** da instância no painel e salvar
-— o mundo nos volumes é preservado.
+Updating a version means changing the **Image** field of the instance in the
+panel and saving; the world in the volumes is preserved.
 
-`freeEnv: true` é o que deixa um template aceitar variável fora do schema; o
-`custom` é o único de fábrica com isso ligado — é a saída para uma imagem que
-nenhum template descreve.
+`freeEnv: true` is what lets a template accept a variable outside the schema;
+`custom` is the only builtin with it on, and it is the way out for an image no
+template describes.
 
-## Estado de verificação dos schemas
+## Verification state of the schemas
 
-Os dois templates de jogo foram exercitados contra um container de verdade em
-21/08/2026: criar instância pelo painel, subir, e confirmar que a configuração
-pegou. Minecraft gera o mundo e aceita conexão; Terraria idem, com
-`okdock.wld` criado pelo `-autocreate`.
+The two game templates were exercised against a real container on 2026-08-21:
+create the instance through the panel, bring it up, and confirm the
+configuration took. Minecraft generates the world and accepts a connection;
+Terraria does the same, with `okdock.wld` created by `-autocreate`.
 
-O catálogo já teve outros seis jogos (Minecraft Bedrock, Palworld, Valheim,
-ARK, Factorio, Satisfactory), removidos em 21/08/2026 a pedido do usuário. Os
-schemas deles estão no histórico do git, em
-`internal/catalog/providers.go` antes do commit que os retirou — vale
-recuperá-los de lá em vez de reescrever do zero, mas **sem confiar neles**: só
-Minecraft e Terraria foram executados, e o caso do Terraria mostrou que o erro
-pode não ser um nome trocado e sim o mecanismo inteiro estar errado.
+The catalog once had six other games (Minecraft Bedrock, Palworld, Valheim, ARK,
+Factorio, Satisfactory), removed on 2026-08-21 at the user request. Their
+schemas are in the git history, in `internal/catalog/providers.go` before the
+commit that took them out. It is worth recovering them from there instead of
+rewriting from scratch, but **without trusting them**: only Minecraft and
+Terraria were actually run, and the Terraria case showed the mistake may not be
+a wrong variable name but the whole mechanism being wrong.
 
-Ao escrever um template para uma imagem nova, o roteiro que funcionou foi:
+When writing a template for a new image, the routine that worked was:
 
-1. `skopeo inspect --config docker://<imagem>` — mostra entrypoint e variáveis
-   declaradas sem baixar a imagem.
-2. Ler o entrypoint (`docker run --rm --entrypoint cat <imagem> /caminho/do/script`)
-   — é o que revela se a imagem lê configuração do ambiente ou de argumentos.
-3. Subir uma instância e confirmar que a configuração surtiu efeito.
+1. `skopeo inspect --config docker://<image>`, which shows the entrypoint and
+   the declared variables without pulling the image.
+2. Read the entrypoint (`docker run --rm --entrypoint cat <image> /path/to/script`),
+   which is what reveals whether the image reads configuration from the
+   environment or from arguments.
+3. Bring an instance up and confirm the configuration had an effect.
 
-O passo 1 sozinho engana: **a lista de variáveis declaradas não é a lista
-completa de variáveis lidas.** Muitas imagens usam `${VAR:-default}` no script
-sem declarar nada no `ENV`. A inspeção prova o que existe, nunca o que não
-existe.
+Step 1 alone misleads: **the list of declared variables is not the list of
+variables read.** Many images use `${VAR:-default}` in the script without
+declaring anything in `ENV`. The inspection proves what exists, never what does
+not.
 
-Campo com nome errado não quebra o `up`: a variável é ignorada e o efeito é a
-configuração não pegar. Configuração que a imagem espera como **argumento** é
-pior: o sintoma é o container subir e não fazer nada, como aconteceu com
-Terraria antes do `TargetArg`.
+A field with the wrong name does not break the `up`: the variable is ignored and
+the effect is the configuration not taking. Configuration the image expects as
+an **argument** is worse: the symptom is a container that comes up and does
+nothing, as happened with Terraria before `TargetArg`.
 
-Nada disso impede usar uma imagem fora do catálogo — o template `custom` sempre
-aceita a imagem com as variáveis digitadas à mão.
+None of this stops anyone from using an image outside the catalog: the `custom`
+template always accepts the image with the variables typed by hand.
 
-## Adicionando um template
+## Adding a template
 
-Pelo painel: **Novo template**, no topo. Grava em `.okdock/templates/` e já
-aparece no wizard — nada precisa ser recompilado.
+Through the panel: **New template**, at the top. It is written to
+`.okdock/templates/` and shows up in the wizard right away, nothing has to be
+recompiled.
 
-Para incluir um template que venha com o OkDock:
+To add a template that ships with OkDock:
 
-1. Acrescente o `.json` em `internal/template/builtin/`, com o id igual ao nome
-   do arquivo.
-2. `go test ./internal/template/` — `TestAllBuiltinTemplatesAreUsable` já cobre
-   o básico: identificação completa, volume de dados marcado, chaves sem
-   repetição, enum com opções, e **todo default passando na própria validação**
-   (um default fora do schema faria a instância nascer inválida sem o usuário
-   ter tocado em nada). `Template.Check` roda no carregamento, então JSON
-   inválido derruba o boot em vez de aparecer quebrado na tela.
-3. Nada muda no frontend.
+1. Add the `.json` to `internal/template/builtin/`, with the id equal to the
+   file name.
+2. `go test ./internal/template/`. `TestAllBuiltinTemplatesAreUsable` already
+   covers the basics: full identification, data volume marked, no repeated keys,
+   enums with options, and **every default passing its own validation** (a
+   default outside the schema would make the instance be born invalid without
+   the user touching anything). `Template.Check` runs at load time, so invalid
+   JSON takes the boot down instead of showing up broken on screen.
+3. Nothing changes in the frontend.
 
-### Campo que vira argumento, e não variável
+### A field that becomes an argument, not a variable
 
-`Target: TargetArg` mais `Flag: "-autocreate"` manda o valor para o `command:`
-do serviço em vez do ambiente. Campo booleano emite só a flag quando
-verdadeiro, sem valor. A ordem dos argumentos segue a ordem dos campos no
-template, e não a do mapa, para o compose gerado não mudar a cada renderização.
+`Target: TargetArg` plus `Flag: "-autocreate"` sends the value to the service
+`command:` instead of the environment. A boolean field emits only the flag when
+true, with no value. The argument order follows the field order in the template,
+not the map order, so the generated compose does not change on every render.
 
-Campo secreto que é argumento vira `${CHAVE}` no compose, e o valor vai para o
-`.env` — o `docker compose` interpola lendo o `.env` do diretório do projeto.
-Assim a senha não aparece no YAML nem quando é passada na linha de comando.
+A secret field that is an argument becomes `${KEY}` in the compose, and the
+value goes to the `.env`: `docker compose` interpolates it by reading the `.env`
+of the project directory. That way the password does not show up in the YAML
+even when it is passed on the command line.
 
-Os campos que merecem atenção:
+The fields that deserve attention:
 
-- **`secret: true`** em qualquer senha. É o que mantém o valor fora do
+- **`secret: true`** on any password. It is what keeps the value out of
   `docker-compose.yml`.
-- **`minMemory`** honesto. É o que o painel usa para recusar uma instância que
-  morreria com `Exited (137)`.
-- **`stopGraceSeconds`** generoso em jogo que salva ao desligar. Minecraft e
-  ARK corrompem save se levarem SIGKILL no meio da gravação; 120 s e 180 s são
-  os valores usados hoje.
-- **`optional: true`** em porta de RCON e de query. Elas não são publicadas por
-  padrão — publicar RCON sem necessidade é abrir um console remoto do servidor.
-- **`advanced: true`** no que quase ninguém mexe, para o formulário não
-  assustar.
+- **An honest `minMemory`**. It is what the panel uses to refuse an instance
+  that would die with `Exited (137)`.
+- **A generous `stopGraceSeconds`** on a game that saves on shutdown. Minecraft
+  and ARK corrupt the save if they take a SIGKILL mid-write; 120 s and 180 s are
+  the values used today.
+- **`optional: true`** on RCON and query ports. They are not published by
+  default, and publishing RCON without a reason is opening a remote console to
+  the server.
+- **`advanced: true`** on what almost nobody touches, so the form does not scare
+  anyone.
 
-## Como a validação funciona
+## How validation works
 
-`Template.Validate` aplica os defaults, confere tipo, faixa e enum, e junta
-**todos** os problemas antes de devolver — o formulário marca os campos errados
-de uma vez em vez de obrigar a salvar várias vezes para descobrir o resto.
+`Template.Validate` applies the defaults, checks type, range and enum, and
+gathers **every** problem before returning, so the form marks the wrong fields
+all at once instead of forcing several saves to discover the rest.
