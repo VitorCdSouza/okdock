@@ -458,7 +458,7 @@ func TestDeleteRefusesAnUneditedBuiltinTemplate(t *testing.T) {
 
 func TestSaveRefusesAnInvalidTemplate(t *testing.T) {
 	c := testCatalog(t)
-	err := c.Save(Template{ID: "../escape", Name: "", Category: "movies"})
+	err := c.Save(Template{ID: "../escape", Name: "", Category: "Filmes!"})
 
 	var ve *ValidationError
 	if !errors.As(err, &ve) {
@@ -475,6 +475,28 @@ func TestSaveRefusesAnInvalidTemplate(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(c.dir, "..", "escape.json")); err == nil {
 		t.Error("a template with an invalid id must not become a file")
+	}
+}
+
+func TestSaveAcceptsACategoryOfItsOwn(t *testing.T) {
+	c := testCatalog(t)
+	err := c.Save(Template{
+		ID: "jellyfin", Name: "Jellyfin", Category: "streaming", Image: "jellyfin/jellyfin:10.9",
+		DefaultMemory: "2g", MinMemory: "512m", DefaultCPUs: 2,
+	})
+	if err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	cats := c.Categories()
+	if len(cats) != len(AllCategories)+1 {
+		t.Fatalf("categories = %v, wanted the shipped ones plus streaming", cats)
+	}
+	if cats[len(cats)-2] != "streaming" {
+		t.Errorf("streaming should come right before other, got %v", cats)
+	}
+	if cats[len(cats)-1] != CategoryOther {
+		t.Errorf("other has to close the list, got %v", cats)
 	}
 }
 

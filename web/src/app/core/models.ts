@@ -35,7 +35,10 @@ export interface TemplateVolume {
   data?: boolean;
 }
 
-export type Category = 'games' | 'media' | 'database' | 'network' | 'utilities' | 'other';
+export type BuiltinCategory = 'games' | 'media' | 'database' | 'network' | 'utilities' | 'other';
+
+// a template can carry a category the panel does not ship, so the type is open
+export type Category = BuiltinCategory | (string & {});
 
 export interface Template {
   id: string;
@@ -63,7 +66,7 @@ export interface TemplatesResponse {
   categories: Category[];
 }
 
-export const CATEGORY_KEY: Record<Category, MessageKey> = {
+export const CATEGORY_KEY: Record<BuiltinCategory, MessageKey> = {
   games: 'category.games',
   media: 'category.media',
   database: 'category.database',

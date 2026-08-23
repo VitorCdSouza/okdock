@@ -133,7 +133,8 @@ losing the original.
 ```
 
 Sorted by category and name, with the loose image last. `categories` comes along
-so the frontend does not repeat the list. `builtin: true` marks what shipped
+so the frontend does not repeat the list: the six shipped ones, then the ones
+some template invented, in alphabetical order, and `other` closing the list. `builtin: true` marks what shipped
 with OkDock and has not been edited yet.
 
 ### `GET /templates/{id}`

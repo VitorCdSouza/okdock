@@ -66,7 +66,7 @@
     @for (c of store.categoryCounts(); track c.category) {
       <button class="chip" [class.on]="store.categoryFilter() === c.category"
               (click)="setFilter(c.category)">
-        {{ t(categoryKey(c.category)) }} {{ c.count }}
+        {{ categoryName(c.category) }} {{ c.count }}
       </button>
     }
   </div>

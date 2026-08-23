@@ -109,6 +109,51 @@ describe('Templates: registering a template', () => {
     expect(screen.draft()).withContext('the draft must not be lost on the error').not.toBeNull();
   });
 
+  it('the custom image does not show up in the list', () => {
+    store.categories.set(['games', 'other']);
+    store.templates.set([template(), template({ id: 'custom', name: 'Imagem custom', category: 'other' })]);
+
+    screen.select('other');
+    expect(screen.shown()).toEqual([]);
+    expect(screen.count('other')).toBe(0);
+  });
+
+  it('the tab shows only the templates of its category', () => {
+    store.categories.set(['games', 'media', 'other']);
+    store.templates.set([template(), template({ id: 'jellyfin', category: 'media' })]);
+
+    expect(screen.active()).withContext('with nothing picked it opens on the first tab').toBe('games');
+    expect(screen.shown().map((t) => t.id)).toEqual(['minecraft-java']);
+
+    screen.select('media');
+    expect(screen.shown().map((t) => t.id)).toEqual(['jellyfin']);
+    expect(screen.count('media')).toBe(1);
+  });
+
+  it('a category typed by hand becomes a tab and the draft is born in it', () => {
+    store.categories.set(['games', 'other']);
+
+    screen.startCategory();
+    screen.categoryDraft.set('Streaming de Áudio');
+    screen.confirmCategory();
+
+    expect(screen.categories()).toContain('streaming-de-audio');
+    expect(screen.active()).toBe('streaming-de-audio');
+    expect(screen.draft()!.category).toBe('streaming-de-audio');
+    expect(screen.adding()).toBeFalse();
+  });
+
+  it('a name with no letter or digit does not become a category', () => {
+    store.categories.set(['games', 'other']);
+
+    screen.startCategory();
+    screen.categoryDraft.set('!!');
+    screen.confirmCategory();
+
+    expect(screen.categories()).toEqual(['games', 'other']);
+    expect(screen.adding()).withContext('the field stays open to be fixed').toBeTrue();
+  });
+
   it('deleting the edit of a builtin template calls DELETE and closes the editor', () => {
     screen.edit(template({ builtin: false }));
     screen.remove();

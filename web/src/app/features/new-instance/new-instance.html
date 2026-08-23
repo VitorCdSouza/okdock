@@ -28,7 +28,7 @@
     @switch (step()) {
       @case (1) {
         @for (group of groups(); track group.category) {
-          <div class="category-title">{{ t(categoryKey(group.category)) }}</div>
+          <div class="category-title">{{ categoryName(group.category) }}</div>
           <div class="templates">
             @for (p of group.templates; track p.id) {
               <button class="template" [class.on]="template()?.id === p.id" (click)="pick(p)">

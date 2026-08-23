@@ -80,7 +80,19 @@ var AllCategories = []Category{
 	CategoryNetwork, CategoryUtilities, CategoryOther,
 }
 
+// a category the panel does not ship is any slug a template chose to use
+var categoryPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{1,31}$`)
+
 func (c Category) Valid() bool {
+	for _, known := range AllCategories {
+		if known == c {
+			return true
+		}
+	}
+	return categoryPattern.MatchString(string(c))
+}
+
+func (c Category) Builtin() bool {
 	for _, known := range AllCategories {
 		if known == c {
 			return true

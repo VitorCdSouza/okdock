@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { Api, OkDockError } from '../../core/api';
 import { Store } from '../../core/state';
 import {
-  CATEGORY_KEY,
   Category,
   FieldType,
   Template,
@@ -17,6 +16,19 @@ import { GameIcon } from '../../shared/game-icon';
 import { InfoDot } from '../../shared/info-dot';
 
 const FIELD_TYPES: FieldType[] = ['text', 'password', 'int', 'float', 'bool', 'enum'];
+
+const CUSTOM_ID = 'custom';
+
+// the API only takes a category matching ^[a-z0-9][a-z0-9-]{1,31}$
+function slugify(raw: string): string {
+  return raw
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .slice(0, 32)
+    .replace(/^-+|-+$/g, '');
+}
 
 function blank(): Template {
   return {
@@ -55,8 +67,35 @@ export class Templates {
   readonly close = output<void>();
 
   readonly fieldTypes = FIELD_TYPES;
-  readonly categories = computed(() => this.store.categories());
-  readonly groups = computed(() => this.store.byCategory());
+
+  // a category typed here only reaches the API with the first template saved in it
+  private readonly invented = signal<Category[]>([]);
+  private readonly picked = signal<Category | null>(null);
+
+  readonly categories = computed(() => {
+    const known = this.store.categories();
+    return [...known, ...this.invented().filter((c) => !known.includes(c))];
+  });
+
+  readonly active = computed<Category>(() => this.picked() ?? this.categories()[0] ?? 'games');
+
+  // the custom image is a hole to fill in the new instance, there is nothing to register here
+  private readonly listed = computed(() =>
+    this.store.templates().filter((t) => t.id !== CUSTOM_ID),
+  );
+
+  readonly counts = computed(() => {
+    const counts = new Map<Category, number>();
+    for (const t of this.listed()) {
+      counts.set(t.category, (counts.get(t.category) ?? 0) + 1);
+    }
+    return counts;
+  });
+
+  readonly shown = computed(() => this.listed().filter((t) => t.category === this.active()));
+
+  readonly adding = signal(false);
+  readonly categoryDraft = signal('');
 
   readonly draft = signal<Template | null>(null);
   readonly editingId = signal('');
@@ -68,11 +107,41 @@ export class Templates {
 
   readonly tagsText = computed(() => (this.draft()?.tags ?? []).join(', '));
 
-  categoryKey(category: Category) {
-    return CATEGORY_KEY[category];
+  categoryName(category: Category): string {
+    return this.i18n.category(category);
+  }
+
+  count(category: Category): number {
+    return this.counts().get(category) ?? 0;
+  }
+
+  select(category: Category): void {
+    this.picked.set(category);
+    this.adding.set(false);
+  }
+
+  startCategory(): void {
+    this.adding.set(true);
+    this.categoryDraft.set('');
+  }
+
+  cancelCategory(): void {
+    this.adding.set(false);
+  }
+
+  confirmCategory(): void {
+    const slug = slugify(this.categoryDraft());
+    if (slug.length < 2) return;
+    if (!this.categories().includes(slug)) {
+      this.invented.update((list) => [...list, slug]);
+    }
+    this.adding.set(false);
+    this.picked.set(slug);
+    this.create();
   }
 
   edit(t: Template): void {
+    this.picked.set(t.category);
     this.draft.set(structuredClone(t));
     this.editingId.set(t.id);
     this.error.set(null);
@@ -80,7 +149,7 @@ export class Templates {
   }
 
   create(): void {
-    this.draft.set(blank());
+    this.draft.set({ ...blank(), category: this.active() });
     this.editingId.set('');
     this.error.set(null);
     this.saved.set(false);

@@ -5,7 +5,7 @@ import { Api } from './core/api';
 import { Store } from './core/state';
 import { Prefs } from './core/prefs';
 import { I18n } from './core/i18n/i18n';
-import { CATEGORY_KEY, Category, Instance } from './core/models';
+import { Category, Instance } from './core/models';
 import { gigabytes } from './core/format';
 import { Kanban } from './features/kanban/kanban';
 import { InstanceDetail } from './features/instance-detail/instance-detail';
@@ -110,7 +110,7 @@ export class App {
     this.store.categoryFilter.set(this.store.categoryFilter() === category ? null : category);
   }
 
-  categoryKey(category: Category) {
-    return CATEGORY_KEY[category];
+  categoryName(category: Category): string {
+    return this.i18n.category(category);
   }
 }

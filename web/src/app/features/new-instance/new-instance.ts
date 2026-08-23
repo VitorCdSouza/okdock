@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 
 import { Api, OkDockError } from '../../core/api';
 import { Store } from '../../core/state';
-import { CATEGORY_KEY, Category, SpecRequest, Template } from '../../core/models';
+import { Category, SpecRequest, Template } from '../../core/models';
 import { I18n } from '../../core/i18n/i18n';
 import { TemplateForm } from '../../shared/template-form';
 import { GameIcon } from '../../shared/game-icon';
@@ -97,8 +97,8 @@ export class NewInstance {
     return this.t('new.hint', { name: this.name() || this.t('new.namePlaceholder') });
   });
 
-  categoryKey(category: Category) {
-    return CATEGORY_KEY[category];
+  categoryName(category: Category): string {
+    return this.i18n.category(category);
   }
 
   description(p: Template): string {

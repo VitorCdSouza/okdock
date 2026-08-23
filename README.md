@@ -86,11 +86,13 @@ not depend on the version installed on the host.
   breaks the cards into strips instead of becoming an endless vertical roll next
   to empty columns; if the board still runs past the screen, a tag on the edge
   says which column was left out.
-- **Templates by category**: games, media, database, network, utilities. Four
-  ship with the panel; the rest you register through the **New template**
-  button, giving image, ports, volumes and the configuration fields. Editing a
-  builtin template saves a copy of your own, and deleting the copy brings the
-  original back.
+- **Templates by category**: games, media, database, network, utilities. The
+  Templates screen shows one category per tab, and **+ Category** opens a
+  category of your own, which starts existing with the first template saved in
+  it. Four templates ship with the panel; the rest you register through the
+  **New template** button, giving image, ports, volumes and the configuration
+  fields. Editing a builtin template saves a copy of your own, and deleting the
+  copy brings the original back.
 - **New instance wizard**, on the `＋` of the STOPPED column. The form fields
   come from the chosen template, they are not fixed in the frontend. The image
   repository is the one from the template and only the tag is picked, `latest`

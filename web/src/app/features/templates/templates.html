@@ -9,22 +9,47 @@
     </div>
   </header>
 
+  <div class="tabs" role="tablist" [attr.aria-label]="t('templates.category')">
+    @for (c of categories(); track c) {
+      <button class="tab" role="tab" [class.on]="active() === c" [attr.aria-selected]="active() === c"
+              (click)="select(c)">
+        {{ categoryName(c) }}
+        <span class="count mono">{{ count(c) }}</span>
+      </button>
+    }
+
+    @if (adding()) {
+      <span class="tab-new">
+        <input class="mono" [ngModel]="categoryDraft()" (ngModelChange)="categoryDraft.set($event)"
+               (keydown.enter)="confirmCategory()" (keydown.escape)="cancelCategory()"
+               [placeholder]="t('templates.categoryPlaceholder')"
+               [attr.aria-label]="t('templates.categoryPlaceholder')" autofocus>
+        <button class="btn btn-sm btn-primary" (click)="confirmCategory()">
+          {{ t('templates.categoryConfirm') }}
+        </button>
+        <button class="btn btn-sm" (click)="cancelCategory()">{{ t('common.cancel') }}</button>
+      </span>
+    } @else {
+      <button class="tab add" (click)="startCategory()">{{ t('templates.newCategory') }}</button>
+      <ok-info [text]="t('templates.newCategoryTip')" />
+    }
+  </div>
+
   <div class="body">
     <aside class="list">
-      @for (group of groups(); track group.category) {
-        <div class="category-title">{{ t(categoryKey(group.category)) }}</div>
-        @for (tmpl of group.templates; track tmpl.id) {
-          <button class="row" [class.on]="draft()?.id === tmpl.id && !isNew()" (click)="edit(tmpl)">
-            <ok-game-icon class="badge" [template]="tmpl.id" [fallback]="tmpl.short" />
-            <span class="ident">
-              <span class="name">{{ tmpl.name }}</span>
-              <span class="image mono">{{ tmpl.image || t('templates.noImage') }}</span>
-            </span>
-            @if (tmpl.builtin) {
-              <span class="tag mono">{{ t('templates.builtin') }}</span>
-            }
-          </button>
-        }
+      @for (tmpl of shown(); track tmpl.id) {
+        <button class="row" [class.on]="draft()?.id === tmpl.id && !isNew()" (click)="edit(tmpl)">
+          <ok-game-icon class="badge" [template]="tmpl.id" [fallback]="tmpl.short" />
+          <span class="ident">
+            <span class="name">{{ tmpl.name }}</span>
+            <span class="image mono">{{ tmpl.image || t('templates.noImage') }}</span>
+          </span>
+          @if (tmpl.builtin) {
+            <span class="tag mono">{{ t('templates.builtin') }}</span>
+          }
+        </button>
+      } @empty {
+        <p class="none">{{ t('templates.emptyCategory') }}</p>
       }
     </aside>
 
@@ -63,7 +88,7 @@
             <label for="tpl-cat">{{ t('templates.category') }}</label>
             <select id="tpl-cat" [ngModel]="d.category" (ngModelChange)="patch({ category: $event })">
               @for (c of categories(); track c) {
-                <option [value]="c">{{ t(categoryKey(c)) }}</option>
+                <option [value]="c">{{ categoryName(c) }}</option>
               }
             </select>
           </div>

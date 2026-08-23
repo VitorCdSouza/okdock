@@ -35,7 +35,7 @@ type templatesResponse struct {
 func (s *Server) listTemplates(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, templatesResponse{
 		Templates:  s.templates.All(),
-		Categories: template.AllCategories,
+		Categories: s.templates.Categories(),
 	})
 }
 

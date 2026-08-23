@@ -13,10 +13,15 @@ without losing the original, which comes back when the edit is deleted.
 
 ## Categories
 
-A closed list (`games`, `media`, `database`, `network`, `utilities`, `other`)
-because each one has its own color, icon and translation in the panel; free text
-would become a duplicate group at the first difference in spelling. A new
-category is one constant in `internal/template/template.go` plus two keys in
+Six ship with the panel (`games`, `media`, `database`, `network`, `utilities`,
+`other`), each with its own color, icon and translation. A template may also
+carry a category of its own, any slug matching `^[a-z0-9][a-z0-9-]{1,31}$`: the
+**+ Category** button on the Templates screen writes one, the icon falls back to
+the color of `other` and the name shows up as the slug itself until it gets a
+`category.<slug>` key in `messages.*.ts`. That category exists while some
+template uses it, because `GET /templates` builds the list out of the catalog;
+a category left with no template is gone on the next load. To make one of them
+shipped, add a constant in `internal/template/template.go` and the two keys in
 `messages.*.ts`.
 
 ## What ships with the panel

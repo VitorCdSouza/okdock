@@ -249,6 +249,11 @@ export const en: Record<MessageKey, string> = {
   'templates.add': '+ add',
   'templates.remove': 'remove',
   'templates.delete': 'Delete',
+  'templates.newCategory': '+ Category',
+  'templates.newCategoryTip': 'A category is born with the first template saved in it; with no template it is gone on the next load.',
+  'templates.categoryPlaceholder': 'category name',
+  'templates.categoryConfirm': 'create',
+  'templates.emptyCategory': 'No template in this category.',
   'templates.newHint': 'writes a new file in .okdock/templates',
   'templates.editHint': 'editing a built-in template saves a copy; deleting the copy restores the original',
 

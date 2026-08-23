@@ -160,20 +160,54 @@ func (c *Catalog) All() []Template {
 		out = append(out, t)
 	}
 
-	rank := map[Category]int{}
-	for i, cat := range AllCategories {
-		rank[cat] = i
-	}
 	sort.SliceStable(out, func(i, j int) bool {
 		if (out[i].ID == CustomID) != (out[j].ID == CustomID) {
 			return out[j].ID == CustomID
 		}
-		if rank[out[i].Category] != rank[out[j].Category] {
-			return rank[out[i].Category] < rank[out[j].Category]
+		if ri, rj := categoryRank(out[i].Category), categoryRank(out[j].Category); ri != rj {
+			return ri < rj
+		}
+		if out[i].Category != out[j].Category {
+			return out[i].Category < out[j].Category
 		}
 		return out[i].Name < out[j].Name
 	})
 	return out
+}
+
+// the shipped categories keep their order, the ones a template invented come next, and other closes the list
+func categoryRank(c Category) int {
+	if c == CategoryOther {
+		return len(AllCategories) + 1
+	}
+	for i, known := range AllCategories {
+		if known == c {
+			return i
+		}
+	}
+	return len(AllCategories)
+}
+
+func (c *Catalog) Categories() []Category {
+	var extra []Category
+	seen := map[Category]bool{}
+	for _, t := range c.All() {
+		if t.Category.Builtin() || seen[t.Category] {
+			continue
+		}
+		seen[t.Category] = true
+		extra = append(extra, t.Category)
+	}
+	sort.Slice(extra, func(i, j int) bool { return extra[i] < extra[j] })
+
+	out := make([]Category, 0, len(AllCategories)+len(extra))
+	for _, known := range AllCategories {
+		if known != CategoryOther {
+			out = append(out, known)
+		}
+	}
+	out = append(out, extra...)
+	return append(out, CategoryOther)
 }
 
 func (c *Catalog) TemplateForImage(image string) (Template, bool) {

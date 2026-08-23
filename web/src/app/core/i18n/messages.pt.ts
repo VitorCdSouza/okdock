@@ -243,6 +243,11 @@ export const pt = {
   'templates.add': '+ adicionar',
   'templates.remove': 'remover',
   'templates.delete': 'Apagar',
+  'templates.newCategory': '+ Categoria',
+  'templates.newCategoryTip': 'A categoria nasce junto com o primeiro template gravado nela; sem template ela some no próximo carregamento.',
+  'templates.categoryPlaceholder': 'nome da categoria',
+  'templates.categoryConfirm': 'criar',
+  'templates.emptyCategory': 'Nenhum template nesta categoria.',
   'templates.newHint': 'grava um arquivo novo em .okdock/templates',
   'templates.editHint': 'editar um template de fábrica grava uma cópia; apagar a cópia devolve o original',
 

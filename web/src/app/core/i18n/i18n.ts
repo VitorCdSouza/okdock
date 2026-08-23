@@ -47,6 +47,9 @@ export class I18n {
     return text === undefined ? undefined : fill(text, params);
   };
 
+  readonly category = (category: string): string =>
+    this.maybe(`category.${category}`) ?? category.replace(/-/g, ' ');
+
   readonly problem = (p: ApiProblem): string => {
     const text = this.maybe(`problem.${p.code}`, p.params) ?? p.code;
     return `${p.field}: ${text}`;

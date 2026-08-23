@@ -29,6 +29,35 @@
 .dialog > header h2 { font: 600 var(--fs-xl) var(--sans); }
 .dialog > header .actions { display: flex; gap: 8px; }
 
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-header);
+}
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  font: 500 var(--fs-xs) var(--sans);
+  color: var(--fg-muted);
+  text-transform: capitalize;
+}
+.tab:hover { color: var(--fg); background: #12151c; }
+.tab.on { color: var(--fg); border-color: var(--accent-line); background: #141b26; }
+.tab .count { font-size: var(--fs-2xs); color: var(--fg-faint); }
+.tab.add { text-transform: none; border-style: dashed; }
+.tab-new { display: flex; align-items: center; gap: 6px; }
+.tab-new input { width: 190px; }
+
+.none { padding: 8px; font-size: var(--fs-xs); color: var(--fg-faint); }
+
 .body { flex: 1; min-height: 0; display: grid; grid-template-columns: 280px 1fr; }
 
 .list {
@@ -40,15 +69,6 @@
   flex-direction: column;
   gap: 4px;
 }
-.category-title {
-  font: 600 var(--fs-2xs) var(--sans);
-  letter-spacing: .07em;
-  text-transform: uppercase;
-  color: var(--fg-dim);
-  margin: 10px 0 4px;
-}
-.category-title:first-child { margin-top: 0; }
-
 .row {
   display: flex;
   align-items: center;
