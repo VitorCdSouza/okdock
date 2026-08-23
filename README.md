@@ -51,8 +51,12 @@ make lint    # go vet + gofmt
 ## Running on the server
 
 ```bash
-docker compose up -d --build
+make deploy
 ```
+
+Which is `docker compose up -d --build` plus a wait until `/api/v1/health`
+answers. It runs on the server itself, the machine that has the daemon; there is
+no remote deploy in the repo.
 
 The panel comes up on `:8080` with the frontend embedded in the binary itself:
 one container, no separate web server.

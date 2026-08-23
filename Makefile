@@ -49,6 +49,17 @@ build-api:
 	cd $(API) && CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o ../okdock ./cmd/okdock
 	@echo "binary at ./okdock"
 
+.PHONY: deploy
+deploy: ## Build the image and bring the panel up (run it on the server, it needs the daemon)
+	docker compose up -d --build
+	@for i in $$(seq 1 30); do \
+	  if curl -fs http://localhost:8080/api/v1/health >/dev/null; then \
+	    echo "  panel answering on http://localhost:8080"; exit 0; \
+	  fi; \
+	  sleep 1; \
+	done; \
+	echo "the panel did not answer in 30s, look at: docker compose logs okdock"; exit 1
+
 .PHONY: test
 test: test-api test-web ## Run every test
 
