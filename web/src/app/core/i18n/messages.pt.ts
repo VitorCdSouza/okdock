@@ -60,6 +60,7 @@ export const pt = {
   'kanban.dropToStart': 'soltar para iniciar',
   'kanban.dropToArchive': 'soltar para arquivar',
   'kanban.newInstance': 'Nova instância',
+  'kanban.showHidden': 'mostrar a coluna {name}',
   'kanban.confirmDeleteAria': 'Confirmar exclusão',
   'kanban.deleteTitle': 'Excluir {name}?',
   'kanban.deleteBody': 'Derruba o container e apaga o docker-compose.yml. O mundo continua no disco, em',

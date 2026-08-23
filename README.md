@@ -81,7 +81,10 @@ depende da versão instalada no host.
 ## O que o painel faz
 
 - **Kanban por estado** — parado, provisionando, iniciando, rodando,
-  atualizando, erro, arquivado. Atualiza sozinho por SSE.
+  atualizando, erro, arquivado. Atualiza sozinho por SSE. A coluna cheia fica
+  mais larga e quebra os cards em tiras, em vez de virar um rolo vertical ao
+  lado de colunas vazias; se ainda assim o quadro passar da tela, uma etiqueta
+  na borda diz qual coluna ficou de fora.
 - **Templates por categoria** — jogos, mídia, banco de dados, rede,
   utilidades. Quatro vêm prontos; os outros você cadastra pelo botão **Novo
   template**, informando imagem, portas, volumes e os campos de configuração.
@@ -104,6 +107,11 @@ depende da versão instalada no host.
   atualiza IP. E ela não conhece porta — encaminhar a porta no roteador
   continua sendo trabalho manual.
 - **Console ao vivo** e leitura do `docker-compose.yml` como está no disco.
+- **O que já rodava no servidor** — container criado fora do painel aparece no
+  quadro do mesmo jeito, com a categoria adivinhada pelo nome da imagem, pelos
+  rótulos e pelas portas. Dá para parar, subir, reiniciar e ver o console; o
+  resto continua sendo do compose original, e o painel diz isso na tela em vez
+  de deixar o botão parecer morto.
 - **Configurações** (a engrenagem) — raiz das instâncias, versão do Docker,
   token do duckdns com a lista de nomes da conta (cada um com o IP que o
   serviço confirmou), quais números aparecem na barra de cima e o idioma da
@@ -177,22 +185,3 @@ Lista de trabalho anotada, ainda não implementada.
 - Suporte a mods: descobrir de alguma forma se a imagem aceita mods e, quando
   aceitar, mostrar uma aba **Mods** onde se arrasta arquivos soltos ou um
   `.zip`.
-- Largura das colunas do quadro: com doze containers de pé, RODANDO fica
-  espremida e o scroll vertical vira uma coluna sem fim, enquanto PARADO fica
-  vazia ao lado. A coluna devia crescer com o que tem dentro — hoje
-  `grid-auto-columns: minmax(252px, 1fr)` em `web/src/app/features/kanban/kanban.css`
-  dá o mesmo tamanho para todas.
-- A coluna ERRO só aparece rolando o quadro no eixo X. Com cinco colunas fixas
-  o quadro passou da largura da tela, e a última fica escondida sem nada
-  indicando que existe.
-- Melhorar a categoria dos containers: a tabela de palpites em
-  `api/internal/template/guess.go` acerta o óbvio e erra o resto — no servidor,
-  `flaresolverr` caiu em mídia e `telegramPromoBot` em outros. Ver se dá para
-  usar mais do que o nome da imagem (labels, portas, imagem base) antes de
-  ampliar a lista de palavras.
-- Descobrir por que não dá para mexer nos containers que já existiam. Parar,
-  subir e reiniciar deveriam funcionar (`ContainerAction` no `dockerx`, com
-  `docker stop/start/restart`), e a API responde 202 nos testes — falta
-  conferir no servidor se o erro vem do docker, do card (que talvez nem mostre
-  o botão) ou do 409 `external_instance`, que é recusa proposital de atualizar
-  imagem, arquivar e excluir, mas hoje aparece igual a uma falha.

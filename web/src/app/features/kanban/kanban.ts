@@ -1,4 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, inject, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  afterRenderEffect,
+  computed,
+  inject,
+  output,
+  signal,
+  viewChild,
+  viewChildren,
+} from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { Api, OkDockError } from '../../core/api';
@@ -7,12 +18,15 @@ import { COLUMN_OF, Instance, STATE_DOT, STATE_KEY, State } from '../../core/mod
 import { I18n } from '../../core/i18n/i18n';
 import { ActionVerb, InstanceCard } from './instance-card';
 
+type HiddenColumn = { title: string; count: number };
+
 @Component({
   selector: 'gd-kanban',
   imports: [InstanceCard],
   templateUrl: './kanban.html',
   styleUrl: './kanban.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(window:resize)': 'measure()' },
 })
 export class Kanban {
   private readonly api = inject(Api);
@@ -58,13 +72,59 @@ export class Kanban {
     this.store
       .states()
       .filter((state) => COLUMN_OF[state] === state)
-      .map((state) => ({
-        state,
-        dot: STATE_DOT[state],
-        title: this.t(STATE_KEY[state]),
-        cards: this.store.byColumn(state),
-      })),
+      .map((state) => {
+        const cards = this.store.byColumn(state);
+        return {
+          state,
+          dot: STATE_DOT[state],
+          title: this.t(STATE_KEY[state]),
+          cards,
+          grow: Math.min(3, Math.max(1, Math.ceil(cards.length / 4))),
+        };
+      }),
   );
+
+  private readonly board = viewChild<ElementRef<HTMLElement>>('board');
+  private readonly columnEls = viewChildren<ElementRef<HTMLElement>>('columnEl');
+
+  readonly hiddenLeft = signal<HiddenColumn[]>([]);
+  readonly hiddenRight = signal<HiddenColumn[]>([]);
+
+  constructor() {
+    afterRenderEffect(() => {
+      this.columns();
+      this.measure();
+    });
+  }
+
+  // quais colunas ficaram fora da parte visivel do quadro
+  measure(): void {
+    const board = this.board()?.nativeElement;
+    if (!board) return;
+
+    const view = board.getBoundingClientRect();
+    const columns = this.columns();
+    const left: HiddenColumn[] = [];
+    const right: HiddenColumn[] = [];
+
+    this.columnEls().forEach((ref, i) => {
+      const col = columns[i];
+      if (!col) return;
+      const box = ref.nativeElement.getBoundingClientRect();
+      const hidden = { title: col.title, count: col.cards.length };
+      if (box.right > view.right + 1) right.push(hidden);
+      else if (box.left < view.left - 1) left.push(hidden);
+    });
+
+    this.hiddenLeft.set(left);
+    this.hiddenRight.set(right);
+  }
+
+  scrollBoard(direction: 1 | -1): void {
+    const board = this.board()?.nativeElement;
+    if (!board) return;
+    board.scrollBy({ left: direction * board.clientWidth * 0.7, behavior: 'smooth' });
+  }
 
   readonly total = computed(() => this.store.filtered().length);
 

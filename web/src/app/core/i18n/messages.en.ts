@@ -62,6 +62,7 @@ export const en: Record<MessageKey, string> = {
   'kanban.dropToStart': 'drop to start',
   'kanban.dropToArchive': 'drop to archive',
   'kanban.newInstance': 'New instance',
+  'kanban.showHidden': 'show the {name} column',
   'kanban.confirmDeleteAria': 'Confirm deletion',
   'kanban.deleteTitle': 'Delete {name}?',
   'kanban.deleteBody':

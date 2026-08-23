@@ -1,7 +1,7 @@
+.board-wrap { position: relative; }
+
 .board {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(252px, 1fr);
+  display: flex;
   gap: 12px;
   padding: 16px 20px 26px;
   align-items: start;
@@ -13,12 +13,42 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-width: 0;
+  flex-shrink: 1;
+  min-width: 208px;
   border-radius: var(--r);
   padding: 6px;
   margin: -6px;
   border: 1px dashed transparent;
 }
+
+.cards {
+  display: grid;
+  /* o min() é o que deixa a tira encolher junto com a coluna: sem ele o card
+     mantém 216px e vaza para fora quando a coluna fica estreita */
+  grid-template-columns: repeat(auto-fill, minmax(min(216px, 100%), 1fr));
+  align-items: start;
+  gap: 10px;
+}
+
+.peek {
+  position: absolute;
+  top: 14px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r);
+  background: var(--bg-raised);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .5);
+  color: var(--fg-soft);
+}
+.peek:hover { border-color: var(--accent-line); color: var(--accent); }
+.peek.left { left: 10px; }
+.peek.right { right: 10px; }
+.peek .chev { font-size: var(--fs-xl); line-height: 1; }
+.peek .title, .peek .count { color: inherit; }
 .column.droppable { border-color: var(--line-strong); }
 .column.drop-over { border-color: var(--accent); border-style: solid; background: #111722; }
 

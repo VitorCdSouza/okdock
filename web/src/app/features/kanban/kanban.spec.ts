@@ -200,6 +200,18 @@ describe('Kanban — arrastar card para uma coluna', () => {
     expect(store.toastBad()).toBeTrue();
   });
 
+  it('a coluna cheia fica mais larga que a vazia', () => {
+    store.states.set(['running', 'stopped']);
+    store.instances.set(
+      Array.from({ length: 12 }, (_, i) => instance({ name: `smp-${i}` })),
+    );
+
+    const grow = new Map(kanban.columns().map((c) => [c.state, c.grow]));
+
+    expect(grow.get('running')).toBe(3);
+    expect(grow.get('stopped')).toBe(1);
+  });
+
   it('confirmar dispara a chamada certa e fecha o diálogo', () => {
     store.instances.set([instance()]);
     store.dragging.set('smp');

@@ -8,39 +8,60 @@
 } @else if (total() === 0) {
   <div class="empty">{{ t('kanban.noMatch') }}</div>
 } @else {
-  <div class="board">
-    @for (col of columns(); track col.state) {
-      <section class="column"
-               [class.droppable]="canDrop(col.state)"
-               [class.drop-over]="dropTarget() === col.state"
-               (dragover)="onDragOver($event, col.state)"
-               (dragleave)="onDragLeave(col.state)"
-               (drop)="onDrop($event, col.state)">
-        <header>
-          <span class="dot" [style.background]="col.dot"></span>
-          <span class="title">{{ col.title }}</span>
-          <span class="count mono">{{ col.cards.length }}</span>
-        </header>
+  <div class="board-wrap">
+    <div class="board" #board (scroll)="measure()">
+      @for (col of columns(); track col.state) {
+        <section class="column" #columnEl
+                 [style.flex-grow]="col.grow"
+                 [style.flex-basis.px]="col.grow * 252"
+                 [class.droppable]="canDrop(col.state)"
+                 [class.drop-over]="dropTarget() === col.state"
+                 (dragover)="onDragOver($event, col.state)"
+                 (dragleave)="onDragLeave(col.state)"
+                 (drop)="onDrop($event, col.state)">
+          <header>
+            <span class="dot" [style.background]="col.dot"></span>
+            <span class="title">{{ col.title }}</span>
+            <span class="count mono">{{ col.cards.length }}</span>
+          </header>
 
-        @if (canDrop(col.state)) {
-          <div class="drop-hint mono">{{ dropHint(col.state) }}</div>
-        }
+          @if (canDrop(col.state)) {
+            <div class="drop-hint mono">{{ dropHint(col.state) }}</div>
+          }
 
-        @for (card of col.cards; track card.name) {
-          <gd-instance-card
-            [instance]="card"
-            [short]="short(card)"
-            (open)="open.emit($event)"
-            (act)="onAction($event)"
-            (remove)="askRemove($event)"
-            (dragChange)="onDragChange($event)"
-            (copied)="store.notify(t('common.copied', { text: $event }))" />
-        }
+          <div class="cards">
+            @for (card of col.cards; track card.name) {
+              <gd-instance-card
+                [instance]="card"
+                [short]="short(card)"
+                (open)="open.emit($event)"
+                (act)="onAction($event)"
+                (remove)="askRemove($event)"
+                (dragChange)="onDragChange($event)"
+                (copied)="store.notify(t('common.copied', { text: $event }))" />
+            }
 
-        @if (col.state === 'stopped') {
-          <button class="add" (click)="create.emit()" [title]="t('kanban.newInstance')">＋</button>
-        }
-      </section>
+            @if (col.state === 'stopped') {
+              <button class="add" (click)="create.emit()" [title]="t('kanban.newInstance')">＋</button>
+            }
+          </div>
+        </section>
+      }
+    </div>
+
+    @if (hiddenLeft().length) {
+      <button class="peek left" (click)="scrollBoard(-1)"
+              [attr.aria-label]="t('kanban.showHidden', { name: hiddenLeft()[0].title })">
+        <span class="chev">‹</span>
+      </button>
+    }
+    @if (hiddenRight()[0]; as next) {
+      <button class="peek right" (click)="scrollBoard(1)"
+              [attr.aria-label]="t('kanban.showHidden', { name: next.title })">
+        <span class="chev">›</span>
+        <span class="title">{{ next.title }}</span>
+        <span class="count mono">{{ next.count }}</span>
+      </button>
     }
   </div>
 }
