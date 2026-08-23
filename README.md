@@ -66,8 +66,10 @@ it already has. What updates is `up -d`.
 To build on your own machine instead of taking the published image, the
 `build: .` is still there: `docker compose up -d --build`.
 
-The panel comes up on `:8080` with the frontend embedded in the binary itself:
-one container, no separate web server.
+The panel comes up on `:8090`, mapped to the `:8080` it listens on inside the
+container, with the frontend embedded in the binary itself: one container, no
+separate web server. The outside port is 8090 because 8080 on the server belongs
+to nextcloud.
 
 Two things in the deploy `docker-compose.yml` are not details:
 
