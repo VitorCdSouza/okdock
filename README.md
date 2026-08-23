@@ -177,3 +177,22 @@ Lista de trabalho anotada, ainda não implementada.
 - Suporte a mods: descobrir de alguma forma se a imagem aceita mods e, quando
   aceitar, mostrar uma aba **Mods** onde se arrasta arquivos soltos ou um
   `.zip`.
+- Largura das colunas do quadro: com doze containers de pé, RODANDO fica
+  espremida e o scroll vertical vira uma coluna sem fim, enquanto PARADO fica
+  vazia ao lado. A coluna devia crescer com o que tem dentro — hoje
+  `grid-auto-columns: minmax(252px, 1fr)` em `web/src/app/features/kanban/kanban.css`
+  dá o mesmo tamanho para todas.
+- A coluna ERRO só aparece rolando o quadro no eixo X. Com cinco colunas fixas
+  o quadro passou da largura da tela, e a última fica escondida sem nada
+  indicando que existe.
+- Melhorar a categoria dos containers: a tabela de palpites em
+  `api/internal/template/guess.go` acerta o óbvio e erra o resto — no servidor,
+  `flaresolverr` caiu em mídia e `telegramPromoBot` em outros. Ver se dá para
+  usar mais do que o nome da imagem (labels, portas, imagem base) antes de
+  ampliar a lista de palavras.
+- Descobrir por que não dá para mexer nos containers que já existiam. Parar,
+  subir e reiniciar deveriam funcionar (`ContainerAction` no `dockerx`, com
+  `docker stop/start/restart`), e a API responde 202 nos testes — falta
+  conferir no servidor se o erro vem do docker, do card (que talvez nem mostre
+  o botão) ou do 409 `external_instance`, que é recusa proposital de atualizar
+  imagem, arquivar e excluir, mas hoje aparece igual a uma falha.
