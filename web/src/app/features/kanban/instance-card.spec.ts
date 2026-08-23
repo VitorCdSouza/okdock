@@ -55,6 +55,28 @@ describe('InstanceCard', () => {
     expect(externo.address()).toBe('');
   });
 
+  it('o container externo chega no console pelo menu, sem opção de excluir', () => {
+    const fixture = TestBed.createComponent(InstanceCard);
+    fixture.componentRef.setInput('instance', instance({ external: true, project: 'media', state: 'running' }));
+    fixture.componentInstance.menuOpen.set(true);
+    fixture.detectChanges();
+
+    const itens: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('.menu button'));
+
+    expect(itens.map((b) => b.textContent!.trim())).toEqual(['Detalhes']);
+  });
+
+  it('a instância do painel continua com editar e excluir', () => {
+    const fixture = TestBed.createComponent(InstanceCard);
+    fixture.componentRef.setInput('instance', instance());
+    fixture.componentInstance.menuOpen.set(true);
+    fixture.detectChanges();
+
+    const itens: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('.menu button'));
+
+    expect(itens.map((b) => b.textContent!.trim())).toEqual(['Editar', 'Excluir']);
+  });
+
   it('traduz a etapa da operação que veio em código', () => {
     expect(card({ operation: { kind: 'provision', code: 'creating', message: '', startedAt: '' } }).opLabel())
       .toBe('criando container');

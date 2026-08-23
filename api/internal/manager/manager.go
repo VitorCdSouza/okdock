@@ -155,10 +155,19 @@ func (m *Manager) listExternal(ctx context.Context, managed []instance.Instance)
 				Host: p.Host, Container: p.Container, Protocol: p.Protocol,
 			})
 		}
+		inst.Operation = m.operation(c.Name)
 		inst.State = externalState(c)
 		if inst.State == instance.StateError && c.ExitCode != 0 {
 			code := c.ExitCode
 			inst.ExitCode = &code
+		}
+		if op := inst.Operation; op != nil {
+			switch {
+			case op.Error != "":
+				inst.State, inst.Status = instance.StateError, op.Error
+			case op.Kind == OpStart:
+				inst.State = instance.StateStarting
+			}
 		}
 		if isUp(inst.State) {
 			running = append(running, c.Name)
@@ -913,7 +922,7 @@ func (m *Manager) Start(ctx context.Context, name string) error {
 	spec, err := m.store.Get(name)
 	if err != nil {
 		if _, ok := m.external(ctx, name); ok {
-			return m.docker.ContainerAction(ctx, name, "start")
+			return m.externalAction(name, "start", OpStart, "starting")
 		}
 		return err
 	}
@@ -930,6 +939,19 @@ func (m *Manager) Start(ctx context.Context, name string) error {
 		c, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 		defer cancel()
 		m.endOp(name, m.docker.Up(c, m.store.Dir(name)))
+	}()
+	return nil
+}
+
+// externalAction vai para goroutine: o docker stop respeita o grace period, maior que o request
+func (m *Manager) externalAction(name, verb, kind, code string) error {
+	if err := m.beginOp(name, kind, code); err != nil {
+		return err
+	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		defer cancel()
+		m.endOp(name, m.docker.ContainerAction(ctx, name, verb))
 	}()
 	return nil
 }
@@ -990,7 +1012,7 @@ func (m *Manager) pullAndRecreate(name string, spec instance.Spec) {
 func (m *Manager) Stop(ctx context.Context, name string) error {
 	if _, err := m.store.Get(name); err != nil {
 		if _, ok := m.external(ctx, name); ok {
-			return m.docker.ContainerAction(ctx, name, "stop")
+			return m.externalAction(name, "stop", OpStop, "stopping")
 		}
 		return err
 	}
@@ -1008,7 +1030,7 @@ func (m *Manager) Stop(ctx context.Context, name string) error {
 func (m *Manager) Restart(ctx context.Context, name string) error {
 	if _, err := m.store.Get(name); err != nil {
 		if _, ok := m.external(ctx, name); ok {
-			return m.docker.ContainerAction(ctx, name, "restart")
+			return m.externalAction(name, "restart", OpStart, "restarting")
 		}
 		return err
 	}

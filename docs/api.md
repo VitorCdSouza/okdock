@@ -53,6 +53,7 @@ Alguns erros afinam o motivo dentro de `params.reason` — `invalid_root` usa
 | `memory_budget` | 409 | não cabe na RAM do host |
 | `port_taken` | 409 | porta já usada por outra instância |
 | `docker_failed` | 409 | o `docker compose` falhou; `params.detail` traz o stderr |
+| `external_instance` | 409 | a ação não vale para container que não é do painel; `params.name` diz qual |
 | `bad_request` | 400 | corpo malformado ou campo desconhecido |
 | `dns_rejected` | 422 | o duckdns respondeu KO: token errado ou domínio que não é da conta |
 | `dns_unreachable` | 409 | o duckdns não respondeu; o servidor pode estar sem saída para a internet |
@@ -310,6 +311,12 @@ de propósito. `204`.
 - `POST /instances/{name}/archive` — derruba e mantém os volumes
 - `POST /instances/{name}/unarchive`
 - `POST /instances/{name}/clear-error` — esquece uma operação que falhou
+
+Em container externo (`external: true` na listagem) valem `start`, `stop`,
+`restart` e `clear-error`: o painel chama `docker start/stop/restart` pelo nome
+do container, também em background, e a falha do docker vira operação com erro,
+visível no card. As outras ações respondem `409 external_instance` — recusa de
+propósito, não falha: quem edita, atualiza e apaga é o compose original.
 
 ### `GET /instances/{name}/compose`
 

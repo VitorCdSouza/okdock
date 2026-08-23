@@ -116,3 +116,4 @@ main { flex: 1; min-height: 0; overflow: auto; }
   font-size: var(--fs-sm);
   color: var(--fg-soft);
 }
+.toast.bad { border-color: var(--bad-line); color: #f3b3b3; }

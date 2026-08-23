@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, output, signal } from '@angular/core';
+import { Observable } from 'rxjs';
 
-import { Api } from '../../core/api';
+import { Api, OkDockError } from '../../core/api';
 import { Store } from '../../core/state';
 import { COLUMN_OF, Instance, STATE_DOT, STATE_KEY, State } from '../../core/models';
 import { I18n } from '../../core/i18n/i18n';
@@ -45,9 +46,10 @@ export class Kanban {
         this.pendingDelete.set(null);
         this.store.reload();
       },
-      error: () => {
+      error: (err: OkDockError) => {
         this.deleting.set(false);
         this.pendingDelete.set(null);
+        this.store.notifyError(err.message);
       },
     });
   }
@@ -142,9 +144,10 @@ export class Kanban {
         this.pendingAction.set(null);
         this.store.reload();
       },
-      error: () => {
+      error: (err: OkDockError) => {
         this.acting.set(false);
         this.pendingAction.set(null);
+        this.store.notifyError(err.message);
       },
     });
   }
@@ -195,24 +198,29 @@ export class Kanban {
   onAction({ instance, verb }: { instance: Instance; verb: ActionVerb }): void {
     switch (verb) {
       case 'start':
-        this.api.start(instance.name).subscribe({ error: () => {} });
+        this.fire(this.api.start(instance.name));
         break;
       case 'stop':
-        this.api.stop(instance.name).subscribe({ error: () => {} });
+      case 'cancel':
+        this.fire(this.api.stop(instance.name));
         break;
       case 'restart':
-        this.api.restart(instance.name).subscribe({ error: () => {} });
+        this.fire(this.api.restart(instance.name));
         break;
       case 'unarchive':
-        this.api.unarchive(instance.name).subscribe({ error: () => {} });
+        this.fire(this.api.unarchive(instance.name));
         break;
       case 'fix':
       case 'logs':
         this.open.emit(instance);
         break;
-      case 'cancel':
-        this.api.stop(instance.name).subscribe({ error: () => {} });
-        break;
     }
+  }
+
+  private fire(call: Observable<void>): void {
+    call.subscribe({
+      next: () => this.store.reload(),
+      error: (err: OkDockError) => this.store.notifyError(err.message),
+    });
   }
 }

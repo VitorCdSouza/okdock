@@ -31,13 +31,23 @@ export class Store {
 
   readonly dragging = signal<string | null>(null);
   readonly toast = signal<string | null>(null);
+  readonly toastBad = signal(false);
 
   private reloadTimer?: ReturnType<typeof setTimeout>;
   private toastTimer?: ReturnType<typeof setTimeout>;
   private started = false;
 
   notify(message: string): void {
+    this.show(message, false);
+  }
+
+  notifyError(message: string): void {
+    this.show(message, true);
+  }
+
+  private show(message: string, bad: boolean): void {
     this.toast.set(message);
+    this.toastBad.set(bad);
     clearTimeout(this.toastTimer);
     this.toastTimer = setTimeout(() => this.toast.set(null), 6000);
   }

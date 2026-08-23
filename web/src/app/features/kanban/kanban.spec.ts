@@ -4,6 +4,7 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 
 import { Kanban } from './kanban';
 import { Store } from '../../core/state';
+import { I18n } from '../../core/i18n/i18n';
 import { Instance } from '../../core/models';
 
 function instance(over: Partial<Instance> = {}): Instance {
@@ -43,6 +44,7 @@ describe('Kanban — arrastar card para uma coluna', () => {
     kanban = TestBed.createComponent(Kanban).componentInstance;
     store = TestBed.inject(Store);
     http = TestBed.inject(HttpTestingController);
+    TestBed.inject(I18n).setPref('pt');
   });
 
   afterEach(() => http.verify());
@@ -170,6 +172,32 @@ describe('Kanban — arrastar card para uma coluna', () => {
     kanban.onDrop(dragEvent(), 'updating');
 
     expect(kanban.pendingAction()).toBeNull();
+  });
+
+  it('o botão do card recarrega o quadro quando a chamada vai', () => {
+    const inst = instance({ external: true, project: 'media' });
+    store.instances.set([inst]);
+
+    kanban.onAction({ instance: inst, verb: 'stop' });
+
+    http.expectOne('/api/v1/instances/smp/stop').flush(null, { status: 202, statusText: 'Accepted' });
+    http.expectOne('/api/v1/instances').flush({ instances: [], states: [] });
+    http.expectOne('/api/v1/system').flush({});
+  });
+
+  it('o botão do card avisa quando a chamada é recusada', () => {
+    const inst = instance({ external: true, project: 'media' });
+    store.instances.set([inst]);
+
+    kanban.onAction({ instance: inst, verb: 'stop' });
+
+    http.expectOne('/api/v1/instances/smp/stop').flush(
+      { error: 'external_instance', message: 'externo', params: { name: 'smp' } },
+      { status: 409, statusText: 'Conflict' },
+    );
+
+    expect(store.toast()).withContext('recusa engolida faz o botão parecer morto').toContain('container externo');
+    expect(store.toastBad()).toBeTrue();
   });
 
   it('confirmar dispara a chamada certa e fecha o diálogo', () => {

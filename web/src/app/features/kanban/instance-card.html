@@ -17,21 +17,23 @@
       <div class="sub mono">{{ instance().image }}</div>
     </div>
 
-    @if (!instance().external) {
     <div class="menu-wrap">
       <button class="menu-btn" (click)="toggleMenu($event)"
               [attr.aria-expanded]="menuOpen()"
               [attr.aria-label]="t('card.optionsAria', { name: instance().name })">⋯</button>
       @if (menuOpen()) {
         <div class="menu" role="menu" (click)="$event.stopPropagation()">
-          <button role="menuitem" (click)="pickEdit($event)">{{ t('card.edit') }}</button>
-          <button role="menuitem" class="destructive" (click)="pickRemove($event)">
-            {{ t('card.delete') }}
+          <button role="menuitem" (click)="pickEdit($event)">
+            {{ instance().external ? t('card.action.details') : t('card.edit') }}
           </button>
+          @if (!instance().external) {
+            <button role="menuitem" class="destructive" (click)="pickRemove($event)">
+              {{ t('card.delete') }}
+            </button>
+          }
         </div>
       }
     </div>
-    }
   </header>
 
   <dl class="specs mono">

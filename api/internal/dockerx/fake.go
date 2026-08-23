@@ -18,6 +18,7 @@ type Fake struct {
 	FailUp         map[string]error
 	FailPull       map[string]error
 	FailDown       map[string]error
+	FailAction     map[string]error
 	ServerVersion  string
 	ImageIDs       map[string]string
 	PulledImageIDs map[string]string
@@ -33,6 +34,7 @@ func NewFake() *Fake {
 		FailUp:         map[string]error{},
 		FailPull:       map[string]error{},
 		FailDown:       map[string]error{},
+		FailAction:     map[string]error{},
 		ImageIDs:       map[string]string{},
 		PulledImageIDs: map[string]string{},
 		ServerVersion:  "27.1.0",
@@ -152,6 +154,9 @@ func (f *Fake) ContainerAction(_ context.Context, name, verb string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.record("container-"+verb, name)
+	if err := f.FailAction[name]; err != nil {
+		return err
+	}
 	for i, c := range f.HostList {
 		if c.Name != name {
 			continue

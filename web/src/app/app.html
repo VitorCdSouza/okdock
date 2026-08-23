@@ -77,7 +77,7 @@
 </main>
 
 @if (store.toast(); as message) {
-  <div class="toast" role="status">{{ message }}</div>
+  <div class="toast" [class.bad]="store.toastBad()" role="status">{{ message }}</div>
 }
 
 @if (detailFor(); as name) {

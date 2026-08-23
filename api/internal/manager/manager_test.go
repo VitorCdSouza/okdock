@@ -668,20 +668,55 @@ func TestAcoesEmContainerExterno(t *testing.T) {
 	fake.HostList = []dockerx.HostContainer{hostContainer("jellyfin", "media")}
 	ctx := t.Context()
 
+	acoes := []struct {
+		nome string
+		run  func(context.Context, string) error
+		call string
+	}{
+		{"Stop", m.Stop, "container-stop:jellyfin"},
+		{"Start", m.Start, "container-start:jellyfin"},
+		{"Restart", m.Restart, "container-restart:jellyfin"},
+	}
+	for _, a := range acoes {
+		if err := a.run(ctx, "jellyfin"); err != nil {
+			t.Fatalf("%s: %v", a.nome, err)
+		}
+		// a operacao some do mapa quando a goroutine termina; so ai Calls esta estavel
+		waitFor(t, "fim da operação de "+a.nome, func() bool { return m.operation("jellyfin") == nil })
+		if !containsCall(fake.Calls, a.call) {
+			t.Errorf("faltou a chamada %q: %v", a.call, fake.Calls)
+		}
+	}
+}
+
+func TestFalhaEmContainerExternoViraErroNoQuadro(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	fake.HostList = []dockerx.HostContainer{hostContainer("jellyfin", "media")}
+	fake.FailAction = map[string]error{"jellyfin": errors.New("permission denied")}
+	ctx := t.Context()
+
 	if err := m.Stop(ctx, "jellyfin"); err != nil {
 		t.Fatalf("Stop: %v", err)
 	}
-	if err := m.Start(ctx, "jellyfin"); err != nil {
-		t.Fatalf("Start: %v", err)
+	waitFor(t, "o erro do docker chegar na operação", func() bool {
+		op := m.operation("jellyfin")
+		return op != nil && op.Error != ""
+	})
+
+	list, err := m.List(ctx)
+	if err != nil {
+		t.Fatalf("List: %v", err)
 	}
-	if err := m.Restart(ctx, "jellyfin"); err != nil {
-		t.Fatalf("Restart: %v", err)
+	if list[0].State != instance.StateError {
+		t.Errorf("estado = %q; a recusa do docker não pode passar em silêncio", list[0].State)
+	}
+	if !strings.Contains(list[0].Status, "permission denied") {
+		t.Errorf("status = %q, queria o que o docker disse", list[0].Status)
 	}
 
-	for _, want := range []string{"container-stop:jellyfin", "container-start:jellyfin", "container-restart:jellyfin"} {
-		if !containsCall(fake.Calls, want) {
-			t.Errorf("faltou a chamada %q: %v", want, fake.Calls)
-		}
+	m.ClearError("jellyfin")
+	if m.operation("jellyfin") != nil {
+		t.Error("limpar o erro precisa destravar o container externo")
 	}
 }
 
