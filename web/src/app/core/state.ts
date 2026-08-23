@@ -60,7 +60,6 @@ export class Store {
     });
   });
 
-  // so as categorias com instancia viram chip: o filtro e atalho para o que esta no quadro
   readonly categoryCounts = computed(() => {
     const counts = new Map<Category, number>();
     for (const i of this.instances()) {
@@ -71,7 +70,6 @@ export class Store {
       .map((category) => ({ category, count: counts.get(category)! }));
   });
 
-  // Templates agrupados na ordem em que a API manda as categorias.
   readonly byCategory = computed(() => {
     const groups = new Map<Category, Template[]>();
     for (const t of this.templates()) {

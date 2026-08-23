@@ -21,7 +21,6 @@ const CustomID = "custom"
 //go:embed builtin/*.json
 var builtinFS embed.FS
 
-// Catalog junta fabrica e disco, e o arquivo em disco com o mesmo id vence o de fabrica
 type Catalog struct {
 	dir string
 
@@ -30,7 +29,6 @@ type Catalog struct {
 	user    map[string]Template
 }
 
-// NotFoundError diz que o id nao existe nem de fabrica nem em disco.
 type NotFoundError struct{ ID string }
 
 func (e *NotFoundError) Error() string { return fmt.Sprintf("template %q não existe", e.ID) }
@@ -39,7 +37,6 @@ var ErrNotFound = errors.New("template não existe")
 
 func (e *NotFoundError) Is(target error) bool { return target == ErrNotFound }
 
-// BuiltinError diz que o alvo e template de fabrica sem edicao em disco, nao ha o que apagar
 type BuiltinError struct{ ID string }
 
 func (e *BuiltinError) Error() string { return fmt.Sprintf("template %q vem com o OkDock", e.ID) }
@@ -55,7 +52,6 @@ func NewCatalog(dir string) (*Catalog, error) {
 		return nil, err
 	}
 	c.builtin = builtin
-	// template quebrado em disco vira aviso, e o catalogo de fabrica continua servindo o painel
 	return c, c.Reload()
 }
 
@@ -82,7 +78,6 @@ func loadBuiltin() (map[string]Template, error) {
 	return out, nil
 }
 
-// Reload rele o diretorio do usuario, e arquivo ilegivel vira erro no retorno, nao parada
 func (c *Catalog) Reload() error {
 	user := map[string]Template{}
 	entries, err := os.ReadDir(c.dir)
@@ -143,14 +138,12 @@ func (c *Catalog) Get(id string) (Template, bool) {
 	return Template{}, false
 }
 
-// legacyIDs traduz o id gravado na Spec como GameDock, que perdeu a barra ao virar arquivo
 var legacyIDs = map[string]string{
 	"itzg/minecraft-server":  "minecraft-java",
 	"ryshe/terraria":         "terraria-tshock",
 	"ryshe/terraria-vanilla": "terraria-vanilla",
 }
 
-// All devolve os templates por categoria e nome, com a imagem avulsa sempre por ultimo
 func (c *Catalog) All() []Template {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -183,7 +176,6 @@ func (c *Catalog) All() []Template {
 	return out
 }
 
-// TemplateForImage acha o dono de uma imagem, para apontar qual era o template certo
 func (c *Catalog) TemplateForImage(image string) (Template, bool) {
 	for _, t := range c.All() {
 		if t.ID == CustomID || t.ImagePattern == "" {
@@ -196,7 +188,6 @@ func (c *Catalog) TemplateForImage(image string) (Template, bool) {
 	return Template{}, false
 }
 
-// Save grava o template em disco, seja ele novo ou edicao de um de fabrica
 func (c *Catalog) Save(t Template) error {
 	if problems := t.Check(); len(problems) > 0 {
 		return &ValidationError{Problems: problems}
@@ -220,7 +211,6 @@ func (c *Catalog) Save(t Template) error {
 	return nil
 }
 
-// Delete apaga o arquivo em disco, e um id de fabrica volta a ser o que vem com o OkDock
 func (c *Catalog) Delete(id string) error {
 	c.mu.RLock()
 	_, isUser := c.user[id]
@@ -245,7 +235,6 @@ func (c *Catalog) Delete(id string) error {
 
 var idPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{1,39}$`)
 
-// Check reprova antes de virar arquivo: o id e nome de arquivo, sem barra nem ponto
 func (t Template) Check() []Problem {
 	var problems []Problem
 

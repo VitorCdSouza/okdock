@@ -50,7 +50,6 @@ export class TemplateForm {
     return this.problemFor().get(field.key);
   }
 
-  // o texto do catalogo sobra quando o campo e de um jogo que a tela ainda nao traduziu
   fieldHelp(field: TemplateField): string {
     return this.i18n.maybe(`field.${this.template().id}.${field.key}.help`) ?? field.help ?? '';
   }

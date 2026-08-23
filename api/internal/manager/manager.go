@@ -104,16 +104,14 @@ func (m *Manager) List(ctx context.Context) ([]instance.Instance, error) {
 	return out, nil
 }
 
-// listExternal traz o que ja rodava antes do painel, comparando pelo diretorio do projeto
 func (m *Manager) listExternal(ctx context.Context, managed []instance.Instance) (list []instance.Instance, running []string) {
 	containers, err := m.docker.PSAll(ctx)
 	if err != nil {
-		// sem docker nao ha externo para mostrar, e as instancias sabem se virar sozinhas
 		slog.Debug("não consegui listar os containers do host", "err", err)
 		return nil, nil
 	}
 
-	// o painel tambem e um container, e um botao de parar nele seria convite a se desligar
+	// dentro do container, o hostname e o id curto do proprio container
 	self, _ := os.Hostname()
 
 	ours := make(map[string]bool, len(managed)*2)
@@ -136,11 +134,10 @@ func (m *Manager) listExternal(ctx context.Context, managed []instance.Instance)
 
 		inst := instance.Instance{
 			Spec: instance.Spec{
-				Name:     c.Name,
-				Image:    c.Image,
-				Category: string(m.templates.CategoryForImage(c.Image)),
-				Env:      map[string]string{},
-				// lista vazia, nunca nula: a tela conta os itens sem perguntar se o campo veio
+				Name:      c.Name,
+				Image:     c.Image,
+				Category:  string(m.templates.CategoryForImage(c.Image)),
+				Env:       map[string]string{},
 				Ports:     []instance.PortBinding{},
 				Mounts:    []instance.Mount{},
 				CreatedAt: now,
@@ -173,7 +170,6 @@ func (m *Manager) listExternal(ctx context.Context, managed []instance.Instance)
 	return list, running
 }
 
-// externalState traduz o estado do docker: externo nao tem operacao nem arquivamento
 func externalState(c dockerx.HostContainer) instance.State {
 	switch c.State {
 	case "running":
@@ -199,7 +195,6 @@ func externalState(c dockerx.HostContainer) instance.State {
 	}
 }
 
-// external acha um container externo pelo nome, para as acoes que nao passam pela Spec
 func (m *Manager) external(ctx context.Context, name string) (instance.Instance, bool) {
 	list, err := m.List(ctx)
 	if err != nil {
@@ -398,7 +393,6 @@ func (m *Manager) beginOp(name, kind, code string) error {
 	return nil
 }
 
-// etapa do painel vai em code, linha crua do docker vai em msg, nunca as duas juntas
 func (m *Manager) progress(name, code, msg string, pct *int) {
 	m.mu.Lock()
 	if op, ok := m.ops[name]; ok {
@@ -746,7 +740,6 @@ func (m *Manager) provision(name string) {
 	m.endOp(name, err)
 }
 
-// ExternalError diz que o alvo existe, mas e container que o painel so enxerga
 type ExternalError struct{ Name string }
 
 func (e *ExternalError) Error() string {
@@ -757,7 +750,6 @@ var ErrExternal = errors.New("container externo")
 
 func (e *ExternalError) Is(target error) bool { return target == ErrExternal }
 
-// notManaged troca o nao existe por um erro que diz a verdade quando o nome e de um externo
 func (m *Manager) notManaged(ctx context.Context, name string, err error) error {
 	if _, ok := m.external(ctx, name); ok {
 		return &ExternalError{Name: name}
@@ -906,7 +898,6 @@ func RecreateFields(old, new instance.Spec) []string {
 func (m *Manager) Start(ctx context.Context, name string) error {
 	spec, err := m.store.Get(name)
 	if err != nil {
-		// container externo sobe pelo docker, sem orcamento: o limite dele nao esta em Spec nenhuma
 		if _, ok := m.external(ctx, name); ok {
 			return m.docker.ContainerAction(ctx, name, "start")
 		}

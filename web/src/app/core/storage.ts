@@ -1,4 +1,3 @@
-// chave do localStorage com resgate do nome GameDock, e a gravacao e sempre na chave nova
 export function readSetting(key: string): string | null {
   try {
     const raw = localStorage.getItem(key);

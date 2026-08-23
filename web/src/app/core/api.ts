@@ -187,7 +187,6 @@ export class Api {
     );
   }
 
-  // a API manda codigo e dados, e o texto do corpo e o ultimo recurso para um codigo novo
   private errorText(body: ApiError): string {
     const params = body.params ?? {};
     const reason = params['reason'];

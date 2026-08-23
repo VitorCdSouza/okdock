@@ -67,7 +67,6 @@ func indexOf(s, sub string) int {
 }
 
 func TestParseHostPS(t *testing.T) {
-	// Uma linha por container, como o docker ps --format json entrega.
 	out := []byte(`{"Names":"jellyfin","Image":"jellyfin/jellyfin:latest","State":"running","Status":"Up 35 hours (healthy)","Ports":"0.0.0.0:8096->8096/tcp, [::]:8096->8096/tcp","Labels":"com.docker.compose.project=media,com.docker.compose.service=jellyfin,com.docker.compose.project.working_dir=/home/vitorcds/servidor/media"}
 {"Names":"nextcloud-mysql","Image":"mariadb:10.6","State":"exited","Status":"Exited (137) 2 hours ago","Ports":"3306/tcp","Labels":"com.docker.compose.project=nextcloud,com.docker.compose.service=db"}`)
 

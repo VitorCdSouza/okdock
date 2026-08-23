@@ -14,7 +14,6 @@ import (
 	"github.com/VitorCdSouza/okdock/api/internal/template"
 )
 
-// a resposta de erro leva codigo e dados, e a mensagem e ultimo recurso para o JSON cru
 type apiError struct {
 	Error    string             `json:"error"`
 	Message  string             `json:"message"`

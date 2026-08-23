@@ -23,7 +23,6 @@ var (
 	ErrInvalidDomain = errors.New("domínio inválido")
 )
 
-// UnreachableError guarda o motivo: a tela monta a frase pelo codigo, o detalhe fica no log
 type UnreachableError struct{ Detail string }
 
 func (e *UnreachableError) Error() string {

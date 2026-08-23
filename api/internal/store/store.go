@@ -22,8 +22,6 @@ var (
 	ErrInvalidRoot = errors.New("raiz inválida")
 )
 
-// os erros abaixo levam o que a tela precisa, e o texto do Error() e so para log
-
 type NotFoundError struct{ Name string }
 
 func (e *NotFoundError) Error() string        { return fmt.Sprintf("%q: %s", e.Name, ErrNotFound) }
@@ -34,7 +32,6 @@ type ExistsError struct{ Name string }
 func (e *ExistsError) Error() string        { return fmt.Sprintf("%q: %s", e.Name, ErrExists) }
 func (e *ExistsError) Is(target error) bool { return target == ErrExists }
 
-// Reason diz qual regra a raiz quebrou: not_absolute, create_failed, unreadable, not_dir, unwritable
 type InvalidRootError struct {
 	Reason string
 	Path   string
@@ -51,10 +48,9 @@ func (e *InvalidRootError) Error() string {
 func (e *InvalidRootError) Is(target error) bool { return target == ErrInvalidRoot }
 
 const (
-	composeFile = "docker-compose.yml"
-	envFile     = ".env"
-	metaFile    = ".okdock.json"
-	// instancia de quando o projeto se chamava GameDock, e a Spec e a unica copia desses campos
+	composeFile    = "docker-compose.yml"
+	envFile        = ".env"
+	metaFile       = ".okdock.json"
 	legacyMetaFile = ".gamedock.json"
 )
 
@@ -160,7 +156,6 @@ func (s *Store) List() ([]instance.Spec, error) {
 		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") {
 			continue
 		}
-		// a raiz pode ter outras coisas dentro, e nome que o painel nao aceitaria nao e instancia dele
 		if instance.ValidateName(e.Name()) != nil {
 			continue
 		}
@@ -263,7 +258,6 @@ func (s *Store) write(spec instance.Spec) error {
 	if err := writeAtomic(filepath.Join(dir, metaFile), append(meta, '\n'), 0o644); err != nil {
 		return err
 	}
-	// a partir daqui vale o nome novo, os dois fariam a leitura depender de qual veio primeiro
 	if err := os.Remove(filepath.Join(dir, legacyMetaFile)); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}

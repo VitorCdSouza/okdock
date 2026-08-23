@@ -58,9 +58,7 @@ export class Templates {
   readonly categories = computed(() => this.store.categories());
   readonly groups = computed(() => this.store.byCategory());
 
-  /** Rascunho em edição. Nulo enquanto ninguém escolheu um template. */
   readonly draft = signal<Template | null>(null);
-  /** Id que já existe em disco; vazio quando o rascunho é um template novo. */
   readonly editingId = signal('');
   readonly busy = signal(false);
   readonly error = signal<OkDockError | null>(null);
@@ -75,7 +73,6 @@ export class Templates {
   }
 
   edit(t: Template): void {
-    // copia profunda: o rascunho nao mexe no store antes de a gravacao dar certo
     this.draft.set(structuredClone(t));
     this.editingId.set(t.id);
     this.error.set(null);
@@ -168,7 +165,6 @@ export class Templates {
     return (field.options ?? []).map((o) => (o.label === o.value ? o.value : `${o.value}=${o.label}`)).join(', ');
   }
 
-  // As opcoes do enum entram como texto: "valor=Rotulo", separadas por virgula.
   setOptions(index: number, raw: string): void {
     const options = raw
       .split(',')

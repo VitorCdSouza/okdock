@@ -71,7 +71,6 @@ func (s *Server) createTemplate(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, saved)
 }
 
-// saveTemplate grava por cima, inclusive de um de fabrica: o arquivo em disco passa a valer
 func (s *Server) saveTemplate(w http.ResponseWriter, r *http.Request) {
 	var t template.Template
 	if !decodeJSON(w, r, &t) {

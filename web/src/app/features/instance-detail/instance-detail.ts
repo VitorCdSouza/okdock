@@ -118,7 +118,6 @@ export class InstanceDetail {
     return i ? this.t('detail.createdAt', { when: this.i18n.since(i.createdAt) }) : '';
   });
 
-  // o rotulo da porta vem do template como codigo, e template a mao pode mandar o texto pronto
   portLabel(label: string | undefined): string {
     if (!label) return this.t('detail.portFallbackLabel');
     return this.i18n.maybe(`port.${label}`) ?? label;
@@ -148,7 +147,6 @@ export class InstanceDetail {
       const i = this.instance();
       if (!i || this.loadedFor === i.name) return;
       this.loadedFor = i.name;
-      // container externo nao tem campos para editar, entao a primeira aba util e a de recursos
       if (i.external && this.tab() === 'config') this.select('recursos');
       this.values.set({ ...i.env });
       this.memoryLimit.set(i.memoryLimit);
@@ -192,7 +190,6 @@ export class InstanceDetail {
     });
   }
 
-  // o compose so e escrito no update, e aqui interessa o que exige recriar o container
   refreshRecreate(): void {
     const req = this.request();
     if (!req) return;

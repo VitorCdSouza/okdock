@@ -2,7 +2,6 @@ package template
 
 import "strings"
 
-// palpites liga um pedaco do nome da imagem a uma categoria, e um imagePattern manda mais
 var palpites = map[Category][]string{
 	CategoryMedia: {
 		"jellyfin", "plex", "emby", "sonarr", "radarr", "lidarr", "readarr",
@@ -34,10 +33,8 @@ var palpites = map[Category][]string{
 	},
 }
 
-// GuessCategory adivinha pelo nome da imagem e devolve false quando nao reconhece nada
 func GuessCategory(image string) (Category, bool) {
 	image = strings.ToLower(image)
-	// a ordem do mapa e aleatoria em Go, entao a varredura segue a ordem fixa das categorias
 	for _, category := range AllCategories {
 		for _, needle := range palpites[category] {
 			if strings.Contains(image, needle) {
@@ -48,7 +45,6 @@ func GuessCategory(image string) (Category, bool) {
 	return CategoryOther, false
 }
 
-// CategoryForImage responde a categoria: o template manda, o palpite pelo nome vem depois
 func (c *Catalog) CategoryForImage(image string) Category {
 	if t, ok := c.TemplateForImage(image); ok {
 		return t.Category

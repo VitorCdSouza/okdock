@@ -9,7 +9,6 @@ import (
 	"testing"
 )
 
-// testCatalog devolve so os templates de fabrica: o diretorio e vazio.
 func testCatalog(t *testing.T) *Catalog {
 	t.Helper()
 	c, err := NewCatalog(t.TempDir())
@@ -430,7 +429,6 @@ func TestSaveGravaEmDiscoEEditaTemplateDeFabrica(t *testing.T) {
 		t.Error("template editado não é mais de fábrica")
 	}
 
-	// Relendo do zero, a edicao continua valendo.
 	outro, err := NewCatalog(dir)
 	if err != nil {
 		t.Fatal(err)
@@ -439,7 +437,6 @@ func TestSaveGravaEmDiscoEEditaTemplateDeFabrica(t *testing.T) {
 		t.Errorf("a edição não sobreviveu ao restart: %q", again.DefaultMemory)
 	}
 
-	// E apagar devolve o de fabrica em vez de sumir com o template.
 	if err := c.Delete("minecraft-java"); err != nil {
 		t.Fatalf("Delete: %v", err)
 	}
@@ -549,11 +546,9 @@ func TestGuessCategoryPeloNomeDaImagem(t *testing.T) {
 func TestCategoryForImagePrefereOTemplate(t *testing.T) {
 	c := testCatalog(t)
 
-	// A imagem casa com o imagePattern de um template: vale a categoria dele.
 	if got := c.CategoryForImage("itzg/minecraft-server:java21"); got != CategoryGames {
 		t.Errorf("categoria = %q", got)
 	}
-	// Sem template que a configure, sobra o palpite pelo nome.
 	if got := c.CategoryForImage("jellyfin/jellyfin:10.9"); got != CategoryMedia {
 		t.Errorf("categoria = %q", got)
 	}

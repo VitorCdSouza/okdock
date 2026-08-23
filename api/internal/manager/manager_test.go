@@ -16,7 +16,6 @@ import (
 	"github.com/VitorCdSouza/okdock/api/internal/template"
 )
 
-// templates devolve o catalogo de fabrica, com diretorio temporario e vazio no teste
 func templates(t *testing.T) *template.Catalog {
 	t.Helper()
 	c, err := template.NewCatalog(t.TempDir())
@@ -622,7 +621,6 @@ func TestListNaoDuplicaInstanciaDoPainel(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// O docker enxerga o container da instancia do painel como qualquer outro.
 	fake.HostList = []dockerx.HostContainer{{
 		Name: "smp", Image: inst.Image, State: "running", Status: "Up 1 minute",
 		Project: "smp", Service: "smp", WorkDir: m.store.Dir("smp"),

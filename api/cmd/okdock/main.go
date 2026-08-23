@@ -129,7 +129,6 @@ func run() error {
 	return srv.Shutdown(shutdownCtx)
 }
 
-// env aceita o nome antigo (GAMEDOCK_*) de quem ainda nao atualizou o compose ou o systemd
 func env(key, def string) string {
 	if v := os.Getenv(key); v != "" {
 		return v

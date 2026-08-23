@@ -181,7 +181,6 @@ func (c CLI) Logs(ctx context.Context, dir string, tail int, follow bool) (io.Re
 	return c.stream(ctx, args...)
 }
 
-// stream deixa o comando rodando, quem fecha o reader mata o processo
 func (c CLI) stream(ctx context.Context, args ...string) (io.ReadCloser, error) {
 	cmd := exec.CommandContext(ctx, c.bin(), args...)
 	pipe, err := cmd.StdoutPipe()
@@ -310,7 +309,6 @@ type hostPSLine struct {
 	Labels string `json:"Labels"`
 }
 
-// PSAll fala com o docker, nao com o compose: e a unica forma de ver container de fora
 func (c CLI) PSAll(ctx context.Context) ([]HostContainer, error) {
 	out, err := c.run(ctx, shortTimeout, "ps", "--all", "--no-trunc", "--format", "json")
 	if err != nil {
@@ -336,8 +334,7 @@ func parseHostPS(out []byte) ([]HostContainer, error) {
 		labels := parseLabels(l.Labels)
 		health, code := parseStatus(l.Status)
 		list = append(list, HostContainer{
-			ID: l.ID,
-			// um container pode ter mais de um nome, o primeiro e o que o docker usa nos comandos
+			ID:       l.ID,
 			Name:     strings.TrimSpace(strings.Split(l.Names, ",")[0]),
 			Image:    l.Image,
 			State:    strings.ToLower(l.State),
@@ -356,7 +353,6 @@ func parseHostPS(out []byte) ([]HostContainer, error) {
 	return list, nil
 }
 
-// parseLabels le chave=valor do docker ps, so as chaves que interessam, nenhuma tem virgula
 func parseLabels(raw string) map[string]string {
 	out := map[string]string{}
 	for _, part := range strings.Split(raw, ",") {
@@ -375,7 +371,6 @@ func parseLabels(raw string) map[string]string {
 
 var statusCode = regexp.MustCompile(`^Exited \((\d+)\)`)
 
-// parseStatus tira do texto do docker o que o compose entrega em campo proprio
 func parseStatus(status string) (health string, exitCode int) {
 	switch {
 	case strings.Contains(status, "(healthy)"):
@@ -391,15 +386,14 @@ func parseStatus(status string) (health string, exitCode int) {
 	return health, exitCode
 }
 
-// parsePorts le a lista do docker, e a mesma porta em IPv4 e IPv6 e uma porta so
 func parsePorts(raw string) []HostPort {
 	var out []HostPort
+	// a mesma porta vem duas vezes, em IPv4 e IPv6
 	seen := map[HostPort]bool{}
 	for _, part := range strings.Split(raw, ",") {
 		part = strings.TrimSpace(part)
 		published, target, ok := strings.Cut(part, "->")
 		if !ok {
-			// Porta exposta e nao publicada ("8080/tcp"): o host nao alcanca.
 			continue
 		}
 		hostPort := published

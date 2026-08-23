@@ -55,7 +55,6 @@ export interface Template {
   stopGraceSeconds: number;
   fields: TemplateField[] | null;
   freeEnv?: boolean;
-  /** Veio com o OkDock: editar grava uma cópia, apagar desfaz a cópia. */
   builtin?: boolean;
 }
 
@@ -154,7 +153,6 @@ export interface Instance {
   stats?: Stats;
   operation?: Operation;
 
-  /** Container que já existia no servidor: o painel enxerga e controla, mas não edita. */
   external?: boolean;
   project?: string;
   service?: string;
@@ -233,7 +231,6 @@ export const STATE_DOT: Record<State, string> = {
   archived: '#4e535d',
 };
 
-// coluna do quadro de cada estado, e provisionando e iniciando ja sentam no destino
 export const COLUMN_OF: Record<State, State> = {
   stopped: 'stopped',
   provisioning: 'running',

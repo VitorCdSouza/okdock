@@ -15,7 +15,6 @@ type Container struct {
 	ExitCode int
 }
 
-// HostContainer e um container visto pelo docker do host, com project e workdir dos labels
 type HostContainer struct {
 	ID       string
 	Name     string
@@ -49,9 +48,7 @@ type Runner interface {
 	Restart(ctx context.Context, dir string) error
 	Pull(ctx context.Context, dir string, progress func(line string)) error
 	PS(ctx context.Context, dir string) ([]Container, error)
-	// PSAll lista todos os containers do host, gerenciados pelo painel ou nao.
 	PSAll(ctx context.Context) ([]HostContainer, error)
-	// ContainerAction e start, stop ou restart em container avulso, que nao tem Spec nem compose
 	ContainerAction(ctx context.Context, name, verb string) error
 	Logs(ctx context.Context, dir string, tail int, follow bool) (io.ReadCloser, error)
 	ContainerLogs(ctx context.Context, name string, tail int, follow bool) (io.ReadCloser, error)

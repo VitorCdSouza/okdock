@@ -21,7 +21,6 @@ const (
 	StateArchived     State = "archived"
 )
 
-// ordem dos estados na tela: o fluxo normal, depois arquivada e, por ultimo, erro
 var AllStates = []State{
 	StateStopped, StateProvisioning, StateStarting,
 	StateRunning, StateUpdating, StateArchived, StateError,
@@ -63,7 +62,6 @@ type Spec struct {
 	UpdatedAt        time.Time         `json:"updatedAt"`
 }
 
-// UnmarshalJSON aceita a Spec de quando template se chamava provedor e categoria, jogo
 func (s *Spec) UnmarshalJSON(raw []byte) error {
 	type alias Spec
 	var v struct {
@@ -79,7 +77,6 @@ func (s *Spec) UnmarshalJSON(raw []byte) error {
 		s.TemplateID = v.LegacyProviderID
 	}
 	if s.Category == "" && v.LegacyGame != "" {
-		// So existia jogo quando o campo se chamava assim.
 		s.Category = "games"
 	}
 	return nil
@@ -110,14 +107,11 @@ type Instance struct {
 	Operation *Operation `json:"operation,omitempty"`
 	DNS       *DNS       `json:"dns,omitempty"`
 
-	// External marca o container que ja existia: da para controlar, nao para editar
-	External bool `json:"external,omitempty"`
-	// Project e o projeto compose do container externo, vazio para quem veio de docker run
-	Project string `json:"project,omitempty"`
-	Service string `json:"service,omitempty"`
+	External bool   `json:"external,omitempty"`
+	Project  string `json:"project,omitempty"`
+	Service  string `json:"service,omitempty"`
 }
 
-// code e a etapa da operacao, message so vem quando o texto e a linha crua do docker
 type Operation struct {
 	Kind      string    `json:"kind"`
 	Code      string    `json:"code,omitempty"`

@@ -39,7 +39,6 @@ export class I18n {
   readonly t = (key: MessageKey, params?: Record<string, string | number>): string =>
     fill(this.table()[key], params);
 
-  // chave montada em tempo de execucao, devolve undefined e quem chamou decide o que mostrar
   readonly maybe = (
     key: string,
     params?: Record<string, string | number>,

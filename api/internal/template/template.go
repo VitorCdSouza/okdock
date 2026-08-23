@@ -64,7 +64,6 @@ type Volume struct {
 	Data      bool   `json:"data,omitempty"`
 }
 
-// Category e lista fechada: cada valor tem icone, cor e traducao, e texto livre duplicaria grupo
 type Category string
 
 const (
@@ -107,10 +106,8 @@ type Template struct {
 	ImagePattern     string   `json:"imagePattern,omitempty"`
 	StopGraceSeconds int      `json:"stopGraceSeconds"`
 	Fields           []Field  `json:"fields"`
-	// FreeEnv abre o formulario para variavel fora de Fields, como na imagem avulsa
-	FreeEnv bool `json:"freeEnv,omitempty"`
-	// Builtin diz para a tela que o template veio com o OkDock e apagar so desfaz a edicao local
-	Builtin bool `json:"builtin,omitempty"`
+	FreeEnv          bool     `json:"freeEnv,omitempty"`
+	Builtin          bool     `json:"builtin,omitempty"`
 }
 
 func (p Template) Field(key string) (Field, bool) {
@@ -264,7 +261,6 @@ func (p Template) AcceptsImage(image string) bool {
 	return re.(*regexp.Regexp).MatchString(image)
 }
 
-// Problem e campo reprovado: code e params bastam para a tela escrever a frase
 type Problem struct {
 	Field  string         `json:"field"`
 	Code   string         `json:"code"`

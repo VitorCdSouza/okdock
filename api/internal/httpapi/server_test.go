@@ -20,7 +20,6 @@ import (
 	"github.com/VitorCdSouza/okdock/api/internal/template"
 )
 
-// templates devolve o catalogo de fabrica, com diretorio temporario e vazio no teste
 func templates(t *testing.T) *template.Catalog {
 	t.Helper()
 	c, err := template.NewCatalog(t.TempDir())

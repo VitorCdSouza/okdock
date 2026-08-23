@@ -351,7 +351,6 @@ func TestListIgnoraPastaComNomeQueNaoSeriaInstancia(t *testing.T) {
 	if err := s.Create(spec("smp")); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	// a raiz pode ser uma pasta com projetos dentro, com nomes que o painel nunca aceitaria
 	for _, dir := range []string{"botTelegram", "Media", "com espaço"} {
 		if err := os.MkdirAll(filepath.Join(s.Root(), dir), 0o755); err != nil {
 			t.Fatal(err)

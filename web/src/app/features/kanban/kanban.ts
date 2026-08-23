@@ -52,7 +52,6 @@ export class Kanban {
     });
   }
 
-  // estado que nao e a propria coluna (provisionando, iniciando) entra na coluna de destino
   readonly columns = computed(() =>
     this.store
       .states()
@@ -77,7 +76,6 @@ export class Kanban {
   });
 
   allows(inst: Instance, target: State): boolean {
-    // container externo nao tem Spec: da para subir e parar, nao para atualizar nem arquivar
     if (inst.external && target !== 'running' && target !== 'stopped') return false;
     switch (target) {
       case 'updating':

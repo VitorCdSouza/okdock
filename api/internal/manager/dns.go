@@ -21,7 +21,6 @@ var (
 	ErrDNSTaken    = errors.New("esse domínio já está vinculado a outra instância")
 )
 
-// DNSTakenError diz qual nome e qual instancia, para a tela montar a frase.
 type DNSTakenError struct {
 	Hostname string
 	Instance string
