@@ -344,6 +344,7 @@ func parseHostPS(out []byte) ([]HostContainer, error) {
 			Project:  labels["com.docker.compose.project"],
 			Service:  labels["com.docker.compose.service"],
 			WorkDir:  labels["com.docker.compose.project.working_dir"],
+			Labels:   labels,
 			Ports:    parsePorts(l.Ports),
 		})
 	}

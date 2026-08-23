@@ -761,3 +761,34 @@ func TestContainerExternoCaiNaCategoriaDaImagem(t *testing.T) {
 		t.Errorf("mariadb caiu em %q", byName["nextcloud-mysql"])
 	}
 }
+
+func TestContainerExternoUsaRotuloEPortaQuandoONomeNaoDiz(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	rotulo := hostContainer("interno", "caseiro")
+	rotulo.Image = "registro.local/interno:1"
+	rotulo.Labels = map[string]string{
+		"org.opencontainers.image.source": "https://github.com/jellyfin/jellyfin",
+	}
+	rotulo.Ports = nil
+
+	porta := hostContainer("servidor", "caseiro")
+	porta.Image = "registro.local/servidor:1"
+	porta.Ports = []dockerx.HostPort{{Host: 30000, Container: 25565, Protocol: "tcp"}}
+
+	fake.HostList = []dockerx.HostContainer{rotulo, porta}
+
+	list, err := m.List(t.Context())
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	byName := map[string]string{}
+	for _, inst := range list {
+		byName[inst.Name] = inst.Category
+	}
+	if byName["interno"] != "media" {
+		t.Errorf("o rótulo da imagem devia valer: categoria = %q", byName["interno"])
+	}
+	if byName["servidor"] != "games" {
+		t.Errorf("a porta 25565 devia valer: categoria = %q", byName["servidor"])
+	}
+}

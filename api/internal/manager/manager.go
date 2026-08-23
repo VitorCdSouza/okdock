@@ -136,7 +136,7 @@ func (m *Manager) listExternal(ctx context.Context, managed []instance.Instance)
 			Spec: instance.Spec{
 				Name:      c.Name,
 				Image:     c.Image,
-				Category:  string(m.templates.CategoryForImage(c.Image)),
+				Category:  string(m.templates.CategoryFor(hintsFor(c))),
 				Env:       map[string]string{},
 				Ports:     []instance.PortBinding{},
 				Mounts:    []instance.Mount{},
@@ -192,6 +192,20 @@ func externalState(c dockerx.HostContainer) instance.State {
 		return instance.StateStopped
 	default:
 		return instance.StateStopped
+	}
+}
+
+func hintsFor(c dockerx.HostContainer) template.Hints {
+	ports := make([]int, 0, len(c.Ports))
+	for _, p := range c.Ports {
+		ports = append(ports, p.Container)
+	}
+	return template.Hints{
+		Image:   c.Image,
+		Name:    c.Name,
+		Service: c.Service,
+		Labels:  c.Labels,
+		Ports:   ports,
 	}
 }
 

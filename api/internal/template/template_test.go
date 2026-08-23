@@ -523,17 +523,17 @@ func TestReloadIgnoraArquivoIlegivel(t *testing.T) {
 
 func TestGuessCategoryPeloNomeDaImagem(t *testing.T) {
 	casos := map[string]Category{
-		"jellyfin/jellyfin:latest":        CategoryMedia,
-		"lscr.io/linuxserver/sonarr":      CategoryMedia,
-		"mariadb:10.6":                    CategoryDatabase,
-		"redis:alpine":                    CategoryDatabase,
-		"linuxserver/duckdns":             CategoryNetwork,
-		"nextcloud:apache":                CategoryUtilities,
-		"itzg/minecraft-server:java21":    CategoryGames,
-		"vitorcds/telegram-promo-bot:1.0": CategoryOther,
+		"jellyfin/jellyfin:latest":     CategoryMedia,
+		"lscr.io/linuxserver/sonarr":   CategoryMedia,
+		"mariadb:10.6":                 CategoryDatabase,
+		"redis:alpine":                 CategoryDatabase,
+		"linuxserver/duckdns":          CategoryNetwork,
+		"nextcloud:apache":             CategoryUtilities,
+		"itzg/minecraft-server:java21": CategoryGames,
+		"ghcr.io/dono/coisa:1.0":       CategoryOther,
 	}
 	for image, want := range casos {
-		got, known := GuessCategory(image)
+		got, known := GuessCategory(Hints{Image: image})
 		if got != want {
 			t.Errorf("GuessCategory(%q) = %q, queria %q", image, got, want)
 		}
@@ -543,16 +543,78 @@ func TestGuessCategoryPeloNomeDaImagem(t *testing.T) {
 	}
 }
 
-func TestCategoryForImagePrefereOTemplate(t *testing.T) {
+func TestGuessCategoryFlaresolverrNaoEMidia(t *testing.T) {
+	got, _ := GuessCategory(Hints{Image: "ghcr.io/flaresolverr/flaresolverr:latest"})
+	if got != CategoryNetwork {
+		t.Errorf("flaresolverr = %q, queria %q: é proxy, não acervo", got, CategoryNetwork)
+	}
+}
+
+func TestGuessCategoryQuandoONomeDaImagemNaoDiz(t *testing.T) {
+	casos := []struct {
+		nome  string
+		hints Hints
+		want  Category
+	}{
+		{
+			"rótulo da imagem",
+			Hints{
+				Image: "registro.local/interno:1",
+				Labels: map[string]string{
+					"org.opencontainers.image.source": "https://github.com/jellyfin/jellyfin",
+				},
+			},
+			CategoryMedia,
+		},
+		{
+			"porta publicada",
+			Hints{Image: "registro.local/servidor:1", Ports: []int{25565}},
+			CategoryGames,
+		},
+		{
+			"nome do container",
+			Hints{Image: "registro.local/db:1", Name: "postgres-do-nextcloud"},
+			CategoryDatabase,
+		},
+		{
+			"palavra de app caseiro",
+			Hints{Image: "vitorcds/telegram-promo-bot:1.0"},
+			CategoryUtilities,
+		},
+	}
+	for _, c := range casos {
+		if got, _ := GuessCategory(c.hints); got != c.want {
+			t.Errorf("%s: categoria = %q, queria %q", c.nome, got, c.want)
+		}
+	}
+}
+
+func TestGuessCategoryIgnoraRotuloQueNaoDescreveAImagem(t *testing.T) {
+	got, known := GuessCategory(Hints{
+		Image:  "registro.local/interno:1",
+		Labels: map[string]string{"traefik.enable": "true", "traefik.http.routers.x.rule": "Host(`x`)"},
+	})
+	if known {
+		t.Errorf("estar atrás do traefik não faz o container ser de rede: %q", got)
+	}
+}
+
+func TestGuessCategoryNaoConfundePalavraDentroDeOutra(t *testing.T) {
+	if _, known := GuessCategory(Hints{Image: "registro.local/robot-framework:1"}); known {
+		t.Error(`"robot" não pode casar com a palavra "bot"`)
+	}
+}
+
+func TestCategoryForPrefereOTemplate(t *testing.T) {
 	c := testCatalog(t)
 
-	if got := c.CategoryForImage("itzg/minecraft-server:java21"); got != CategoryGames {
+	if got := c.CategoryFor(Hints{Image: "itzg/minecraft-server:java21"}); got != CategoryGames {
 		t.Errorf("categoria = %q", got)
 	}
-	if got := c.CategoryForImage("jellyfin/jellyfin:10.9"); got != CategoryMedia {
+	if got := c.CategoryFor(Hints{Image: "jellyfin/jellyfin:10.9"}); got != CategoryMedia {
 		t.Errorf("categoria = %q", got)
 	}
-	if got := c.CategoryForImage("coisa/desconhecida:1"); got != CategoryOther {
+	if got := c.CategoryFor(Hints{Image: "coisa/desconhecida:1"}); got != CategoryOther {
 		t.Errorf("categoria = %q", got)
 	}
 }

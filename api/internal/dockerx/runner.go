@@ -26,6 +26,7 @@ type HostContainer struct {
 	Project  string
 	Service  string
 	WorkDir  string
+	Labels   map[string]string
 	Ports    []HostPort
 }
 

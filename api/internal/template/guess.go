@@ -2,10 +2,19 @@ package template
 
 import "strings"
 
+// Hints e o que se sabe de um container sem template: imagem, nome, servico, rotulos e portas
+type Hints struct {
+	Image   string
+	Name    string
+	Service string
+	Labels  map[string]string
+	Ports   []int
+}
+
 var palpites = map[Category][]string{
 	CategoryMedia: {
 		"jellyfin", "plex", "emby", "sonarr", "radarr", "lidarr", "readarr",
-		"bazarr", "prowlarr", "jackett", "flaresolverr", "qbittorrent",
+		"bazarr", "prowlarr", "jackett", "qbittorrent",
 		"transmission", "deluge", "sabnzbd", "nzbget", "navidrome", "airsonic",
 		"audiobookshelf", "calibre", "immich", "photoprism", "tautulli",
 		"overseerr", "jellyseerr", "komga", "kavita",
@@ -19,6 +28,7 @@ var palpites = map[Category][]string{
 		"nginx", "traefik", "caddy", "haproxy", "pihole", "pi-hole", "adguard",
 		"wireguard", "openvpn", "duckdns", "ddns", "cloudflared", "tailscale",
 		"unbound", "bind9", "dnsmasq", "swag", "authelia", "authentik",
+		"flaresolverr", "squid", "socks5",
 	},
 	CategoryGames: {
 		"minecraft", "terraria", "valheim", "palworld", "factorio", "ark",
@@ -33,11 +43,74 @@ var palpites = map[Category][]string{
 	},
 }
 
-func GuessCategory(image string) (Category, bool) {
-	image = strings.ToLower(image)
+// portas que so um tipo de servico costuma publicar, 80 e 8080 ficam de fora de proposito
+var portasConhecidas = map[int]Category{
+	25565: CategoryGames, 25575: CategoryGames, 19132: CategoryGames,
+	7777: CategoryGames, 2456: CategoryGames, 2457: CategoryGames,
+	27015: CategoryGames, 8211: CategoryGames, 34197: CategoryGames,
+
+	5432: CategoryDatabase, 3306: CategoryDatabase, 27017: CategoryDatabase,
+	6379: CategoryDatabase, 9200: CategoryDatabase, 8086: CategoryDatabase,
+	5984: CategoryDatabase, 9042: CategoryDatabase, 11211: CategoryDatabase,
+	1433: CategoryDatabase,
+
+	53: CategoryNetwork, 51820: CategoryNetwork, 1194: CategoryNetwork,
+	3128: CategoryNetwork,
+
+	8096: CategoryMedia, 32400: CategoryMedia, 8989: CategoryMedia,
+	7878: CategoryMedia, 9696: CategoryMedia, 8686: CategoryMedia,
+	8787: CategoryMedia, 6767: CategoryMedia, 9091: CategoryMedia,
+
+	8123: CategoryUtilities, 9443: CategoryUtilities,
+}
+
+// palavras de nome de container feito em casa, ultimo recurso e so como palavra inteira
+var palavrasDeApp = map[Category][]string{
+	CategoryUtilities: {
+		"bot", "webhook", "worker", "scraper", "crawler", "notifier",
+		"exporter", "cron", "backup", "dashboard",
+	},
+}
+
+// rotulos que descrevem a imagem, o resto descreve outra coisa, como o traefik do proxy
+var rotulosDescritivos = []string{
+	"org.opencontainers.image.title",
+	"org.opencontainers.image.description",
+	"org.opencontainers.image.source",
+	"org.opencontainers.image.url",
+	"org.opencontainers.image.documentation",
+	"org.label-schema.name",
+	"org.label-schema.description",
+	"org.label-schema.url",
+}
+
+func GuessCategory(h Hints) (Category, bool) {
+	if category, ok := porTrecho(h.Image); ok {
+		return category, true
+	}
+	if category, ok := porTrecho(textoDosRotulos(h.Labels)); ok {
+		return category, true
+	}
+	if category, ok := porPorta(h.Ports); ok {
+		return category, true
+	}
+	if category, ok := porTrecho(h.Name + " " + h.Service); ok {
+		return category, true
+	}
+	if category, ok := porPalavra(h.Image, h.Name, h.Service); ok {
+		return category, true
+	}
+	return CategoryOther, false
+}
+
+func porTrecho(texto string) (Category, bool) {
+	texto = strings.ToLower(texto)
+	if strings.TrimSpace(texto) == "" {
+		return CategoryOther, false
+	}
 	for _, category := range AllCategories {
 		for _, needle := range palpites[category] {
-			if strings.Contains(image, needle) {
+			if strings.Contains(texto, needle) {
 				return category, true
 			}
 		}
@@ -45,10 +118,61 @@ func GuessCategory(image string) (Category, bool) {
 	return CategoryOther, false
 }
 
-func (c *Catalog) CategoryForImage(image string) Category {
-	if t, ok := c.TemplateForImage(image); ok {
+func porPorta(ports []int) (Category, bool) {
+	for _, p := range ports {
+		if category, ok := portasConhecidas[p]; ok {
+			return category, true
+		}
+	}
+	return CategoryOther, false
+}
+
+func porPalavra(textos ...string) (Category, bool) {
+	palavras := map[string]bool{}
+	for _, texto := range textos {
+		for _, palavra := range strings.FieldsFunc(strings.ToLower(texto), naoAlfanumerico) {
+			palavras[palavra] = true
+		}
+	}
+	for _, category := range AllCategories {
+		for _, palavra := range palavrasDeApp[category] {
+			if palavras[palavra] {
+				return category, true
+			}
+		}
+	}
+	return CategoryOther, false
+}
+
+func naoAlfanumerico(r rune) bool {
+	switch {
+	case r >= 'a' && r <= 'z':
+		return false
+	case r >= '0' && r <= '9':
+		return false
+	default:
+		return true
+	}
+}
+
+func textoDosRotulos(labels map[string]string) string {
+	if len(labels) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	for _, key := range rotulosDescritivos {
+		if v := labels[key]; v != "" {
+			b.WriteString(v)
+			b.WriteByte(' ')
+		}
+	}
+	return b.String()
+}
+
+func (c *Catalog) CategoryFor(h Hints) Category {
+	if t, ok := c.TemplateForImage(h.Image); ok {
 		return t.Category
 	}
-	category, _ := GuessCategory(image)
+	category, _ := GuessCategory(h)
 	return category
 }
