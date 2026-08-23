@@ -1,6 +1,7 @@
 package instance
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -45,8 +46,8 @@ type Mount struct {
 
 type Spec struct {
 	Name             string            `json:"name"`
-	ProviderID       string            `json:"providerId"`
-	Game             string            `json:"game"`
+	TemplateID       string            `json:"templateId"`
+	Category         string            `json:"category"`
 	Image            string            `json:"image"`
 	Env              map[string]string `json:"env"`
 	SecretKeys       []string          `json:"secretKeys,omitempty"`
@@ -60,6 +61,28 @@ type Spec struct {
 	Archived         bool              `json:"archived,omitempty"`
 	CreatedAt        time.Time         `json:"createdAt"`
 	UpdatedAt        time.Time         `json:"updatedAt"`
+}
+
+// UnmarshalJSON aceita a Spec de quando template se chamava provedor e categoria, jogo
+func (s *Spec) UnmarshalJSON(raw []byte) error {
+	type alias Spec
+	var v struct {
+		alias
+		LegacyProviderID string `json:"providerId"`
+		LegacyGame       string `json:"game"`
+	}
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return err
+	}
+	*s = Spec(v.alias)
+	if s.TemplateID == "" {
+		s.TemplateID = v.LegacyProviderID
+	}
+	if s.Category == "" && v.LegacyGame != "" {
+		// So existia jogo quando o campo se chamava assim.
+		s.Category = "games"
+	}
+	return nil
 }
 
 type DNS struct {

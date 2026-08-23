@@ -6,20 +6,20 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/VitorCdSouza/okdock/api/internal/catalog"
 	"github.com/VitorCdSouza/okdock/api/internal/dockerx"
 	"github.com/VitorCdSouza/okdock/api/internal/duckdns"
 	"github.com/VitorCdSouza/okdock/api/internal/instance"
 	"github.com/VitorCdSouza/okdock/api/internal/manager"
 	"github.com/VitorCdSouza/okdock/api/internal/store"
+	"github.com/VitorCdSouza/okdock/api/internal/template"
 )
 
 // a resposta de erro leva codigo e dados, e a mensagem e ultimo recurso para o JSON cru
 type apiError struct {
-	Error    string            `json:"error"`
-	Message  string            `json:"message"`
-	Params   map[string]any    `json:"params,omitempty"`
-	Problems []catalog.Problem `json:"problems,omitempty"`
+	Error    string             `json:"error"`
+	Message  string             `json:"message"`
+	Params   map[string]any     `json:"params,omitempty"`
+	Problems []template.Problem `json:"problems,omitempty"`
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -38,7 +38,9 @@ func writeError(w http.ResponseWriter, err error) {
 		notFound    *store.NotFoundError
 		exists      *store.ExistsError
 		invalidRoot *store.InvalidRootError
-		validation  *catalog.ValidationError
+		validation  *template.ValidationError
+		tmplMissing *template.NotFoundError
+		tmplBuiltin *template.BuiltinError
 		budget      *manager.ErrBudget
 		port        *manager.ErrPortTaken
 		dnsTaken    *manager.DNSTakenError
@@ -75,6 +77,18 @@ func writeError(w http.ResponseWriter, err error) {
 		})
 	case errors.Is(err, store.ErrInvalidRoot):
 		writeJSON(w, http.StatusUnprocessableEntity, apiError{Error: "invalid_root", Message: err.Error()})
+	case errors.As(err, &tmplMissing):
+		writeJSON(w, http.StatusNotFound, apiError{
+			Error:   "not_found",
+			Message: err.Error(),
+			Params:  map[string]any{"template": tmplMissing.ID},
+		})
+	case errors.As(err, &tmplBuiltin):
+		writeJSON(w, http.StatusConflict, apiError{
+			Error:   "template_builtin",
+			Message: err.Error(),
+			Params:  map[string]any{"template": tmplBuiltin.ID},
+		})
 	case errors.As(err, &validation):
 		writeJSON(w, http.StatusUnprocessableEntity, apiError{
 			Error:    "invalid_fields",

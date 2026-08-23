@@ -13,8 +13,8 @@ import (
 func spec() instance.Spec {
 	return instance.Spec{
 		Name:       "smp-familia",
-		ProviderID: "itzg/minecraft-server",
-		Game:       "minecraft-java",
+		TemplateID: "minecraft-java",
+		Category:   "games",
 		Image:      "itzg/minecraft-server:java21",
 		Env: map[string]string{
 			"EULA":        "true",

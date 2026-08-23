@@ -17,8 +17,8 @@ import { Events } from '../../core/events';
 import { Store } from '../../core/state';
 import { Instance, STATE_KEY, SpecRequest, State } from '../../core/models';
 import { I18n } from '../../core/i18n/i18n';
-import { ProviderForm } from '../../shared/provider-form';
-import { GameIcon, gameColors } from '../../shared/game-icon';
+import { TemplateForm } from '../../shared/template-form';
+import { GameIcon, templateColors } from '../../shared/game-icon';
 import { InfoDot } from '../../shared/info-dot';
 import { bytes } from '../../core/format';
 import { copyText } from '../../core/clipboard';
@@ -37,7 +37,7 @@ const STATE_CHIP: Record<State, { bg: string; line: string; fg: string }> = {
 
 @Component({
   selector: 'gd-instance-detail',
-  imports: [FormsModule, ProviderForm, GameIcon, InfoDot],
+  imports: [FormsModule, TemplateForm, GameIcon, InfoDot],
   templateUrl: './instance-detail.html',
   styleUrl: './instance-detail.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -76,16 +76,18 @@ export class InstanceDetail {
     this.store.instances().find((i) => i.name === this.name()),
   );
 
-  readonly provider = computed(() => {
+  readonly template = computed(() => {
     const i = this.instance();
-    return i ? this.store.provider(i.providerId) : undefined;
+    return i ? this.store.template(i.templateId) : undefined;
   });
 
   readonly chip = computed(() => {
     const state = this.instance()?.state ?? 'stopped';
     return { ...STATE_CHIP[state], label: this.t(STATE_KEY[state]) };
   });
-  readonly colors = computed(() => gameColors(this.instance()?.game ?? ''));
+  readonly colors = computed(() =>
+    templateColors(this.instance()?.templateId ?? '', this.instance()?.category ?? 'other'),
+  );
 
   readonly isUp = computed(() => {
     const s = this.instance()?.state;
@@ -116,7 +118,7 @@ export class InstanceDetail {
     return i ? this.t('detail.createdAt', { when: this.i18n.since(i.createdAt) }) : '';
   });
 
-  // o rotulo da porta vem do catalogo como codigo, e imagem de fora pode mandar o texto pronto
+  // o rotulo da porta vem do template como codigo, e template a mao pode mandar o texto pronto
   portLabel(label: string | undefined): string {
     if (!label) return this.t('detail.portFallbackLabel');
     return this.i18n.maybe(`port.${label}`) ?? label;
@@ -316,7 +318,7 @@ export class InstanceDetail {
     if (!i) return null;
     return {
       name: i.name,
-      providerId: i.providerId,
+      templateId: i.templateId,
       image: i.image,
       values: this.values(),
       ports: i.ports.map((p) => ({

@@ -3,9 +3,9 @@ import { FormsModule } from '@angular/forms';
 
 import { Api, OkDockError } from '../../core/api';
 import { Store } from '../../core/state';
-import { Provider, SpecRequest } from '../../core/models';
+import { CATEGORY_KEY, Category, SpecRequest, Template } from '../../core/models';
 import { I18n } from '../../core/i18n/i18n';
-import { ProviderForm } from '../../shared/provider-form';
+import { TemplateForm } from '../../shared/template-form';
 import { GameIcon } from '../../shared/game-icon';
 import { InfoDot } from '../../shared/info-dot';
 import { ImageRef } from '../../shared/image-ref';
@@ -14,7 +14,7 @@ type Step = 1 | 2;
 
 @Component({
   selector: 'gd-new-instance',
-  imports: [FormsModule, ProviderForm, GameIcon, InfoDot, ImageRef],
+  imports: [FormsModule, TemplateForm, GameIcon, InfoDot, ImageRef],
   templateUrl: './new-instance.html',
   styleUrl: './new-instance.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,7 +32,7 @@ export class NewInstance {
   readonly created = output<string>();
 
   readonly step = signal<Step>(1);
-  readonly provider = signal<Provider | null>(null);
+  readonly template = signal<Template | null>(null);
   readonly name = signal('');
   readonly image = signal('');
   readonly memoryLimit = signal('');
@@ -44,7 +44,7 @@ export class NewInstance {
   readonly busy = signal(false);
   readonly error = signal<OkDockError | null>(null);
 
-  readonly providers = computed(() => this.store.providers());
+  readonly groups = computed(() => this.store.byCategory());
 
   readonly hasDnsToken = computed(() => !!this.store.dns()?.token);
 
@@ -56,7 +56,7 @@ export class NewInstance {
   });
 
   readonly ports = computed(() => {
-    const p = this.provider();
+    const p = this.template();
     if (!p) return [];
     return (p.ports ?? []).map((port) => ({
       ...port,
@@ -73,13 +73,13 @@ export class NewInstance {
   });
 
   readonly canAdvance = computed(() => {
-    if (this.step() === 1) return !!this.provider();
-    return !!this.name() && !this.nameError() && !!this.provider();
+    if (this.step() === 1) return !!this.template();
+    return !!this.name() && !this.nameError() && !!this.template();
   });
 
   readonly budgetWarning = computed(() => {
     const sys = this.store.system();
-    const p = this.provider();
+    const p = this.template();
     if (!sys || !p) return '';
     const want = parseMemory(this.memoryLimit() || p.defaultMemory);
     const free = sys.memoryBudget - sys.memoryCommitted;
@@ -93,12 +93,16 @@ export class NewInstance {
   });
 
   readonly hint = computed(() => {
-    if (!this.provider()) return '';
+    if (!this.template()) return '';
     return this.t('new.hint', { name: this.name() || this.t('new.namePlaceholder') });
   });
 
-  description(p: Provider): string {
-    return this.i18n.maybe(`provider.${p.id}.desc`) ?? p.description;
+  categoryKey(category: Category) {
+    return CATEGORY_KEY[category];
+  }
+
+  description(p: Template): string {
+    return this.i18n.maybe(`template.${p.id}.desc`) ?? p.description;
   }
 
   portLabel(label: string | undefined): string {
@@ -110,8 +114,8 @@ export class NewInstance {
     return `${container}/${protocol}`;
   }
 
-  pick(p: Provider): void {
-    this.provider.set(p);
+  pick(p: Template): void {
+    this.template.set(p);
     this.image.set(p.image);
     this.memoryLimit.set(p.defaultMemory);
     const defaults: Record<string, string> = {};
@@ -178,10 +182,10 @@ export class NewInstance {
   }
 
   private request(): SpecRequest {
-    const p = this.provider()!;
+    const p = this.template()!;
     return {
       name: this.name(),
-      providerId: p.id,
+      templateId: p.id,
       image: this.image() || undefined,
       values: this.values(),
       ports: this.ports().map((port) => ({

@@ -27,25 +27,28 @@
 
     @switch (step()) {
       @case (1) {
-        <div class="providers">
-          @for (p of providers(); track p.id) {
-            <button class="provider" [class.on]="provider()?.id === p.id" (click)="pick(p)">
-              <div class="head">
-                <gd-game-icon class="short" [game]="p.game" [fallback]="p.short" />
-                <span class="game">{{ p.gameLabel }}</span>
-              </div>
-              <div class="id mono">{{ p.id }}</div>
-              <div class="desc">{{ description(p) }}</div>
-              <div class="meta mono">
-                {{ t('new.providerMeta', { fields: (p.fields ?? []).length, memory: p.minMemory }) }}
-              </div>
-            </button>
-          }
-        </div>
+        @for (group of groups(); track group.category) {
+          <div class="category-title">{{ t(categoryKey(group.category)) }}</div>
+          <div class="templates">
+            @for (p of group.templates; track p.id) {
+              <button class="template" [class.on]="template()?.id === p.id" (click)="pick(p)">
+                <div class="head">
+                  <gd-game-icon class="short" [template]="p.id" [fallback]="p.short" />
+                  <span class="name">{{ p.name }}</span>
+                </div>
+                <div class="id mono">{{ p.image || p.id }}</div>
+                <div class="desc">{{ description(p) }}</div>
+                <div class="meta mono">
+                  {{ t('new.templateMeta', { fields: (p.fields ?? []).length, memory: p.minMemory }) }}
+                </div>
+              </button>
+            }
+          </div>
+        }
       }
 
       @case (2) {
-        @if (provider(); as p) {
+        @if (template(); as p) {
           <section>
             <div class="grid-2">
               <div class="field" [class.has-error]="!!nameError()">
@@ -116,10 +119,10 @@
           }
 
           <section>
-            <div class="section-title">{{ t('detail.providerFields') }}
+            <div class="section-title">{{ t('detail.templateFields') }}
               <span class="badge-count mono">{{ p.id }} · {{ (p.fields ?? []).length }} vars</span>
             </div>
-            <gd-provider-form [provider]="p" [(values)]="values" [problems]="error()?.problems ?? []" />
+            <gd-template-form [template]="p" [(values)]="values" [problems]="error()?.problems ?? []" />
           </section>
 
           <label class="check">
@@ -135,7 +138,7 @@
   <footer>
     <span class="hint mono">
       {{ hint() }}
-      @if (provider()) {
+      @if (template()) {
         <gd-info [text]="t('new.footerTip')" />
       }
     </span>

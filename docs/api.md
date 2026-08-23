@@ -47,9 +47,9 @@ Alguns erros afinam o motivo dentro de `params.reason` — `invalid_root` usa
 
 | `error` | Status | Quando |
 |---|---|---|
-| `not_found` | 404 | instância ou provedor inexistente |
+| `not_found` | 404 | instância ou template inexistente |
 | `already_exists` | 409 | já existe instância com esse nome |
-| `invalid_fields` | 422 | valores fora do schema do provedor |
+| `invalid_fields` | 422 | valores fora do schema do template |
 | `memory_budget` | 409 | não cabe na RAM do host |
 | `port_taken` | 409 | porta já usada por outra instância |
 | `docker_failed` | 409 | o `docker compose` falhou; `params.detail` traz o stderr |
@@ -112,16 +112,53 @@ o processo seguinte procuraria o arquivo no lugar errado.
 
 `{"status":"ok"}`. Não toca no Docker — é o healthcheck do container.
 
-## Catálogo
+## Templates
 
-### `GET /providers`
+Um template descreve uma imagem: categoria, portas, volumes, RAM e os campos
+que o formulário mostra. Os que vêm com o OkDock são JSON embutidos no binário;
+os do usuário ficam em `<raiz de boot>/.okdock/templates/<id>.json`, e um
+arquivo com o mesmo id vence o de fábrica — é assim que se edita um template
+pronto sem perder o original.
 
-Lista os provedores, ordenados por nome do jogo, com a imagem custom por
-último. Cada um traz `fields`, que é o que o wizard renderiza.
+### `GET /templates`
 
-### `GET /providers/{id...}`
+```json
+{
+  "templates": [ /* … */ ],
+  "categories": ["games","media","database","network","utilities","other"]
+}
+```
 
-O ID tem barra (`itzg/minecraft-server`), daí o curinga na rota.
+Ordenados por categoria e nome, com a imagem avulsa por último. `categories` vem
+junto para o frontend não repetir a lista. `builtin: true` marca o que veio com
+o OkDock e ainda não foi editado.
+
+### `GET /templates/{id}`
+
+O id é o nome do arquivo em disco: minúsculas, dígitos e hífen, 2 a 40
+caracteres. Instância criada quando o campo se chamava `providerId` guardou id
+com barra (`itzg/minecraft-server`); a busca traduz esses três ids antigos para
+os novos.
+
+### `POST /templates`
+
+Cria. `409 template_exists` se o id já existe — inclusive se for de fábrica.
+
+### `PUT /templates/{id}`
+
+Grava por cima, inclusive de um template de fábrica: a edição vira arquivo em
+disco e passa a ser o que a API serve.
+
+### `DELETE /templates/{id}`
+
+Apaga o arquivo em disco. Se o id também é de fábrica, o template **volta ao
+original** em vez de sumir; se nunca houve arquivo, `409 template_builtin`.
+
+Template reprovado responde `422 invalid_fields` com a mesma lista de
+`problems` da criação de instância: `bad_template_id`, `unknown_category`,
+`bad_memory`, `bad_port`, `duplicate_port`, `container_path_not_absolute`,
+`many_data_volumes`, `duplicate_field`, `bad_field_type`,
+`enum_without_options`, `arg_without_flag`.
 
 Um `field`:
 
@@ -137,9 +174,9 @@ Um `field`:
 `options: [{value, label}]`. `secret: true` mantém o valor fora do compose.
 
 `label` e `help` vêm em português. Quem monta a tela procura primeiro pelo par
-provedor + chave (`field.itzg/minecraft-server.MEMORY.help`) na tabela do
-idioma escolhido, e só usa o texto daqui quando não acha — assim um jogo novo
-entra no catálogo sem depender do frontend, aparecendo em português até ganhar
+template + chave (`field.minecraft-java.MEMORY.help`) na tabela do idioma
+escolhido, e só usa o texto daqui quando não acha — assim um template novo entra
+no catálogo sem depender do frontend, aparecendo em português até ganhar
 tradução. O `label` da porta é um código (`game`) pela mesma razão.
 
 ## Instâncias
@@ -162,8 +199,8 @@ Uma instância junta o que está em disco com o que o Docker respondeu agora:
 ```json
 {
   "name": "smp-familia",
-  "providerId": "itzg/minecraft-server",
-  "game": "minecraft-java",
+  "templateId": "minecraft-java",
+  "category": "games",
   "image": "itzg/minecraft-server:java21",
   "env": {"EULA": "true", "TYPE": "PAPER"},
   "secretKeys": ["RCON_PASSWORD"],
@@ -180,6 +217,10 @@ Uma instância junta o que está em disco com o que o Docker respondeu agora:
   "stats": {"cpuPercent": 12.4, "memoryBytes": 2040109465, "memoryLimit": 6442450944}
 }
 ```
+
+A Spec gravada quando template se chamava provedor tem `providerId` e `game` no
+lugar dos dois primeiros; a leitura aceita os dois nomes e a próxima gravação
+troca pelos novos.
 
 `env` inclui os segredos — a API é local e o formulário precisa deles para
 editar. Eles só não vão para o `docker-compose.yml`.
@@ -209,7 +250,7 @@ linha crua do `docker` viaja em `message`, porque não há o que traduzir nela.
 ```json
 {
   "name": "smp-familia",
-  "providerId": "itzg/minecraft-server",
+  "templateId": "minecraft-java",
   "values": {"EULA": "true", "TYPE": "PAPER", "MAX_PLAYERS": "20"},
   "memoryLimit": "6g",
   "ports": [{"host": 25565, "container": 25565, "protocol": "tcp"}],
@@ -217,9 +258,9 @@ linha crua do `docker` viaja em `message`, porque não há o que traduzir nela.
 }
 ```
 
-Tudo além de `name`, `providerId` e `values` é opcional: portas, volumes, RAM e
-CPUs caem no default do provedor. `values` passa pelo schema — campo
-desconhecido é 422, exceto no provedor `custom`.
+Tudo além de `name`, `templateId` e `values` é opcional: portas, volumes, RAM e
+CPUs caem no default do template. `values` passa pelo schema — campo
+desconhecido é 422, exceto num template com `freeEnv`, como o `custom`.
 
 `start: true` sobe logo depois de criar; a resposta é `201` na hora e o `pull`
 segue em background. Sem `start`, a instância nasce parada e o orçamento de RAM

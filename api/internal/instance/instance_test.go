@@ -1,6 +1,9 @@
 package instance
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+)
 
 func TestValidateName(t *testing.T) {
 	ok := []string{"smp", "smp-familia", "mc_1", "a1", "palworld-guilda-2"}
@@ -59,5 +62,32 @@ func TestPortBindingString(t *testing.T) {
 	p := PortBinding{Host: 8211, Container: 8211, Protocol: "udp"}
 	if got := p.String(); got != "8211:8211/udp" {
 		t.Errorf("String() = %q", got)
+	}
+}
+
+func TestSpecLeCamposComNomeAntigo(t *testing.T) {
+	raw := []byte(`{"name":"smp","providerId":"itzg/minecraft-server","game":"minecraft-java","image":"itzg/minecraft-server:java21"}`)
+
+	var spec Spec
+	if err := json.Unmarshal(raw, &spec); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if spec.TemplateID != "itzg/minecraft-server" {
+		t.Errorf("templateId = %q; o id antigo precisa sobreviver para o catálogo traduzir", spec.TemplateID)
+	}
+	if spec.Category != "games" {
+		t.Errorf("category = %q; instância criada como GameDock só podia ser jogo", spec.Category)
+	}
+}
+
+func TestSpecPrefereOsCamposNovos(t *testing.T) {
+	raw := []byte(`{"name":"filmes","templateId":"jellyfin","category":"media","providerId":"velho","game":"minecraft-java"}`)
+
+	var spec Spec
+	if err := json.Unmarshal(raw, &spec); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if spec.TemplateID != "jellyfin" || spec.Category != "media" {
+		t.Errorf("campo novo devia ganhar: %+v", spec)
 	}
 }

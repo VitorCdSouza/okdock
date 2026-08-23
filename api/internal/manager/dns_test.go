@@ -19,8 +19,9 @@ func newDNSManager(t *testing.T) (*Manager, *duckdns.Fake) {
 	}
 	fake := duckdns.NewFake()
 	m := New(Options{
-		Store:  st,
-		Docker: dockerx.NewFake(),
+		Store:     st,
+		Templates: templates(t),
+		Docker:    dockerx.NewFake(),
 		System: system.StaticReader{Info: system.Info{
 			MemoryTotal: 16 * gb, MemoryAvailable: 16 * gb, CPUCount: 8,
 		}},

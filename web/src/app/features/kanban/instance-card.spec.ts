@@ -7,8 +7,8 @@ import { Instance } from '../../core/models';
 function instance(over: Partial<Instance> = {}): Instance {
   return {
     name: 'smp',
-    providerId: 'itzg/minecraft-server',
-    game: 'minecraft-java',
+    templateId: 'minecraft-java',
+    category: 'games',
     image: 'itzg/minecraft-server:java21',
     env: {},
     ports: [{ host: 25565, container: 25565, protocol: 'tcp' }],

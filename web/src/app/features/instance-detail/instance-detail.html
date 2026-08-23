@@ -3,7 +3,7 @@
 @if (instance(); as inst) {
   <div class="dialog" role="dialog" [attr.aria-label]="t('detail.aria', { name: inst.name })">
     <header>
-      <gd-game-icon class="badge" [game]="instance()?.game ?? ''" [fallback]="provider()?.short ?? '··'"
+      <gd-game-icon class="badge" [template]="instance()?.templateId ?? ''" [fallback]="template()?.short ?? '··'"
                   [style.background]="colors().bg" [style.color]="colors().fg" />
 
       <div class="ident">
@@ -72,15 +72,15 @@
       <div class="main">
         @switch (tab()) {
           @case ('config') {
-            @if (provider(); as p) {
+            @if (template(); as p) {
               <div class="section-title">
-                {{ t('detail.providerFields') }}
+                {{ t('detail.templateFields') }}
                 <span class="badge-count mono">{{ p.id }} · {{ (p.fields ?? []).length }} vars</span>
               </div>
-              <gd-provider-form [provider]="p" [(values)]="values"
+              <gd-template-form [template]="p" [(values)]="values"
                                 [problems]="error()?.problems ?? []" />
             } @else {
-              <p class="none">{{ t('detail.providerGone', { id: inst.providerId }) }}</p>
+              <p class="none">{{ t('detail.templateGone', { id: inst.templateId }) }}</p>
             }
           }
 

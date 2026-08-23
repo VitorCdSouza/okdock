@@ -45,12 +45,12 @@ h2 { margin: 0; font: 600 var(--fs-2xl) var(--sans); }
 
 .body { padding: 20px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
 
-.providers {
+.templates {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(262px, 1fr));
   gap: 10px;
 }
-.provider {
+.template {
   text-align: left;
   padding: 12px;
   border: 1px solid var(--line-strong);
@@ -59,20 +59,20 @@ h2 { margin: 0; font: 600 var(--fs-2xl) var(--sans); }
   flex-direction: column;
   gap: 6px;
 }
-.provider:hover { border-color: var(--line-hover); }
-.provider.on { border-color: var(--accent-line); background: #141b26; }
-.provider .head { display: flex; align-items: center; gap: 8px; }
-.provider .short {
+.template:hover { border-color: var(--line-hover); }
+.template.on { border-color: var(--accent-line); background: #141b26; }
+.template .head { display: flex; align-items: center; gap: 8px; }
+.template .short {
   width: 26px; height: 26px;
   flex: none;
   border-radius: var(--r-xs);
   background: var(--bg-chip);
   color: var(--fg-soft);
 }
-.provider .game { font: 600 var(--fs-md) var(--sans); color: var(--fg); }
-.provider .id { font-size: var(--fs-xs); color: var(--accent); }
-.provider .desc { font: 400 var(--fs-sm)/1.5 var(--sans); color: var(--fg-muted); }
-.provider .meta { font-size: var(--fs-xs); color: var(--fg-dim); }
+.template .name { font: 600 var(--fs-md) var(--sans); color: var(--fg); }
+.template .id { font-size: var(--fs-xs); color: var(--accent); }
+.template .desc { font: 400 var(--fs-sm)/1.5 var(--sans); color: var(--fg-muted); }
+.template .meta { font-size: var(--fs-xs); color: var(--fg-dim); }
 
 section { display: flex; flex-direction: column; gap: 12px; }
 .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
@@ -123,3 +123,12 @@ section { display: flex; flex-direction: column; gap: 12px; }
 }
 .hint { display: flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--fg-dim); }
 .actions { display: flex; gap: 8px; }
+
+.category-title {
+  font: 600 var(--fs-xs) var(--sans);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin: 14px 0 8px;
+}
+.category-title:first-child { margin-top: 0; }

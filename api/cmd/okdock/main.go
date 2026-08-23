@@ -21,6 +21,7 @@ import (
 	"github.com/VitorCdSouza/okdock/api/internal/manager"
 	"github.com/VitorCdSouza/okdock/api/internal/store"
 	"github.com/VitorCdSouza/okdock/api/internal/system"
+	"github.com/VitorCdSouza/okdock/api/internal/template"
 	"github.com/VitorCdSouza/okdock/api/internal/webui"
 )
 
@@ -56,9 +57,18 @@ func run() error {
 		return err
 	}
 
+	templates, err := template.NewCatalog(st.TemplatesDir())
+	if templates == nil {
+		return err
+	}
+	if err != nil {
+		slog.Warn("template ignorado", "dir", st.TemplatesDir(), "err", err)
+	}
+
 	docker := dockerx.CLI{Bin: *dockerBin}
 	mgr := manager.New(manager.Options{
 		Store:         st,
+		Templates:     templates,
 		Docker:        docker,
 		System:        &system.ProcReader{},
 		DNS:           duckdns.HTTP{},
@@ -79,6 +89,7 @@ func run() error {
 		Addr: *addr,
 		Handler: httpapi.New(httpapi.Options{
 			Manager:     mgr,
+			Templates:   templates,
 			WebFS:       web,
 			AllowOrigin: *allowOrigin,
 		}),

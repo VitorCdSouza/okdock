@@ -11,7 +11,7 @@ cmd/okdock          flags, logger, servidor HTTP, desligamento gracioso
               │     └── compose   geração do YAML e do .env
               ├── dockerx   `docker compose` atrás de uma interface
               ├── duckdns   DNS dinâmico atrás de uma interface
-              ├── catalog   provedores e schema de campos
+              ├── template  templates e schema de campos
               └── system    RAM, CPU e disco do host
 ```
 
@@ -22,7 +22,8 @@ conhece HTTP. `httpapi` traduz erro de domínio em status:
 |---|---|
 | `store.ErrNotFound` | 404 |
 | `store.ErrExists` | 409 |
-| `catalog.ValidationError` | 422, com a lista de campos |
+| `template.ValidationError` | 422, com a lista de campos |
+| `template.ErrNotFound`, `ErrBuiltin` | 404 e 409 no CRUD de template |
 | `manager.ErrBudget`, `ErrPortTaken` | 409 |
 | `dockerx.Error` | 409 — o docker falhou por algo que o usuário resolve |
 | `duckdns.ErrRejected` | 422 — o serviço respondeu, e quem conserta é o usuário |
@@ -37,8 +38,8 @@ chama o binário do `docker compose`. Custa um processo por operação, e em tro
 o servidor continua administrável pelo terminal se o painel morrer — que é o
 cenário provável num servidor caseiro.
 
-`.okdock.json` guarda só o que o compose não sabe dizer: de qual provedor do
-catálogo aquilo saiu. Se o arquivo sumir, a instância continua subindo pelo
+`.okdock.json` guarda só o que o compose não sabe dizer: de qual template aquilo
+saiu, e quais chaves são secretas. Se o arquivo sumir, a instância continua subindo pelo
 terminal; só deixa de ser editável pelo formulário.
 
 ### O nome é um só
@@ -50,10 +51,10 @@ explícito o projeto herda o nome da pasta, e quando os dois divergem
 
 ### Segredo nunca no compose
 
-Campos marcados `secret: true` no catálogo não entram no YAML: vão para um
+Campos marcados `secret: true` no template não entram no YAML: vão para um
 `.env` com `0600`, referenciado por `env_file`. A lista de chaves secretas fica
-gravada na Spec da instância, não é relida do catálogo — se o schema do provedor
-mudar depois, uma senha já gravada não passa a vazar.
+gravada na Spec da instância, não é relida do template — se o schema mudar
+depois, uma senha já gravada não passa a vazar.
 
 Os campos não secretos ficam inline em `environment:`, porque poder ler a
 configuração no terminal é metade do motivo de gerar compose.
@@ -127,9 +128,10 @@ de `manager` roda no `Fake`, então `go test ./...` passa sem Docker.
 Angular 20 standalone, com signals. Sem NgRx: o estado cabe num serviço
 (`core/state.ts`) com quatro signals e alguns `computed`.
 
-`shared/provider-form` monta o formulário a partir do schema que a API mandou.
-O frontend não conhece nenhuma variável de nenhum jogo — adicionar um jogo novo
-é mexer só no `catalog` do Go.
+`shared/template-form` monta o formulário a partir do schema que a API mandou.
+O frontend não conhece nenhuma variável de nenhuma imagem: um template novo
+entra sem tocar em código, e um template pronto é um `.json` em
+`internal/template/builtin/`.
 
 Nenhum texto de interface é literal no template: tudo passa por `core/i18n`,
 que resolve a chave contra a tabela do idioma corrente. A tabela portuguesa é
@@ -142,10 +144,10 @@ A API também não manda frase pronta: erro vira `error` + `params`, campo
 reprovado vira `{field, code, params}`, e a etapa de uma operação vira `code`.
 Quem escreve a frase é sempre o painel, com a tabela do idioma corrente. O
 português que ainda viaja no `message` é o último recurso — um código que a
-tela não conhece cai nele em vez de aparecer vazio. Texto do catálogo (`help`
-de campo, descrição do provedor) segue a mesma regra: a tela procura pela chave
-`field.<provedor>.<CAMPO>.help` e cai no texto da API quando não acha, para um
-jogo novo entrar só pelo Go. Linha de log e status de container são do docker e
+tela não conhece cai nele em vez de aparecer vazio. Texto do template (`help` de
+campo, descrição) segue a mesma regra: a tela procura pela chave
+`field.<template>.<CAMPO>.help` e cai no texto da API quando não acha, que é o
+único caminho possível para um template cadastrado pelo painel. Linha de log e status de container são do docker e
 passam intactos.
 
 Em produção o binário Go serve o `dist/` do Angular (via `go:embed`) e a API na

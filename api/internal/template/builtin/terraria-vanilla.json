@@ -1,0 +1,154 @@
+{
+  "id": "terraria-vanilla",
+  "name": "Terraria (vanilla)",
+  "category": "games",
+  "short": "TV",
+  "image": "ryshe/terraria:vanilla-1.4.5.7",
+  "description": "Terraria 1.4.5.7 sem TShock: sem plugins nem comandos de admin, mas acompanha a versão do cliente muito mais rápido.",
+  "docs": "https://github.com/ryshe/docker-terraria",
+  "ports": [
+    {
+      "container": 7777,
+      "protocol": "tcp",
+      "defaultHost": 7777,
+      "label": "game"
+    }
+  ],
+  "volumes": [
+    {
+      "host": "./data",
+      "container": "/root/.local/share/Terraria/Worlds",
+      "data": true
+    },
+    {
+      "host": "./config",
+      "container": "/config"
+    }
+  ],
+  "defaultMemory": "2g",
+  "minMemory": "512m",
+  "defaultCpus": 2,
+  "imagePattern": "^ryshe/terraria:vanilla-",
+  "stopGraceSeconds": 60,
+  "fields": [
+    {
+      "key": "WORLD",
+      "label": "Caminho do mundo",
+      "type": "text",
+      "default": "/root/.local/share/Terraria/Worlds/okdock.wld",
+      "required": true,
+      "help": "Caminho dentro do container. A pasta é o volume ./data da instância; troque só o nome do arquivo.",
+      "target": "arg",
+      "flag": "-world"
+    },
+    {
+      "key": "AUTOCREATE",
+      "label": "Tamanho do mundo novo",
+      "type": "enum",
+      "default": "2",
+      "options": [
+        {
+          "value": "1",
+          "label": "Small"
+        },
+        {
+          "value": "2",
+          "label": "Medium"
+        },
+        {
+          "value": "3",
+          "label": "Large"
+        }
+      ],
+      "help": "Só tem efeito quando o arquivo do mundo ainda não existe.",
+      "target": "arg",
+      "flag": "-autocreate"
+    },
+    {
+      "key": "WORLDNAME",
+      "label": "Nome do mundo",
+      "type": "text",
+      "default": "OkDock",
+      "target": "arg",
+      "flag": "-worldname"
+    },
+    {
+      "key": "DIFFICULTY",
+      "label": "Dificuldade",
+      "type": "enum",
+      "default": "0",
+      "options": [
+        {
+          "value": "0",
+          "label": "Classic"
+        },
+        {
+          "value": "1",
+          "label": "Expert"
+        },
+        {
+          "value": "2",
+          "label": "Master"
+        },
+        {
+          "value": "3",
+          "label": "Journey"
+        }
+      ],
+      "target": "arg",
+      "flag": "-difficulty"
+    },
+    {
+      "key": "MAXPLAYERS",
+      "label": "Máximo de jogadores",
+      "type": "int",
+      "default": "8",
+      "min": 1,
+      "max": 255,
+      "target": "arg",
+      "flag": "-maxplayers"
+    },
+    {
+      "key": "PASSWORD",
+      "label": "Senha",
+      "type": "password",
+      "secret": true,
+      "target": "arg",
+      "flag": "-password"
+    },
+    {
+      "key": "MOTD",
+      "label": "MOTD",
+      "type": "text",
+      "target": "arg",
+      "flag": "-motd"
+    },
+    {
+      "key": "SEED",
+      "label": "Seed do mundo",
+      "type": "text",
+      "advanced": true,
+      "target": "arg",
+      "flag": "-seed"
+    },
+    {
+      "key": "SECURE",
+      "label": "Anticheat",
+      "type": "bool",
+      "default": "false",
+      "advanced": true,
+      "target": "arg",
+      "flag": "-secure"
+    },
+    {
+      "key": "NOUPNP",
+      "label": "Desligar UPnP",
+      "type": "bool",
+      "default": "true",
+      "help": "O painel já publica a porta; deixar o servidor mexer no roteador só atrapalha.",
+      "advanced": true,
+      "target": "arg",
+      "flag": "-noupnp"
+    }
+  ]
+}

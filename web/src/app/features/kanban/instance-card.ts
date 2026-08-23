@@ -4,7 +4,7 @@ import { Instance, STATE_DOT } from '../../core/models';
 import { I18n } from '../../core/i18n/i18n';
 import { bytes } from '../../core/format';
 import { copyText } from '../../core/clipboard';
-import { GameIcon, gameColors } from '../../shared/game-icon';
+import { GameIcon, templateColors } from '../../shared/game-icon';
 
 type Action = { label: string; kind: 'go' | 'bad' | 'flat'; verb: ActionVerb };
 export type ActionVerb = 'start' | 'stop' | 'restart' | 'logs' | 'fix' | 'unarchive' | 'cancel';
@@ -77,7 +77,9 @@ export class InstanceCard {
     this.dragChange.emit(null);
   }
 
-  readonly colors = computed(() => gameColors(this.instance().game));
+  readonly colors = computed(() =>
+    templateColors(this.instance().templateId, this.instance().category),
+  );
   readonly dot = computed(() => STATE_DOT[this.instance().state]);
 
   readonly portList = computed(() => {

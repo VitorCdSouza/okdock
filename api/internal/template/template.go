@@ -1,4 +1,4 @@
-package catalog
+package template
 
 import (
 	"fmt"
@@ -64,10 +64,36 @@ type Volume struct {
 	Data      bool   `json:"data,omitempty"`
 }
 
-type Provider struct {
+// Category e lista fechada: cada valor tem icone, cor e traducao, e texto livre duplicaria grupo
+type Category string
+
+const (
+	CategoryGames     Category = "games"
+	CategoryMedia     Category = "media"
+	CategoryDatabase  Category = "database"
+	CategoryNetwork   Category = "network"
+	CategoryUtilities Category = "utilities"
+	CategoryOther     Category = "other"
+)
+
+var AllCategories = []Category{
+	CategoryGames, CategoryMedia, CategoryDatabase,
+	CategoryNetwork, CategoryUtilities, CategoryOther,
+}
+
+func (c Category) Valid() bool {
+	for _, known := range AllCategories {
+		if known == c {
+			return true
+		}
+	}
+	return false
+}
+
+type Template struct {
 	ID               string   `json:"id"`
-	Game             string   `json:"game"`
-	GameLabel        string   `json:"gameLabel"`
+	Name             string   `json:"name"`
+	Category         Category `json:"category"`
 	Short            string   `json:"short"`
 	Image            string   `json:"image"`
 	Description      string   `json:"description"`
@@ -81,9 +107,13 @@ type Provider struct {
 	ImagePattern     string   `json:"imagePattern,omitempty"`
 	StopGraceSeconds int      `json:"stopGraceSeconds"`
 	Fields           []Field  `json:"fields"`
+	// FreeEnv abre o formulario para variavel fora de Fields, como na imagem avulsa
+	FreeEnv bool `json:"freeEnv,omitempty"`
+	// Builtin diz para a tela que o template veio com o OkDock e apagar so desfaz a edicao local
+	Builtin bool `json:"builtin,omitempty"`
 }
 
-func (p Provider) Field(key string) (Field, bool) {
+func (p Template) Field(key string) (Field, bool) {
 	for _, f := range p.Fields {
 		if f.Key == key {
 			return f, true
@@ -92,7 +122,7 @@ func (p Provider) Field(key string) (Field, bool) {
 	return Field{}, false
 }
 
-func (p Provider) DataVolume() (Volume, bool) {
+func (p Template) DataVolume() (Volume, bool) {
 	for _, v := range p.Volumes {
 		if v.Data {
 			return v, true
@@ -101,7 +131,7 @@ func (p Provider) DataVolume() (Volume, bool) {
 	return Volume{}, false
 }
 
-func (p Provider) Defaults() map[string]string {
+func (p Template) Defaults() map[string]string {
 	out := make(map[string]string, len(p.Fields))
 	for _, f := range p.Fields {
 		if f.Default != "" {
@@ -111,7 +141,7 @@ func (p Provider) Defaults() map[string]string {
 	return out
 }
 
-func (p Provider) Validate(values map[string]string) (map[string]string, error) {
+func (p Template) Validate(values map[string]string) (map[string]string, error) {
 	out := p.Defaults()
 	var problems []Problem
 
@@ -130,14 +160,14 @@ func (p Provider) Validate(values map[string]string) (map[string]string, error) 
 		v := values[k]
 		f, ok := known[k]
 		if !ok {
-			if p.acceptsFreeEnv() {
+			if p.FreeEnv {
 				out[k] = v
 				continue
 			}
 			problems = append(problems, Problem{
 				Field:  k,
 				Code:   "unknown_field",
-				Params: map[string]any{"provider": p.ID},
+				Params: map[string]any{"template": p.ID},
 			})
 			continue
 		}
@@ -160,8 +190,6 @@ func (p Provider) Validate(values map[string]string) (map[string]string, error) 
 	}
 	return out, nil
 }
-
-func (p Provider) acceptsFreeEnv() bool { return p.ID == CustomProviderID }
 
 func validateField(f Field, v string) (string, *Problem) {
 	v = strings.TrimSpace(v)
@@ -220,7 +248,7 @@ func validateField(f Field, v string) (string, *Problem) {
 
 var imagePatterns sync.Map
 
-func (p Provider) AcceptsImage(image string) bool {
+func (p Template) AcceptsImage(image string) bool {
 	if p.ImagePattern == "" {
 		return true
 	}
@@ -234,18 +262,6 @@ func (p Provider) AcceptsImage(image string) bool {
 		re = compiled
 	}
 	return re.(*regexp.Regexp).MatchString(image)
-}
-
-func ProviderForImage(image string) (Provider, bool) {
-	for _, p := range providers {
-		if p.ID == CustomProviderID || p.ImagePattern == "" {
-			continue
-		}
-		if p.AcceptsImage(image) {
-			return p, true
-		}
-	}
-	return Provider{}, false
 }
 
 // Problem e campo reprovado: code e params bastam para a tela escrever a frase
@@ -267,7 +283,7 @@ func (e *ValidationError) Error() string {
 	return strings.Join(parts, "; ")
 }
 
-func (p Provider) SplitValues(values map[string]string) (env map[string]string, args []string) {
+func (p Template) SplitValues(values map[string]string) (env map[string]string, args []string) {
 	env = make(map[string]string, len(values))
 	isArg := make(map[string]Field, len(p.Fields))
 	for _, f := range p.Fields {

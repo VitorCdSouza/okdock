@@ -3,7 +3,15 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Api } from './api';
 import { Events } from './events';
 import { I18n } from './i18n/i18n';
-import { COLUMN_OF, DnsStatus, Instance, Provider, State, SystemInfo } from './models';
+import {
+  COLUMN_OF,
+  Category,
+  DnsStatus,
+  Instance,
+  State,
+  SystemInfo,
+  Template,
+} from './models';
 
 @Injectable({ providedIn: 'root' })
 export class Store {
@@ -13,11 +21,12 @@ export class Store {
 
   readonly instances = signal<Instance[]>([]);
   readonly states = signal<State[]>([]);
-  readonly providers = signal<Provider[]>([]);
+  readonly templates = signal<Template[]>([]);
+  readonly categories = signal<Category[]>([]);
   readonly system = signal<SystemInfo | null>(null);
   readonly dns = signal<DnsStatus | null>(null);
   readonly loading = signal(true);
-  readonly gameFilter = signal<string | null>(null);
+  readonly categoryFilter = signal<Category | null>(null);
   readonly search = signal('');
 
   readonly dragging = signal<string | null>(null);
@@ -35,14 +44,14 @@ export class Store {
 
   readonly filtered = computed(() => {
     const term = this.search().trim().toLowerCase();
-    const game = this.gameFilter();
+    const category = this.categoryFilter();
     return this.instances().filter((i) => {
-      if (game && i.game !== game) return false;
+      if (category && i.category !== category) return false;
       if (!term) return true;
       const haystack = [
         i.name,
         i.image,
-        i.providerId,
+        i.templateId,
         ...i.ports.map((p) => String(p.host)),
       ]
         .join(' ')
@@ -51,14 +60,26 @@ export class Store {
     });
   });
 
-  readonly gameCounts = computed(() => {
-    const counts = new Map<string, { label: string; count: number }>();
+  // so as categorias com instancia viram chip: o filtro e atalho para o que esta no quadro
+  readonly categoryCounts = computed(() => {
+    const counts = new Map<Category, number>();
     for (const i of this.instances()) {
-      const label = this.providers().find((p) => p.game === i.game)?.gameLabel ?? i.game;
-      const cur = counts.get(i.game);
-      counts.set(i.game, { label, count: (cur?.count ?? 0) + 1 });
+      counts.set(i.category, (counts.get(i.category) ?? 0) + 1);
     }
-    return [...counts.entries()].map(([game, v]) => ({ game, ...v }));
+    return this.categories()
+      .filter((c) => counts.has(c))
+      .map((category) => ({ category, count: counts.get(category)! }));
+  });
+
+  // Templates agrupados na ordem em que a API manda as categorias.
+  readonly byCategory = computed(() => {
+    const groups = new Map<Category, Template[]>();
+    for (const t of this.templates()) {
+      groups.set(t.category, [...(groups.get(t.category) ?? []), t]);
+    }
+    return this.categories()
+      .filter((c) => groups.has(c))
+      .map((category) => ({ category, templates: groups.get(category)! }));
   });
 
   byColumn(column: State): Instance[] {
@@ -69,10 +90,7 @@ export class Store {
     if (this.started) return;
     this.started = true;
 
-    this.api.providers().subscribe({
-      next: (p) => this.providers.set(p),
-      error: () => {},
-    });
+    this.reloadTemplates();
     this.reload();
     this.reloadDns();
 
@@ -105,6 +123,16 @@ export class Store {
     });
   }
 
+  reloadTemplates(): void {
+    this.api.templates().subscribe({
+      next: ({ templates, categories }) => {
+        this.templates.set(templates);
+        this.categories.set(categories);
+      },
+      error: () => {},
+    });
+  }
+
   reloadDns(): void {
     this.api.dns().subscribe({
       next: (d) => this.dns.set(d),
@@ -117,7 +145,7 @@ export class Store {
     this.reloadTimer = setTimeout(() => this.reload(), 250);
   }
 
-  provider(id: string): Provider | undefined {
-    return this.providers().find((p) => p.id === id);
+  template(id: string): Template | undefined {
+    return this.templates().find((t) => t.id === id);
   }
 }

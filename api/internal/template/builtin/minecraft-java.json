@@ -1,0 +1,189 @@
+{
+  "id": "minecraft-java",
+  "name": "Minecraft (Java)",
+  "category": "games",
+  "short": "MC",
+  "image": "itzg/minecraft-server:java21",
+  "description": "Servidor Java com suporte a vanilla, Paper, Fabric, Forge e modpacks.",
+  "docs": "https://docker-minecraft-server.readthedocs.io/",
+  "ports": [
+    {
+      "container": 25565,
+      "protocol": "tcp",
+      "defaultHost": 25565,
+      "label": "game"
+    }
+  ],
+  "volumes": [
+    {
+      "host": "./data",
+      "container": "/data",
+      "data": true
+    }
+  ],
+  "defaultMemory": "4g",
+  "minMemory": "2g",
+  "defaultCpus": 2,
+  "tags": [
+    "java21",
+    "java17",
+    "java8",
+    "latest"
+  ],
+  "imagePattern": "^itzg/minecraft-server(:|$)",
+  "stopGraceSeconds": 120,
+  "fields": [
+    {
+      "key": "EULA",
+      "label": "EULA da Mojang",
+      "type": "bool",
+      "default": "true",
+      "required": true,
+      "help": "A imagem não sobe sem isto aceito."
+    },
+    {
+      "key": "TYPE",
+      "label": "Distribuição",
+      "type": "enum",
+      "default": "VANILLA",
+      "options": [
+        {
+          "value": "VANILLA",
+          "label": "Vanilla"
+        },
+        {
+          "value": "PAPER",
+          "label": "Paper"
+        },
+        {
+          "value": "FABRIC",
+          "label": "Fabric"
+        },
+        {
+          "value": "FORGE",
+          "label": "Forge"
+        },
+        {
+          "value": "SPIGOT",
+          "label": "Spigot"
+        }
+      ]
+    },
+    {
+      "key": "VERSION",
+      "label": "Versão",
+      "type": "text",
+      "default": "LATEST",
+      "help": "LATEST, SNAPSHOT ou uma versão exata como 1.21.1."
+    },
+    {
+      "key": "MEMORY",
+      "label": "Heap da JVM",
+      "type": "text",
+      "default": "3G",
+      "help": "Deixe pelo menos 1 GB abaixo do limite de RAM do container, senão o kernel mata o processo (exit 137)."
+    },
+    {
+      "key": "MOTD",
+      "label": "MOTD",
+      "type": "text",
+      "default": "Servidor OkDock"
+    },
+    {
+      "key": "DIFFICULTY",
+      "label": "Dificuldade",
+      "type": "enum",
+      "default": "normal",
+      "options": [
+        {
+          "value": "peaceful",
+          "label": "Peaceful"
+        },
+        {
+          "value": "easy",
+          "label": "Easy"
+        },
+        {
+          "value": "normal",
+          "label": "Normal"
+        },
+        {
+          "value": "hard",
+          "label": "Hard"
+        }
+      ]
+    },
+    {
+      "key": "MODE",
+      "label": "Modo de jogo",
+      "type": "enum",
+      "default": "survival",
+      "options": [
+        {
+          "value": "survival",
+          "label": "Survival"
+        },
+        {
+          "value": "creative",
+          "label": "Creative"
+        },
+        {
+          "value": "adventure",
+          "label": "Adventure"
+        },
+        {
+          "value": "spectator",
+          "label": "Spectator"
+        }
+      ]
+    },
+    {
+      "key": "MAX_PLAYERS",
+      "label": "Máximo de jogadores",
+      "type": "int",
+      "default": "10",
+      "min": 1,
+      "max": 200
+    },
+    {
+      "key": "ONLINE_MODE",
+      "label": "Exigir conta Mojang",
+      "type": "bool",
+      "default": "true"
+    },
+    {
+      "key": "PVP",
+      "label": "PvP",
+      "type": "bool",
+      "default": "true"
+    },
+    {
+      "key": "OPS",
+      "label": "Operadores",
+      "type": "text",
+      "help": "Nicks separados por vírgula."
+    },
+    {
+      "key": "LEVEL_SEED",
+      "label": "Seed do mundo",
+      "type": "text",
+      "advanced": true
+    },
+    {
+      "key": "VIEW_DISTANCE",
+      "label": "Distância de render",
+      "type": "int",
+      "default": "10",
+      "min": 3,
+      "max": 32,
+      "advanced": true
+    },
+    {
+      "key": "ENABLE_ROLLING_LOGS",
+      "label": "Rotacionar logs",
+      "type": "bool",
+      "default": "true",
+      "advanced": true
+    }
+  ]
+}

@@ -10,7 +10,8 @@ import {
   Instance,
   InstanceDNS,
   InstancesResponse,
-  Provider,
+  Template,
+  TemplatesResponse,
   SpecRequest,
   State,
   SystemInfo,
@@ -41,8 +42,20 @@ export class Api {
     return this.get<SystemInfo>(`${BASE}/system`);
   }
 
-  providers(): Observable<Provider[]> {
-    return this.get<Provider[]>(`${BASE}/providers`);
+  templates(): Observable<TemplatesResponse> {
+    return this.get<TemplatesResponse>(`${BASE}/templates`);
+  }
+
+  createTemplate(t: Template): Observable<Template> {
+    return this.post<Template>(`${BASE}/templates`, t);
+  }
+
+  saveTemplate(t: Template): Observable<Template> {
+    return this.put<Template>(`${BASE}/templates/${encodeURIComponent(t.id)}`, t);
+  }
+
+  deleteTemplate(id: string): Observable<void> {
+    return this.delete<void>(`${BASE}/templates/${encodeURIComponent(id)}`);
   }
 
   instances(): Observable<{ instances: Instance[]; states: State[] }> {
@@ -154,6 +167,14 @@ export class Api {
 
   private post<T>(url: string, body: unknown): Observable<T> {
     return this.wrap(this.http.post<T>(url, body));
+  }
+
+  private put<T>(url: string, body: unknown): Observable<T> {
+    return this.wrap(this.http.put<T>(url, body));
+  }
+
+  private delete<T>(url: string): Observable<T> {
+    return this.wrap(this.http.delete<T>(url));
   }
 
   private wrap<T>(source: Observable<T>): Observable<T> {

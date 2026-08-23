@@ -18,22 +18,24 @@ func newDNSServer(t *testing.T) (*Server, *duckdns.Fake) {
 		t.Fatal(err)
 	}
 	fake := duckdns.NewFake()
+	cat := templates(t)
 	mgr := manager.New(manager.Options{
-		Store:  st,
-		Docker: dockerx.NewFake(),
+		Store:     st,
+		Templates: cat,
+		Docker:    dockerx.NewFake(),
 		System: system.StaticReader{Info: system.Info{
 			MemoryTotal: 16 << 30, MemoryAvailable: 12 << 30, CPUCount: 8,
 		}},
 		DNS: fake,
 	})
-	return New(Options{Manager: mgr}), fake
+	return New(Options{Manager: mgr, Templates: cat}), fake
 }
 
 func createForDNS(t *testing.T, s *Server, name string) {
 	t.Helper()
 	body := map[string]any{
 		"name":       name,
-		"providerId": "itzg/minecraft-server",
+		"templateId": "minecraft-java",
 		"values":     map[string]string{"EULA": "true"},
 	}
 	if got := do(t, s, "POST", "/api/v1/instances", body).Code; got != 201 {

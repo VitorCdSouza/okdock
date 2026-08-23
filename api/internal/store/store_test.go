@@ -22,8 +22,8 @@ func newStore(t *testing.T) *Store {
 func spec(name string) instance.Spec {
 	return instance.Spec{
 		Name:             name,
-		ProviderID:       "itzg/minecraft-server",
-		Game:             "minecraft-java",
+		TemplateID:       "minecraft-java",
+		Category:         "games",
 		Image:            "itzg/minecraft-server:java21",
 		Env:              map[string]string{"EULA": "true", "SENHA": "hunter2"},
 		SecretKeys:       []string{"SENHA"},
@@ -294,7 +294,7 @@ func TestGetLeSpecComNomeAntigo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Get com o arquivo antigo: %v", err)
 	}
-	if got.ProviderID != "itzg/minecraft-server" || len(got.SecretKeys) != 1 {
+	if got.TemplateID != "minecraft-java" || len(got.SecretKeys) != 1 {
 		t.Errorf("spec veio incompleta: %+v", got)
 	}
 }

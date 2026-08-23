@@ -103,8 +103,8 @@ func Render(spec instance.Spec) ([]byte, error) {
 		Volumes:       volumes,
 		Labels: map[string]string{
 			Label + ".managed":  "true",
-			Label + ".provider": spec.ProviderID,
-			Label + ".game":     spec.Game,
+			Label + ".template": spec.TemplateID,
+			Label + ".category": spec.Category,
 		},
 		StdinOpen: true,
 		Tty:       true,

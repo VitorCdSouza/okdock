@@ -2,6 +2,16 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 
 const ICONS = new Set(['minecraft', 'terraria', 'valheim', 'palworld', 'ark', 'factorio', 'satisfactory']);
 
+// Cor por categoria, para o template que o painel nao conhece de nome.
+const CATEGORY_COLORS: Record<string, { bg: string; fg: string }> = {
+  games: { bg: '#1c3323', fg: '#4fd99b' },
+  media: { bg: '#2b2438', fg: '#b79cf0' },
+  database: { bg: '#332a1c', fg: '#e5b567' },
+  network: { bg: '#1e2f43', fg: '#6aa6f5' },
+  utilities: { bg: '#1e222b', fg: '#9297a3' },
+  other: { bg: '#1e222b', fg: '#9297a3' },
+};
+
 const GAME_COLORS: Record<string, { bg: string; fg: string }> = {
   minecraft: { bg: '#1c3323', fg: '#4fd99b' },
   terraria: { bg: '#33261c', fg: '#e5b567' },
@@ -13,12 +23,17 @@ const GAME_COLORS: Record<string, { bg: string; fg: string }> = {
   custom: { bg: '#1e222b', fg: '#9297a3' },
 };
 
-export function gameFamily(game: string): string {
-  return (game || '').split('-')[0];
+// a familia sai do id do template, e um template novo cai nas letras do Short
+export function templateFamily(templateId: string): string {
+  return (templateId || '').split('-')[0];
 }
 
-export function gameColors(game: string): { bg: string; fg: string } {
-  return GAME_COLORS[gameFamily(game)] ?? GAME_COLORS['custom'];
+export function templateColors(templateId: string, category = 'other'): { bg: string; fg: string } {
+  return (
+    GAME_COLORS[templateFamily(templateId)] ??
+    CATEGORY_COLORS[category] ??
+    CATEGORY_COLORS['other']
+  );
 }
 
 @Component({
@@ -98,11 +113,11 @@ export function gameColors(game: string): { bg: string; fg: string } {
   `,
 })
 export class GameIcon {
-  readonly game = input.required<string>();
+  readonly template = input.required<string>();
   readonly fallback = input('··');
 
   readonly family = computed(() => {
-    const f = gameFamily(this.game());
+    const f = templateFamily(this.template());
     return ICONS.has(f) ? f : '';
   });
 }

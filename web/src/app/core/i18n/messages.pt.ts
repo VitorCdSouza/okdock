@@ -8,6 +8,13 @@ export const pt = {
   'common.checking': 'verificando…',
   'common.copied': 'copiado: {text}',
 
+  'category.games': 'Jogos',
+  'category.media': 'Mídia',
+  'category.database': 'Banco de dados',
+  'category.network': 'Rede',
+  'category.utilities': 'Utilidades',
+  'category.other': 'Outros',
+
   'state.stopped': 'PARADO',
   'state.provisioning': 'PROVISIONANDO',
   'state.starting': 'INICIANDO',
@@ -25,7 +32,7 @@ export const pt = {
   'time.years.one': 'há {n} ano',
   'time.years.other': 'há {n} anos',
 
-  'app.newInstance': '+ Nova instância',
+  'app.newTemplate': '+ Novo template',
   'app.settings': 'Configurações',
   'app.metric.cpu': 'CPU',
   'app.metric.memory': 'RAM',
@@ -33,7 +40,7 @@ export const pt = {
   'app.metric.budget': 'RAM DISPONIBILIZADA',
   'app.hostReserve': 'reserva do host: {gb} GB',
   'app.searchPlaceholder': 'filtrar por nome, porta, imagem…',
-  'app.allGames': 'Todos',
+  'app.allCategories': 'Todos',
   'app.created': '{name} foi criada',
   'app.dns.noToken': 'duckdns sem token',
   'app.dns.noNames': 'duckdns sem nome',
@@ -109,12 +116,12 @@ export const pt = {
   'detail.tab.config': 'Configurações',
   'detail.tab.resources': 'Recursos e rede',
   'detail.tab.console': 'Console',
-  'detail.providerFields': 'CAMPOS DO PROVEDOR',
-  'detail.providerGone':
-    'O provedor {id} não está mais no catálogo. Edite pelo docker-compose.yml.',
+  'detail.templateFields': 'CAMPOS DO TEMPLATE',
+  'detail.templateGone':
+    'O template {id} não está mais no catálogo. Edite pelo docker-compose.yml.',
   'detail.resourcesTitle': 'RECURSOS E REDE',
   'detail.ramLimit': 'Limite de RAM',
-  'detail.ramLimitTip': 'Teto do container. O heap da JVM vai nos campos do provedor.',
+  'detail.ramLimitTip': 'Teto do container. O heap da JVM vai nos campos do template.',
   'detail.hostPort': 'Porta host — {label}',
   'detail.portFallbackLabel': 'jogo',
   'detail.inContainer': 'Dentro do container: {port}/{protocol}',
@@ -143,9 +150,9 @@ export const pt = {
   'detail.createdAt': 'criada {when}',
 
   'new.title': 'Nova instância',
-  'new.step1': '1 jogo',
+  'new.step1': '1 template',
   'new.step2': '2 imagem & config',
-  'new.providerMeta': '{fields} campos · RAM mínima {memory}',
+  'new.templateMeta': '{fields} campos · RAM mínima {memory}',
   'new.name': 'Nome da instância',
   'new.nameTip':
     'Vira o diretório, o nome do projeto no compose e o nome do container — os três sempre o mesmo texto.',
@@ -153,7 +160,7 @@ export const pt = {
   'new.nameTaken': 'já existe uma instância com esse nome',
   'new.image': 'Imagem',
   'new.imageTip':
-    'O repositório vem do provedor; só a etiqueta muda. Vale qualquer etiqueta que exista na imagem, latest inclusive — a lista é só sugestão.',
+    'O repositório vem do template; só a etiqueta muda. Vale qualquer etiqueta que exista na imagem, latest inclusive — a lista é só sugestão.',
   'new.memoryLimit': 'Limite de RAM do container',
   'new.memoryTip': 'Teto do container, não o heap da JVM. Mínimo desta imagem: {memory}',
   'new.dns': 'Nome para convidar',
@@ -175,6 +182,61 @@ export const pt = {
   'new.wait': 'aguarde…',
   'new.create': 'Criar instância',
   'new.continue': 'Continuar →',
+
+  'templates.title': 'Templates',
+  'templates.new': '+ Novo template',
+  'templates.pick': 'Escolha um template para editar, ou crie um novo.',
+  'templates.builtin': 'de fábrica',
+  'templates.noImage': 'sem imagem fixa',
+  'templates.saved': 'template gravado.',
+  'templates.identity': 'IDENTIFICAÇÃO',
+  'templates.id': 'Identificador',
+  'templates.idTip':
+    'Vira o nome do arquivo em disco e o que fica gravado na instância: minúsculas, dígitos e hífen. Não dá para trocar depois de gravar.',
+  'templates.name': 'Nome',
+  'templates.category': 'Categoria',
+  'templates.short': 'Sigla',
+  'templates.shortTip': 'Até 3 caracteres. Aparece no card quando o painel não tem ícone para este template.',
+  'templates.image': 'Imagem',
+  'templates.tags': 'Etiquetas sugeridas',
+  'templates.tagsTip': 'Separadas por vírgula. Viram a lista de sugestões na hora de criar a instância; qualquer outra etiqueta continua valendo.',
+  'templates.imagePattern': 'Padrão da imagem',
+  'templates.imagePatternTip':
+    'Expressão regular. O painel recusa criar a instância com imagem que não case — é o que impede escolher o template errado. Em branco, aceita qualquer imagem.',
+  'templates.description': 'Descrição',
+  'templates.docs': 'Documentação',
+  'templates.resources': 'RECURSOS',
+  'templates.defaultMemory': 'RAM sugerida',
+  'templates.minMemory': 'RAM mínima',
+  'templates.minMemoryTip': 'Abaixo disso o painel recusa criar: a imagem morreria com exit 137.',
+  'templates.defaultCpus': 'CPUs',
+  'templates.stopGrace': 'Espera ao parar (s)',
+  'templates.stopGraceTip':
+    'Quanto o docker espera antes do SIGKILL. Jogo que grava mundo ao desligar precisa de folga aqui, senão o save corrompe.',
+  'templates.ports': 'PORTAS',
+  'templates.portContainer': 'porta no container',
+  'templates.portHost': 'porta sugerida no host',
+  'templates.portLabel': 'rótulo',
+  'templates.volumes': 'VOLUMES',
+  'templates.volumeHost': 'caminho na instância',
+  'templates.volumeContainer': 'caminho no container',
+  'templates.volumeData': 'guarda os dados',
+  'templates.fields': 'CAMPOS DE CONFIGURAÇÃO',
+  'templates.fieldsTip':
+    'Cada campo vira uma variável de ambiente da imagem, com o nome que está na chave. Marque secreto para o valor ir só para o .env.',
+  'templates.fieldKey': 'chave',
+  'templates.fieldLabel': 'rótulo',
+  'templates.fieldDefault': 'valor padrão',
+  'templates.fieldRequired': 'obrigatório',
+  'templates.fieldSecret': 'secreto',
+  'templates.fieldAdvanced': 'avançado',
+  'templates.fieldOptions': 'opções do enum',
+  'templates.fieldOptionsPlaceholder': 'valor=Rótulo, outro=Outro',
+  'templates.add': '+ adicionar',
+  'templates.remove': 'remover',
+  'templates.delete': 'Apagar',
+  'templates.newHint': 'grava um arquivo novo em .okdock/templates',
+  'templates.editHint': 'editar um template de fábrica grava uma cópia; apagar a cópia devolve o original',
 
   'settings.title': 'Configurações',
   'settings.rootTitle': 'RAIZ DAS INSTÂNCIAS',
@@ -240,12 +302,12 @@ export const pt = {
   'error.dns_disabled': 'este painel subiu sem cliente de DNS',
   'error.dns_taken': '{domain} já está vinculado a {instance}',
   'error.docker_failed': 'o docker recusou o comando: {detail}',
-  'error.invalid_fields': 'alguns campos não passaram na validação do provedor',
+  'error.invalid_fields': 'alguns campos não passaram na validação do template',
   'error.bad_request': 'a requisição veio malformada',
   'error.internal': 'erro interno no painel',
 
   'problem.required': 'obrigatório',
-  'problem.unknown_field': 'campo desconhecido para {provider}',
+  'problem.unknown_field': 'campo desconhecido para {template}',
   'problem.not_int': 'esperava um inteiro, veio {value}',
   'problem.not_number': 'esperava um número, veio {value}',
   'problem.not_bool': 'esperava true ou false, veio {value}',
@@ -253,9 +315,9 @@ export const pt = {
   'problem.above_max': 'máximo é {max}',
   'problem.not_option': '{value} não é uma das opções: {allowed}',
   'problem.image_owned_by':
-    'quem configura {image} é o provedor {owner}, não {provider}. Crie a instância escolhendo {owner} na lista, sem mexer no campo Imagem: as duas variantes têm bootstrap diferente, não basta trocar a tag.',
+    'quem configura {image} é o template {owner}, não {template}. Crie a instância escolhendo {owner} na lista, sem mexer no campo Imagem: as duas variantes têm bootstrap diferente, não basta trocar a tag.',
   'problem.image_not_accepted':
-    '{provider} não sabe configurar {image}. Ele espera uma imagem que case com {pattern} — trocar a tag para outra versão funciona. Para uma imagem fora do catálogo, use o provedor Imagem custom, onde você define as variáveis à mão.',
+    '{template} não sabe configurar {image}. Ele espera uma imagem que case com {pattern} — trocar a tag para outra versão funciona. Para uma imagem fora do catálogo, use o template Imagem custom, onde você define as variáveis à mão.',
 
   'op.preparing': 'preparando',
   'op.creating': 'criando container',
@@ -272,31 +334,31 @@ export const pt = {
   'event.instance.uptodate': '{name} já está na imagem mais nova',
   'event.instance.updated': '{name} foi atualizada; o mundo nos volumes foi preservado',
 
-  'provider.itzg/minecraft-server.desc':
+  'template.minecraft-java.desc':
     'Servidor Java com suporte a vanilla, Paper, Fabric, Forge e modpacks.',
-  'provider.ryshe/terraria.desc':
+  'template.terraria-tshock.desc':
     'Terraria 1.4.5.6 com TShock 6.1.0 — plugins, permissões e comandos de admin. O TShock costuma demorar semanas para acompanhar um lançamento do Terraria; se o cliente reclamar de versão, use a variante vanilla.',
-  'provider.ryshe/terraria-vanilla.desc':
+  'template.terraria-vanilla.desc':
     'Terraria 1.4.5.7 sem TShock: sem plugins nem comandos de admin, mas acompanha a versão do cliente muito mais rápido.',
-  'provider.custom.desc': 'Qualquer imagem. Você informa portas, volumes e variáveis à mão.',
+  'template.custom.desc': 'Qualquer imagem. Você informa portas, volumes e variáveis à mão.',
 
-  'field.itzg/minecraft-server.EULA.help': 'A imagem não sobe sem isto aceito.',
-  'field.itzg/minecraft-server.VERSION.help':
+  'field.minecraft-java.EULA.help': 'A imagem não sobe sem isto aceito.',
+  'field.minecraft-java.VERSION.help':
     'LATEST, SNAPSHOT ou uma versão exata como 1.21.1.',
-  'field.itzg/minecraft-server.MEMORY.help':
+  'field.minecraft-java.MEMORY.help':
     'Deixe pelo menos 1 GB abaixo do limite de RAM do container, senão o kernel mata o processo (exit 137).',
-  'field.itzg/minecraft-server.OPS.help': 'Nicks separados por vírgula.',
-  'field.ryshe/terraria.WORLD_FILENAME.help':
+  'field.minecraft-java.OPS.help': 'Nicks separados por vírgula.',
+  'field.terraria-tshock.WORLD_FILENAME.help':
     'Nome do .wld dentro de ./data. Se não existir, é criado com o tamanho abaixo.',
-  'field.ryshe/terraria.AUTOCREATE.help':
+  'field.terraria-tshock.AUTOCREATE.help':
     'Só tem efeito quando o arquivo do mundo ainda não existe.',
-  'field.ryshe/terraria.NOUPNP.help':
+  'field.terraria-tshock.NOUPNP.help':
     'O painel já publica a porta; deixar o servidor mexer no roteador só atrapalha.',
-  'field.ryshe/terraria-vanilla.WORLD.help':
+  'field.terraria-vanilla.WORLD.help':
     'Caminho dentro do container. A pasta é o volume ./data da instância; troque só o nome do arquivo.',
-  'field.ryshe/terraria-vanilla.AUTOCREATE.help':
+  'field.terraria-vanilla.AUTOCREATE.help':
     'Só tem efeito quando o arquivo do mundo ainda não existe.',
-  'field.ryshe/terraria-vanilla.NOUPNP.help':
+  'field.terraria-vanilla.NOUPNP.help':
     'O painel já publica a porta; deixar o servidor mexer no roteador só atrapalha.',
 
   'api.offline': 'não consegui falar com a API do OkDock — ela está de pé?',

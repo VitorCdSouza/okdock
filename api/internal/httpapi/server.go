@@ -8,16 +8,19 @@ import (
 	"time"
 
 	"github.com/VitorCdSouza/okdock/api/internal/manager"
+	"github.com/VitorCdSouza/okdock/api/internal/template"
 )
 
 type Options struct {
 	Manager     *manager.Manager
+	Templates   *template.Catalog
 	WebFS       fs.FS
 	AllowOrigin string
 }
 
 type Server struct {
 	mgr         *manager.Manager
+	templates   *template.Catalog
 	webFS       fs.FS
 	allowOrigin string
 	mux         *http.ServeMux
@@ -26,6 +29,7 @@ type Server struct {
 func New(o Options) *Server {
 	s := &Server{
 		mgr:         o.Manager,
+		templates:   o.Templates,
 		webFS:       o.WebFS,
 		allowOrigin: o.AllowOrigin,
 		mux:         http.NewServeMux(),
@@ -42,8 +46,11 @@ func (s *Server) routes() {
 	m.HandleFunc("PUT /api/v1/system/root", s.setRoot)
 	m.HandleFunc("GET /api/v1/events", s.events)
 
-	m.HandleFunc("GET /api/v1/providers", s.listProviders)
-	m.HandleFunc("GET /api/v1/providers/{id...}", s.getProvider)
+	m.HandleFunc("GET /api/v1/templates", s.listTemplates)
+	m.HandleFunc("GET /api/v1/templates/{id}", s.getTemplate)
+	m.HandleFunc("POST /api/v1/templates", s.createTemplate)
+	m.HandleFunc("PUT /api/v1/templates/{id}", s.saveTemplate)
+	m.HandleFunc("DELETE /api/v1/templates/{id}", s.deleteTemplate)
 
 	m.HandleFunc("GET /api/v1/dns", s.getDNS)
 	m.HandleFunc("PUT /api/v1/dns", s.setDNSToken)

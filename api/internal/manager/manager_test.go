@@ -11,7 +11,18 @@ import (
 	"github.com/VitorCdSouza/okdock/api/internal/instance"
 	"github.com/VitorCdSouza/okdock/api/internal/store"
 	"github.com/VitorCdSouza/okdock/api/internal/system"
+	"github.com/VitorCdSouza/okdock/api/internal/template"
 )
+
+// templates devolve o catalogo de fabrica, com diretorio temporario e vazio no teste
+func templates(t *testing.T) *template.Catalog {
+	t.Helper()
+	c, err := template.NewCatalog(t.TempDir())
+	if err != nil {
+		t.Fatalf("NewCatalog: %v", err)
+	}
+	return c
+}
 
 func newManager(t *testing.T, totalRAM int64) (*Manager, *dockerx.Fake) {
 	t.Helper()
@@ -21,8 +32,9 @@ func newManager(t *testing.T, totalRAM int64) (*Manager, *dockerx.Fake) {
 	}
 	fake := dockerx.NewFake()
 	m := New(Options{
-		Store:  st,
-		Docker: fake,
+		Store:     st,
+		Templates: templates(t),
+		Docker:    fake,
 		System: system.StaticReader{Info: system.Info{
 			MemoryTotal:     totalRAM,
 			MemoryAvailable: totalRAM,
@@ -38,7 +50,7 @@ const gb = int64(1) << 30
 func req(name, mem string) SpecRequest {
 	return SpecRequest{
 		Name:        name,
-		ProviderID:  "itzg/minecraft-server",
+		TemplateID:  "minecraft-java",
 		Values:      map[string]string{"EULA": "true"},
 		MemoryLimit: mem,
 	}
@@ -80,7 +92,7 @@ func TestBuildSpecMarksProviderSecrets(t *testing.T) {
 	m, _ := newManager(t, 32*gb)
 	spec, err := m.BuildSpec(SpecRequest{
 		Name:       "terraria-1",
-		ProviderID: "ryshe/terraria",
+		TemplateID: "terraria-tshock",
 		Values:     map[string]string{"PASSWORD": "abc"},
 	})
 	if err != nil {
@@ -115,7 +127,7 @@ func TestBuildSpecRejectsMemoryBelowProviderMinimum(t *testing.T) {
 
 func TestBuildSpecCustomNeedsImage(t *testing.T) {
 	m, _ := newManager(t, 32*gb)
-	_, err := m.BuildSpec(SpecRequest{Name: "custom-1", ProviderID: "custom"})
+	_, err := m.BuildSpec(SpecRequest{Name: "custom-1", TemplateID: "custom"})
 	if err == nil {
 		t.Fatal("provedor custom sem imagem devia falhar")
 	}

@@ -8,9 +8,9 @@ terminal.
 
 ```
 okdock/
-├── api/     API em Go — catálogo, geração de compose, orquestração
+├── api/     API em Go — templates, geração de compose, orquestração
 ├── web/     painel em Angular 20
-├── docs/    arquitetura, contrato da API, catálogo
+├── docs/    arquitetura, contrato da API, templates
 └── Dockerfile, docker-compose.yml, Makefile
 ```
 
@@ -82,9 +82,15 @@ depende da versão instalada no host.
 
 - **Kanban por estado** — parado, provisionando, iniciando, rodando,
   atualizando, erro, arquivado. Atualiza sozinho por SSE.
-- **Wizard de nova instância** — os campos do formulário vêm do provedor da
-  imagem, não são fixos no frontend. O repositório da imagem é o do provedor e
-  só a etiqueta se escolhe, `latest` inclusive. O `docker-compose.yml` gerado
+- **Templates por categoria** — jogos, mídia, banco de dados, rede,
+  utilidades. Quatro vêm prontos; os outros você cadastra pelo botão **Novo
+  template**, informando imagem, portas, volumes e os campos de configuração.
+  Editar um template pronto grava uma cópia sua, e apagar a cópia devolve o
+  original.
+- **Wizard de nova instância** — no `＋` da coluna PARADO. Os campos do
+  formulário vêm do template escolhido, não são fixos no frontend. O
+  repositório da imagem é o do template e só a etiqueta se escolhe, `latest`
+  inclusive. O `docker-compose.yml` gerado
   fica na aba **compose.yml** da instância. Um dos nomes de DNS já cadastrados
   nas configurações dá para vincular ali mesmo, sem passar pela tela da
   instância.
@@ -119,7 +125,7 @@ para um `.env` ao lado, com permissão `0600` e fora do controle de versão.
 /srv/games/smp-familia/
 ├── docker-compose.yml    gerado; é o que o Docker lê
 ├── .env                  só os segredos; 0600; nunca versionado
-├── .okdock.json          de qual provedor do catálogo isto veio
+├── .okdock.json          de qual template isto veio
 └── data/                 o mundo
 ```
 
@@ -144,8 +150,8 @@ diferente do que a pasta sugere.
 - [`docs/arquitetura.md`](docs/arquitetura.md) — como as camadas se encaixam e
   por quê
 - [`docs/api.md`](docs/api.md) — contrato REST + SSE
-- [`docs/catalogo.md`](docs/catalogo.md) — provedores suportados e como
-  adicionar outro
+- [`docs/templates.md`](docs/templates.md) — templates prontos e como escrever
+  outro
 
 ## Vindo do GameDock
 

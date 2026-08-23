@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/VitorCdSouza/okdock/api/internal/catalog"
 	"github.com/VitorCdSouza/okdock/api/internal/instance"
 	"github.com/VitorCdSouza/okdock/api/internal/manager"
+	"github.com/VitorCdSouza/okdock/api/internal/template"
 )
 
 func (s *Server) health(w http.ResponseWriter, _ *http.Request) {
@@ -27,20 +27,71 @@ func (s *Server) system(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, info)
 }
 
-func (s *Server) listProviders(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, catalog.All())
+type templatesResponse struct {
+	Templates  []template.Template `json:"templates"`
+	Categories []template.Category `json:"categories"`
 }
 
-func (s *Server) getProvider(w http.ResponseWriter, r *http.Request) {
-	p, ok := catalog.Get(r.PathValue("id"))
+func (s *Server) listTemplates(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, templatesResponse{
+		Templates:  s.templates.All(),
+		Categories: template.AllCategories,
+	})
+}
+
+func (s *Server) getTemplate(w http.ResponseWriter, r *http.Request) {
+	t, ok := s.templates.Get(r.PathValue("id"))
 	if !ok {
 		writeJSON(w, http.StatusNotFound, apiError{
 			Error:   "not_found",
-			Message: fmt.Sprintf("provedor %q não está no catálogo", r.PathValue("id")),
+			Message: fmt.Sprintf("template %q não está no catálogo", r.PathValue("id")),
 		})
 		return
 	}
-	writeJSON(w, http.StatusOK, p)
+	writeJSON(w, http.StatusOK, t)
+}
+
+func (s *Server) createTemplate(w http.ResponseWriter, r *http.Request) {
+	var t template.Template
+	if !decodeJSON(w, r, &t) {
+		return
+	}
+	if _, exists := s.templates.Get(t.ID); exists {
+		writeJSON(w, http.StatusConflict, apiError{
+			Error:   "template_exists",
+			Message: fmt.Sprintf("já existe um template com o id %q", t.ID),
+		})
+		return
+	}
+	if err := s.templates.Save(t); err != nil {
+		writeError(w, err)
+		return
+	}
+	saved, _ := s.templates.Get(t.ID)
+	writeJSON(w, http.StatusCreated, saved)
+}
+
+// saveTemplate grava por cima, inclusive de um de fabrica: o arquivo em disco passa a valer
+func (s *Server) saveTemplate(w http.ResponseWriter, r *http.Request) {
+	var t template.Template
+	if !decodeJSON(w, r, &t) {
+		return
+	}
+	t.ID = r.PathValue("id")
+	if err := s.templates.Save(t); err != nil {
+		writeError(w, err)
+		return
+	}
+	saved, _ := s.templates.Get(t.ID)
+	writeJSON(w, http.StatusOK, saved)
+}
+
+func (s *Server) deleteTemplate(w http.ResponseWriter, r *http.Request) {
+	if err := s.templates.Delete(r.PathValue("id")); err != nil {
+		writeError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 type instancesResponse struct {

@@ -15,7 +15,13 @@ const (
 	legacyPanelDir = ".gamedock"
 	dnsFile        = "dns.json"
 	panelFile      = "config.json"
+	templatesDir   = "templates"
 )
+
+// TemplatesDir fica na raiz de boot: template e do painel, nao pode sumir quando a raiz muda
+func (s *Store) TemplatesDir() string {
+	return filepath.Join(s.ConfigRoot, panelDir, templatesDir)
+}
 
 // readPanel le da pasta do painel e cai no nome antigo, mas a gravacao e sempre em panelDir
 func (s *Store) readPanel(file string) ([]byte, error) {

@@ -1,27 +1,39 @@
-package catalog
+package template
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
 )
 
-func TestAllProvidersAreUsable(t *testing.T) {
-	for _, p := range All() {
-		if p.ID == "" || p.GameLabel == "" || p.Short == "" {
-			t.Errorf("provedor %q sem identificação completa", p.ID)
+// testCatalog devolve so os templates de fabrica: o diretorio e vazio.
+func testCatalog(t *testing.T) *Catalog {
+	t.Helper()
+	c, err := NewCatalog(t.TempDir())
+	if err != nil {
+		t.Fatalf("NewCatalog: %v", err)
+	}
+	return c
+}
+
+func TestAllBuiltinTemplatesAreUsable(t *testing.T) {
+	for _, p := range testCatalog(t).All() {
+		if p.ID == "" || p.Name == "" || p.Short == "" {
+			t.Errorf("template %q sem identificação completa", p.ID)
 		}
-		if p.ID != CustomProviderID && p.Image == "" {
-			t.Errorf("provedor %q sem imagem", p.ID)
+		if p.ID != CustomID && p.Image == "" {
+			t.Errorf("template %q sem imagem", p.ID)
 		}
 		if _, ok := p.DataVolume(); !ok {
-			t.Errorf("provedor %q não marca nenhum volume como o do mundo", p.ID)
+			t.Errorf("template %q não marca nenhum volume como o do mundo", p.ID)
 		}
 		seen := map[string]bool{}
 		for _, f := range p.Fields {
 			if seen[f.Key] {
-				t.Errorf("provedor %q repete o campo %q", p.ID, f.Key)
+				t.Errorf("template %q repete o campo %q", p.ID, f.Key)
 			}
 			seen[f.Key] = true
 			if f.Type == FieldEnum && len(f.Options) == 0 {
@@ -37,14 +49,14 @@ func TestAllProvidersAreUsable(t *testing.T) {
 }
 
 func TestCustomIsLast(t *testing.T) {
-	all := All()
-	if all[len(all)-1].ID != CustomProviderID {
+	all := testCatalog(t).All()
+	if all[len(all)-1].ID != CustomID {
 		t.Fatalf("imagem custom devia ser a última do catálogo, veio %q", all[len(all)-1].ID)
 	}
 }
 
 func TestValidateAppliesDefaults(t *testing.T) {
-	p, _ := Get("itzg/minecraft-server")
+	p, _ := testCatalog(t).Get("minecraft-java")
 	out, err := p.Validate(map[string]string{"MAX_PLAYERS": "20"})
 	if err != nil {
 		t.Fatalf("Validate: %v", err)
@@ -58,7 +70,7 @@ func TestValidateAppliesDefaults(t *testing.T) {
 }
 
 func TestValidateRejectsUnknownField(t *testing.T) {
-	p, _ := Get("itzg/minecraft-server")
+	p, _ := testCatalog(t).Get("minecraft-java")
 	_, err := p.Validate(map[string]string{"RM_RF": "sim"})
 
 	var ve *ValidationError
@@ -70,11 +82,11 @@ func TestValidateRejectsUnknownField(t *testing.T) {
 	}
 }
 
-func TestCustomProviderAcceptsFreeEnv(t *testing.T) {
-	p, _ := Get(CustomProviderID)
+func TestCustomTemplateAcceptsFreeEnv(t *testing.T) {
+	p, _ := testCatalog(t).Get(CustomID)
 	out, err := p.Validate(map[string]string{"QUALQUER_COISA": "1"})
 	if err != nil {
-		t.Fatalf("provedor custom devia aceitar env livre: %v", err)
+		t.Fatalf("template custom devia aceitar env livre: %v", err)
 	}
 	if out["QUALQUER_COISA"] != "1" {
 		t.Errorf("valor perdido: %v", out)
@@ -82,7 +94,7 @@ func TestCustomProviderAcceptsFreeEnv(t *testing.T) {
 }
 
 func TestValidateEnumAndRange(t *testing.T) {
-	p, _ := Get("itzg/minecraft-server")
+	p, _ := testCatalog(t).Get("minecraft-java")
 
 	if _, err := p.Validate(map[string]string{"DIFFICULTY": "impossivel"}); err == nil {
 		t.Error("enum fora das opções devia falhar")
@@ -96,7 +108,7 @@ func TestValidateEnumAndRange(t *testing.T) {
 }
 
 func TestValidateReportsEveryProblemAtOnce(t *testing.T) {
-	p, _ := Get("itzg/minecraft-server")
+	p, _ := testCatalog(t).Get("minecraft-java")
 	_, err := p.Validate(map[string]string{
 		"DIFFICULTY":  "impossivel",
 		"MAX_PLAYERS": "0",
@@ -111,7 +123,7 @@ func TestValidateReportsEveryProblemAtOnce(t *testing.T) {
 }
 
 func TestValidateRequiredMissing(t *testing.T) {
-	p, _ := Get("itzg/minecraft-server")
+	p, _ := testCatalog(t).Get("minecraft-java")
 	_, err := p.Validate(map[string]string{"EULA": ""})
 	if err == nil {
 		t.Fatal("campo obrigatório em branco devia falhar")
@@ -122,7 +134,7 @@ func TestValidateRequiredMissing(t *testing.T) {
 }
 
 func TestArgFieldsDeclareAFlag(t *testing.T) {
-	for _, p := range All() {
+	for _, p := range testCatalog(t).All() {
 		for _, f := range p.Fields {
 			if f.IsArg() && f.Flag == "" {
 				t.Errorf("%s.%s é argumento mas não diz qual flag", p.ID, f.Key)
@@ -135,7 +147,7 @@ func TestArgFieldsDeclareAFlag(t *testing.T) {
 }
 
 func TestSplitValuesSeparatesEnvFromArgs(t *testing.T) {
-	p, _ := Get("ryshe/terraria")
+	p, _ := testCatalog(t).Get("terraria-tshock")
 	values, err := p.Validate(map[string]string{"MAXPLAYERS": "12"})
 	if err != nil {
 		t.Fatalf("Validate: %v", err)
@@ -157,7 +169,7 @@ func TestSplitValuesSeparatesEnvFromArgs(t *testing.T) {
 }
 
 func TestSplitValuesBoolFlagCarriesNoValue(t *testing.T) {
-	p, _ := Get("ryshe/terraria")
+	p, _ := testCatalog(t).Get("terraria-tshock")
 
 	values, _ := p.Validate(map[string]string{"SECURE": "true"})
 	_, args := p.SplitValues(values)
@@ -176,7 +188,7 @@ func TestSplitValuesBoolFlagCarriesNoValue(t *testing.T) {
 }
 
 func TestSecretArgBecomesInterpolationReference(t *testing.T) {
-	p, _ := Get("ryshe/terraria")
+	p, _ := testCatalog(t).Get("terraria-tshock")
 	values, _ := p.Validate(map[string]string{"PASSWORD": "hunter2"})
 	env, args := p.SplitValues(values)
 
@@ -194,7 +206,7 @@ func TestSecretArgBecomesInterpolationReference(t *testing.T) {
 }
 
 func TestSplitValuesIsDeterministic(t *testing.T) {
-	p, _ := Get("ryshe/terraria")
+	p, _ := testCatalog(t).Get("terraria-tshock")
 	values, _ := p.Validate(map[string]string{"MAXPLAYERS": "12", "MOTD": "oi"})
 
 	_, first := p.SplitValues(values)
@@ -225,12 +237,12 @@ func containsPair(list []string, flag, value string) bool {
 }
 
 func TestTerrariaVanillaKeepsWorldOutOfEnvironment(t *testing.T) {
-	p, ok := Get("ryshe/terraria-vanilla")
+	p, ok := testCatalog(t).Get("terraria-vanilla")
 	if !ok {
-		t.Fatal("provedor vanilla sumiu do catálogo")
+		t.Fatal("template vanilla sumiu do catálogo")
 	}
 	if _, exists := p.Field("WORLD_FILENAME"); exists {
-		t.Error("WORLD_FILENAME não pode existir neste provedor: preenchê-la impede o servidor de subir")
+		t.Error("WORLD_FILENAME não pode existir neste template: preenchê-la impede o servidor de subir")
 	}
 	world, ok := p.Field("WORLD")
 	if !ok || !world.IsArg() || world.Flag != "-world" {
@@ -251,8 +263,8 @@ func TestTerrariaVanillaKeepsWorldOutOfEnvironment(t *testing.T) {
 }
 
 func TestGameImagesArePinned(t *testing.T) {
-	for _, p := range All() {
-		if p.ID == CustomProviderID {
+	for _, p := range testCatalog(t).All() {
+		if p.ID == CustomID {
 			continue
 		}
 		for _, moving := range []string{":latest", ":stable"} {
@@ -267,39 +279,39 @@ func TestGameImagesArePinned(t *testing.T) {
 }
 
 func TestAcceptsImageSeparatesTerrariaVariants(t *testing.T) {
-	tshock, _ := Get("ryshe/terraria")
-	vanilla, _ := Get("ryshe/terraria-vanilla")
+	tshock, _ := testCatalog(t).Get("terraria-tshock")
+	vanilla, _ := testCatalog(t).Get("terraria-vanilla")
 
 	if !tshock.AcceptsImage("ryshe/terraria:tshock-1.4.5.6-6.1.0") {
-		t.Error("provedor TShock devia aceitar a própria imagem")
+		t.Error("template TShock devia aceitar a própria imagem")
 	}
 	if !vanilla.AcceptsImage("ryshe/terraria:vanilla-1.4.5.7") {
-		t.Error("provedor vanilla devia aceitar a própria imagem")
+		t.Error("template vanilla devia aceitar a própria imagem")
 	}
 	if tshock.AcceptsImage("ryshe/terraria:vanilla-1.4.5.7") {
-		t.Error("provedor TShock não pode aceitar a imagem vanilla")
+		t.Error("template TShock não pode aceitar a imagem vanilla")
 	}
 	if vanilla.AcceptsImage("ryshe/terraria:tshock-1.4.5.6-6.1.0") {
-		t.Error("provedor vanilla não pode aceitar a imagem TShock")
+		t.Error("template vanilla não pode aceitar a imagem TShock")
 	}
 }
 
 func TestAcceptsImageAllowsNewerTagsOfTheSameVariant(t *testing.T) {
-	p, _ := Get("ryshe/terraria-vanilla")
+	p, _ := testCatalog(t).Get("terraria-vanilla")
 	if !p.AcceptsImage("ryshe/terraria:vanilla-1.4.6.0") {
 		t.Error("versão nova da mesma variante devia ser aceita")
 	}
 }
 
-func TestCustomProviderAcceptsAnyImage(t *testing.T) {
-	p, _ := Get(CustomProviderID)
+func TestCustomTemplateAcceptsAnyImage(t *testing.T) {
+	p, _ := testCatalog(t).Get(CustomID)
 	if !p.AcceptsImage("qualquer/coisa:1") {
-		t.Error("o provedor custom precisa aceitar qualquer imagem")
+		t.Error("o template custom precisa aceitar qualquer imagem")
 	}
 }
 
 func TestImagePatternsCompileAndMatchTheirOwnDefault(t *testing.T) {
-	for _, p := range All() {
+	for _, p := range testCatalog(t).All() {
 		if p.ImagePattern == "" {
 			continue
 		}
@@ -313,31 +325,31 @@ func TestImagePatternsCompileAndMatchTheirOwnDefault(t *testing.T) {
 	}
 }
 
-func TestProviderForImageFindsTheRightVariant(t *testing.T) {
-	p, ok := ProviderForImage("ryshe/terraria:vanilla-1.4.5.7")
-	if !ok || p.ID != "ryshe/terraria-vanilla" {
-		t.Fatalf("ProviderForImage = %q, %v", p.ID, ok)
+func TestTemplateForImageFindsTheRightVariant(t *testing.T) {
+	p, ok := testCatalog(t).TemplateForImage("ryshe/terraria:vanilla-1.4.5.7")
+	if !ok || p.ID != "terraria-vanilla" {
+		t.Fatalf("TemplateForImage = %q, %v", p.ID, ok)
 	}
-	p, ok = ProviderForImage("ryshe/terraria:tshock-1.4.5.6-6.1.0")
-	if !ok || p.ID != "ryshe/terraria" {
-		t.Fatalf("ProviderForImage = %q, %v", p.ID, ok)
+	p, ok = testCatalog(t).TemplateForImage("ryshe/terraria:tshock-1.4.5.6-6.1.0")
+	if !ok || p.ID != "terraria-tshock" {
+		t.Fatalf("TemplateForImage = %q, %v", p.ID, ok)
 	}
-	if p, ok := ProviderForImage("nginx:alpine"); ok {
+	if p, ok := testCatalog(t).TemplateForImage("nginx:alpine"); ok {
 		t.Errorf("imagem fora do catálogo não devia casar com %q", p.ID)
 	}
 }
 
 func TestTerrariaLabelsNameTheVariant(t *testing.T) {
-	for _, id := range []string{"ryshe/terraria", "ryshe/terraria-vanilla"} {
-		p, _ := Get(id)
-		if !strings.Contains(p.GameLabel, "(") {
-			t.Errorf("%s: o rótulo %q não diz qual variante é", id, p.GameLabel)
+	for _, id := range []string{"terraria-tshock", "terraria-vanilla"} {
+		p, _ := testCatalog(t).Get(id)
+		if !strings.Contains(p.Name, "(") {
+			t.Errorf("%s: o rótulo %q não diz qual variante é", id, p.Name)
 		}
 	}
 }
 
 func TestValidateProblemsCarryCodeAndParams(t *testing.T) {
-	p, _ := Get("itzg/minecraft-server")
+	p, _ := testCatalog(t).Get("minecraft-java")
 	_, err := p.Validate(map[string]string{
 		"DIFFICULTY":  "impossivel",
 		"MAX_PLAYERS": "0",
@@ -364,5 +376,150 @@ func TestValidateProblemsCarryCodeAndParams(t *testing.T) {
 	}
 	if got := byField["MAX_PLAYERS"].Params["min"]; got != 1.0 {
 		t.Errorf("params de MAX_PLAYERS não levam o mínimo: %v", byField["MAX_PLAYERS"].Params)
+	}
+}
+
+func TestGetAceitaOIDAntigoDaSpec(t *testing.T) {
+	c := testCatalog(t)
+	for old, want := range map[string]string{
+		"itzg/minecraft-server":  "minecraft-java",
+		"ryshe/terraria":         "terraria-tshock",
+		"ryshe/terraria-vanilla": "terraria-vanilla",
+	} {
+		got, ok := c.Get(old)
+		if !ok || got.ID != want {
+			t.Errorf("Get(%q) = %q, %v; queria %q", old, got.ID, ok, want)
+		}
+	}
+}
+
+func TestTodoTemplateDeFabricaTemCategoriaConhecida(t *testing.T) {
+	for _, tmpl := range testCatalog(t).All() {
+		if !tmpl.Category.Valid() {
+			t.Errorf("%s: categoria %q não está na lista", tmpl.ID, tmpl.Category)
+		}
+		if !tmpl.Builtin {
+			t.Errorf("%s devia estar marcado como de fábrica", tmpl.ID)
+		}
+	}
+}
+
+func TestSaveGravaEmDiscoEEditaTemplateDeFabrica(t *testing.T) {
+	dir := t.TempDir()
+	c, err := NewCatalog(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	original, _ := c.Get("minecraft-java")
+	edited := original
+	edited.Builtin = false
+	edited.DefaultMemory = "8g"
+	if err := c.Save(edited); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(dir, "minecraft-java.json")); err != nil {
+		t.Errorf("não gravou o arquivo: %v", err)
+	}
+	got, _ := c.Get("minecraft-java")
+	if got.DefaultMemory != "8g" {
+		t.Errorf("a edição não valeu: %q", got.DefaultMemory)
+	}
+	if got.Builtin {
+		t.Error("template editado não é mais de fábrica")
+	}
+
+	// Relendo do zero, a edicao continua valendo.
+	outro, err := NewCatalog(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if again, _ := outro.Get("minecraft-java"); again.DefaultMemory != "8g" {
+		t.Errorf("a edição não sobreviveu ao restart: %q", again.DefaultMemory)
+	}
+
+	// E apagar devolve o de fabrica em vez de sumir com o template.
+	if err := c.Delete("minecraft-java"); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+	back, ok := c.Get("minecraft-java")
+	if !ok || back.DefaultMemory != original.DefaultMemory || !back.Builtin {
+		t.Errorf("apagar a edição devia devolver o de fábrica: %+v", back)
+	}
+}
+
+func TestDeleteRecusaTemplateDeFabricaSemEdicao(t *testing.T) {
+	c := testCatalog(t)
+	if err := c.Delete("minecraft-java"); !errors.Is(err, ErrBuiltin) {
+		t.Errorf("queria ErrBuiltin, veio %v", err)
+	}
+	if err := c.Delete("nao-existe"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("queria ErrNotFound, veio %v", err)
+	}
+}
+
+func TestSaveRecusaTemplateInvalido(t *testing.T) {
+	c := testCatalog(t)
+	err := c.Save(Template{ID: "../fuga", Name: "", Category: "filmes"})
+
+	var ve *ValidationError
+	if !errors.As(err, &ve) {
+		t.Fatalf("esperava ValidationError, veio %v", err)
+	}
+	byField := map[string]string{}
+	for _, p := range ve.Problems {
+		byField[p.Field] = p.Code
+	}
+	for field, code := range map[string]string{"id": "bad_template_id", "name": "required", "category": "unknown_category"} {
+		if byField[field] != code {
+			t.Errorf("problema de %s = %q, queria %q (%v)", field, byField[field], code, ve.Problems)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(c.dir, "..", "fuga.json")); err == nil {
+		t.Error("template com id inválido não podia ter virado arquivo")
+	}
+}
+
+func TestSaveRecusaCampoQuebrado(t *testing.T) {
+	c := testCatalog(t)
+	err := c.Save(Template{
+		ID: "jellyfin", Name: "Jellyfin", Category: CategoryMedia, Image: "jellyfin/jellyfin:10.9",
+		Fields: []Field{
+			{Key: "MODO", Type: FieldEnum},
+			{Key: "MODO", Type: FieldText},
+			{Key: "PORTA", Type: FieldInt, Default: "muitas"},
+		},
+	})
+
+	var ve *ValidationError
+	if !errors.As(err, &ve) {
+		t.Fatalf("esperava ValidationError, veio %v", err)
+	}
+	codes := map[string]bool{}
+	for _, p := range ve.Problems {
+		codes[p.Code] = true
+	}
+	for _, want := range []string{"enum_without_options", "duplicate_field", "not_int"} {
+		if !codes[want] {
+			t.Errorf("faltou o problema %q: %v", want, ve.Problems)
+		}
+	}
+}
+
+func TestReloadIgnoraArquivoIlegivel(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "quebrado.json"), []byte("{"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c, err := NewCatalog(dir)
+	if err == nil {
+		t.Error("o arquivo ilegível devia ser reportado")
+	}
+	if c == nil {
+		t.Fatal("um template quebrado não pode derrubar o catálogo")
+	}
+	if _, ok := c.Get("minecraft-java"); !ok {
+		t.Error("os templates de fábrica precisam continuar valendo")
 	}
 }

@@ -6,13 +6,13 @@ import { Subject } from 'rxjs';
 import { Store } from './state';
 import { Events } from './events';
 import { I18n } from './i18n/i18n';
-import { Instance, Provider, ServerEvent } from './models';
+import { Instance, ServerEvent, Template } from './models';
 
 function instance(over: Partial<Instance> = {}): Instance {
   return {
     name: 'smp',
-    providerId: 'itzg/minecraft-server',
-    game: 'minecraft-java',
+    templateId: 'minecraft-java',
+    category: 'games',
     image: 'itzg/minecraft-server:java21',
     env: {},
     ports: [{ host: 25565, container: 25565, protocol: 'tcp' }],
@@ -52,7 +52,7 @@ describe('Store', () => {
   afterEach(() => localStorage.removeItem('okdock.locale'));
 
   it('filtra por nome, porta e imagem', () => {
-    store.instances.set([instance(), instance({ name: 'terra', game: 'terraria', ports: [] })]);
+    store.instances.set([instance(), instance({ name: 'terra', templateId: 'terraria-tshock', ports: [] })]);
 
     store.search.set('25565');
     expect(store.filtered().map((i) => i.name)).toEqual(['smp']);
@@ -61,29 +61,40 @@ describe('Store', () => {
     expect(store.filtered().map((i) => i.name)).withContext('busca é sem caixa').toEqual(['terra']);
   });
 
-  it('o filtro de jogo e o de texto valem juntos', () => {
+  it('o filtro de categoria e o de texto valem juntos', () => {
     store.instances.set([instance(), instance({ name: 'outro' })]);
-    store.gameFilter.set('minecraft-java');
+    store.categoryFilter.set('games');
     store.search.set('outro');
 
     expect(store.filtered().map((i) => i.name)).toEqual(['outro']);
   });
 
-  it('conta por jogo usando o rótulo do provedor', () => {
-    store.providers.set([
-      { id: 'itzg/minecraft-server', game: 'minecraft-java', gameLabel: 'Minecraft (Java)' } as Provider,
+  it('conta por categoria, na ordem que a API mandou', () => {
+    store.categories.set(['games', 'media', 'other']);
+    store.instances.set([
+      instance(),
+      instance({ name: 'dois' }),
+      instance({ name: 'filmes', templateId: 'jellyfin', category: 'media' }),
     ]);
-    store.instances.set([instance(), instance({ name: 'dois' })]);
 
-    expect(store.gameCounts()).toEqual([
-      { game: 'minecraft-java', label: 'Minecraft (Java)', count: 2 },
+    expect(store.categoryCounts()).toEqual([
+      { category: 'games', count: 2 },
+      { category: 'media', count: 1 },
     ]);
   });
 
-  it('cai no nome cru do jogo quando o provedor sumiu do catálogo', () => {
-    store.instances.set([instance({ providerId: 'foi-embora', game: 'valheim' })]);
+  it('agrupa os templates por categoria, pulando a que ninguém usa', () => {
+    store.categories.set(['games', 'media', 'other']);
+    store.templates.set([
+      { id: 'minecraft-java', category: 'games' } as Template,
+      { id: 'jellyfin', category: 'media' } as Template,
+      { id: 'terraria-tshock', category: 'games' } as Template,
+    ]);
 
-    expect(store.gameCounts()[0].label).toBe('valheim');
+    expect(store.byCategory().map((g) => [g.category, g.templates.map((t) => t.id)])).toEqual([
+      ['games', ['minecraft-java', 'terraria-tshock']],
+      ['media', ['jellyfin']],
+    ]);
   });
 
   it('põe provisionando e iniciando na coluna de rodando', () => {
@@ -100,7 +111,7 @@ describe('Store', () => {
 
   it('monta o aviso de fim de operação pelo tipo do evento', () => {
     store.start();
-    http.expectOne('/api/v1/providers').flush([]);
+    http.expectOne('/api/v1/templates').flush({ templates: [], categories: [] });
     http.expectOne('/api/v1/instances').flush({ instances: [], states: [] });
     http.expectOne('/api/v1/system').flush({});
     http.expectOne('/api/v1/dns').flush({ token: '', suffix: '.duckdns.org', links: [], domains: [] });

@@ -1,0 +1,22 @@
+{
+  "id": "custom",
+  "name": "Imagem custom",
+  "category": "other",
+  "short": "··",
+  "image": "",
+  "description": "Qualquer imagem. Você informa portas, volumes e variáveis à mão.",
+  "ports": [],
+  "volumes": [
+    {
+      "host": "./data",
+      "container": "/data",
+      "data": true
+    }
+  ],
+  "defaultMemory": "2g",
+  "minMemory": "256m",
+  "defaultCpus": 2,
+  "stopGraceSeconds": 30,
+  "fields": [],
+  "freeEnv": true
+}

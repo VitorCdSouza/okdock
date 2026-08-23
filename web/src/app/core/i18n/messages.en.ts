@@ -10,6 +10,13 @@ export const en: Record<MessageKey, string> = {
   'common.checking': 'checking…',
   'common.copied': 'copied: {text}',
 
+  'category.games': 'Games',
+  'category.media': 'Media',
+  'category.database': 'Database',
+  'category.network': 'Network',
+  'category.utilities': 'Utilities',
+  'category.other': 'Other',
+
   'state.stopped': 'STOPPED',
   'state.provisioning': 'PROVISIONING',
   'state.starting': 'STARTING',
@@ -27,7 +34,7 @@ export const en: Record<MessageKey, string> = {
   'time.years.one': '{n} year ago',
   'time.years.other': '{n} years ago',
 
-  'app.newInstance': '+ New instance',
+  'app.newTemplate': '+ New template',
   'app.settings': 'Settings',
   'app.metric.cpu': 'CPU',
   'app.metric.memory': 'RAM',
@@ -35,7 +42,7 @@ export const en: Record<MessageKey, string> = {
   'app.metric.budget': 'RAM FOR INSTANCES',
   'app.hostReserve': 'host reserve: {gb} GB',
   'app.searchPlaceholder': 'filter by name, port, image…',
-  'app.allGames': 'All',
+  'app.allCategories': 'All',
   'app.created': '{name} was created',
   'app.dns.noToken': 'duckdns no token',
   'app.dns.noNames': 'duckdns no names',
@@ -112,12 +119,12 @@ export const en: Record<MessageKey, string> = {
   'detail.tab.config': 'Settings',
   'detail.tab.resources': 'Resources & network',
   'detail.tab.console': 'Console',
-  'detail.providerFields': 'PROVIDER FIELDS',
-  'detail.providerGone':
-    'Provider {id} is no longer in the catalog. Edit it through docker-compose.yml.',
+  'detail.templateFields': 'TEMPLATE FIELDS',
+  'detail.templateGone':
+    'Template {id} is no longer in the catalog. Edit it through docker-compose.yml.',
   'detail.resourcesTitle': 'RESOURCES & NETWORK',
   'detail.ramLimit': 'RAM limit',
-  'detail.ramLimitTip': 'The container ceiling. The JVM heap goes in the provider fields.',
+  'detail.ramLimitTip': 'The container ceiling. The JVM heap goes in the template fields.',
   'detail.hostPort': 'Host port — {label}',
   'detail.portFallbackLabel': 'game',
   'detail.inContainer': 'Inside the container: {port}/{protocol}',
@@ -148,9 +155,9 @@ export const en: Record<MessageKey, string> = {
   'detail.createdAt': 'created {when}',
 
   'new.title': 'New instance',
-  'new.step1': '1 game',
+  'new.step1': '1 template',
   'new.step2': '2 image & config',
-  'new.providerMeta': '{fields} fields · minimum RAM {memory}',
+  'new.templateMeta': '{fields} fields · minimum RAM {memory}',
   'new.name': 'Instance name',
   'new.nameTip':
     'It becomes the directory, the compose project name and the container name — always the same text in all three.',
@@ -159,7 +166,7 @@ export const en: Record<MessageKey, string> = {
   'new.nameTaken': 'an instance with this name already exists',
   'new.image': 'Image',
   'new.imageTip':
-    'The repository comes from the provider; only the tag changes. Any tag that exists on the image works, latest included — the list is only a suggestion.',
+    'The repository comes from the template; only the tag changes. Any tag that exists on the image works, latest included — the list is only a suggestion.',
   'new.memoryLimit': 'Container RAM limit',
   'new.memoryTip': 'The container ceiling, not the JVM heap. Minimum for this image: {memory}',
   'new.dns': 'Name to invite people with',
@@ -181,6 +188,61 @@ export const en: Record<MessageKey, string> = {
   'new.wait': 'please wait…',
   'new.create': 'Create instance',
   'new.continue': 'Continue →',
+
+  'templates.title': 'Templates',
+  'templates.new': '+ New template',
+  'templates.pick': 'Pick a template to edit, or create a new one.',
+  'templates.builtin': 'built-in',
+  'templates.noImage': 'no fixed image',
+  'templates.saved': 'template saved.',
+  'templates.identity': 'IDENTITY',
+  'templates.id': 'Identifier',
+  'templates.idTip':
+    'Becomes the file name on disk and what the instance stores: lowercase, digits and hyphen. It cannot be changed after saving.',
+  'templates.name': 'Name',
+  'templates.category': 'Category',
+  'templates.short': 'Short',
+  'templates.shortTip': 'Up to 3 characters. Shown on the card when the panel has no icon for this template.',
+  'templates.image': 'Image',
+  'templates.tags': 'Suggested tags',
+  'templates.tagsTip': 'Comma separated. They become the suggestion list when creating the instance; any other tag still works.',
+  'templates.imagePattern': 'Image pattern',
+  'templates.imagePatternTip':
+    'Regular expression. The panel refuses to create an instance with an image that does not match — that is what stops the wrong template being picked. Empty accepts any image.',
+  'templates.description': 'Description',
+  'templates.docs': 'Documentation',
+  'templates.resources': 'RESOURCES',
+  'templates.defaultMemory': 'Suggested RAM',
+  'templates.minMemory': 'Minimum RAM',
+  'templates.minMemoryTip': 'Below this the panel refuses to create: the image would die with exit 137.',
+  'templates.defaultCpus': 'CPUs',
+  'templates.stopGrace': 'Stop grace (s)',
+  'templates.stopGraceTip':
+    'How long docker waits before SIGKILL. A game that saves the world on shutdown needs room here, or the save corrupts.',
+  'templates.ports': 'PORTS',
+  'templates.portContainer': 'container port',
+  'templates.portHost': 'suggested host port',
+  'templates.portLabel': 'label',
+  'templates.volumes': 'VOLUMES',
+  'templates.volumeHost': 'path in the instance',
+  'templates.volumeContainer': 'path in the container',
+  'templates.volumeData': 'holds the data',
+  'templates.fields': 'CONFIGURATION FIELDS',
+  'templates.fieldsTip':
+    'Each field becomes an environment variable of the image, named after the key. Mark it secret so the value only goes to .env.',
+  'templates.fieldKey': 'key',
+  'templates.fieldLabel': 'label',
+  'templates.fieldDefault': 'default value',
+  'templates.fieldRequired': 'required',
+  'templates.fieldSecret': 'secret',
+  'templates.fieldAdvanced': 'advanced',
+  'templates.fieldOptions': 'enum options',
+  'templates.fieldOptionsPlaceholder': 'value=Label, other=Other',
+  'templates.add': '+ add',
+  'templates.remove': 'remove',
+  'templates.delete': 'Delete',
+  'templates.newHint': 'writes a new file in .okdock/templates',
+  'templates.editHint': 'editing a built-in template saves a copy; deleting the copy restores the original',
 
   'settings.title': 'Settings',
   'settings.rootTitle': 'INSTANCE ROOT',
@@ -246,12 +308,12 @@ export const en: Record<MessageKey, string> = {
   'error.dns_disabled': 'this panel started with no DNS client',
   'error.dns_taken': '{domain} is already linked to {instance}',
   'error.docker_failed': 'docker refused the command: {detail}',
-  'error.invalid_fields': 'some fields did not pass the provider validation',
+  'error.invalid_fields': 'some fields did not pass the template validation',
   'error.bad_request': 'the request was malformed',
   'error.internal': 'internal panel error',
 
   'problem.required': 'required',
-  'problem.unknown_field': 'unknown field for {provider}',
+  'problem.unknown_field': 'unknown field for {template}',
   'problem.not_int': 'expected an integer, got {value}',
   'problem.not_number': 'expected a number, got {value}',
   'problem.not_bool': 'expected true or false, got {value}',
@@ -259,9 +321,9 @@ export const en: Record<MessageKey, string> = {
   'problem.above_max': 'the maximum is {max}',
   'problem.not_option': '{value} is not one of: {allowed}',
   'problem.image_owned_by':
-    '{image} is configured by the {owner} provider, not {provider}. Create the instance by picking {owner} from the list, leaving the Image field alone: the two variants bootstrap differently, changing the tag is not enough.',
+    '{image} is configured by the {owner} template, not {template}. Create the instance by picking {owner} from the list, leaving the Image field alone: the two variants bootstrap differently, changing the tag is not enough.',
   'problem.image_not_accepted':
-    '{provider} does not know how to configure {image}. It expects an image matching {pattern} — switching the tag to another version works. For an image outside the catalog, use the custom image provider, where you set the variables by hand.',
+    '{template} does not know how to configure {image}. It expects an image matching {pattern} — switching the tag to another version works. For an image outside the catalog, use the custom image template, where you set the variables by hand.',
 
   'op.preparing': 'preparing',
   'op.creating': 'creating container',
@@ -278,31 +340,31 @@ export const en: Record<MessageKey, string> = {
   'event.instance.uptodate': '{name} is already on the newest image',
   'event.instance.updated': '{name} was updated; the world in the volumes was preserved',
 
-  'provider.itzg/minecraft-server.desc':
+  'template.minecraft-java.desc':
     'Java server with vanilla, Paper, Fabric, Forge and modpack support.',
-  'provider.ryshe/terraria.desc':
+  'template.terraria-tshock.desc':
     'Terraria 1.4.5.6 with TShock 6.1.0 — plugins, permissions and admin commands. TShock usually takes weeks to catch up with a Terraria release; if the client complains about the version, use the vanilla variant.',
-  'provider.ryshe/terraria-vanilla.desc':
+  'template.terraria-vanilla.desc':
     'Terraria 1.4.5.7 without TShock: no plugins and no admin commands, but it follows the client version much faster.',
-  'provider.custom.desc': 'Any image. You set ports, volumes and variables by hand.',
+  'template.custom.desc': 'Any image. You set ports, volumes and variables by hand.',
 
-  'field.itzg/minecraft-server.EULA.help': 'The image does not start without this accepted.',
-  'field.itzg/minecraft-server.VERSION.help':
+  'field.minecraft-java.EULA.help': 'The image does not start without this accepted.',
+  'field.minecraft-java.VERSION.help':
     'LATEST, SNAPSHOT or an exact version such as 1.21.1.',
-  'field.itzg/minecraft-server.MEMORY.help':
+  'field.minecraft-java.MEMORY.help':
     'Keep it at least 1 GB below the container RAM limit, or the kernel kills the process (exit 137).',
-  'field.itzg/minecraft-server.OPS.help': 'Nicknames separated by commas.',
-  'field.ryshe/terraria.WORLD_FILENAME.help':
+  'field.minecraft-java.OPS.help': 'Nicknames separated by commas.',
+  'field.terraria-tshock.WORLD_FILENAME.help':
     'Name of the .wld inside ./data. If it does not exist, it is created with the size below.',
-  'field.ryshe/terraria.AUTOCREATE.help':
+  'field.terraria-tshock.AUTOCREATE.help':
     'Only takes effect while the world file does not exist yet.',
-  'field.ryshe/terraria.NOUPNP.help':
+  'field.terraria-tshock.NOUPNP.help':
     'The panel already publishes the port; letting the server touch the router only gets in the way.',
-  'field.ryshe/terraria-vanilla.WORLD.help':
+  'field.terraria-vanilla.WORLD.help':
     'Path inside the container. The folder is the instance ./data volume; change only the file name.',
-  'field.ryshe/terraria-vanilla.AUTOCREATE.help':
+  'field.terraria-vanilla.AUTOCREATE.help':
     'Only takes effect while the world file does not exist yet.',
-  'field.ryshe/terraria-vanilla.NOUPNP.help':
+  'field.terraria-vanilla.NOUPNP.help':
     'The panel already publishes the port; letting the server touch the router only gets in the way.',
 
   'api.offline': 'could not reach the OkDock API — is it up?',

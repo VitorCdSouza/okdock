@@ -7,7 +7,7 @@ export interface FieldOption {
   label: string;
 }
 
-export interface ProviderField {
+export interface TemplateField {
   key: string;
   label: string;
   type: FieldType;
@@ -21,7 +21,7 @@ export interface ProviderField {
   advanced?: boolean;
 }
 
-export interface ProviderPort {
+export interface TemplatePort {
   container: number;
   protocol: 'tcp' | 'udp';
   defaultHost: number;
@@ -29,29 +29,49 @@ export interface ProviderPort {
   optional?: boolean;
 }
 
-export interface ProviderVolume {
+export interface TemplateVolume {
   host: string;
   container: string;
   data?: boolean;
 }
 
-export interface Provider {
+export type Category = 'games' | 'media' | 'database' | 'network' | 'utilities' | 'other';
+
+export interface Template {
   id: string;
-  game: string;
-  gameLabel: string;
+  name: string;
+  category: Category;
   short: string;
   image: string;
   description: string;
   docs?: string;
   tags?: string[];
-  ports: ProviderPort[] | null;
-  volumes: ProviderVolume[];
+  imagePattern?: string;
+  ports: TemplatePort[] | null;
+  volumes: TemplateVolume[];
   defaultMemory: string;
   minMemory: string;
   defaultCpus: number;
   stopGraceSeconds: number;
-  fields: ProviderField[] | null;
+  fields: TemplateField[] | null;
+  freeEnv?: boolean;
+  /** Veio com o OkDock: editar grava uma cópia, apagar desfaz a cópia. */
+  builtin?: boolean;
 }
+
+export interface TemplatesResponse {
+  templates: Template[];
+  categories: Category[];
+}
+
+export const CATEGORY_KEY: Record<Category, MessageKey> = {
+  games: 'category.games',
+  media: 'category.media',
+  database: 'category.database',
+  network: 'category.network',
+  utilities: 'category.utilities',
+  other: 'category.other',
+};
 
 export type State =
   | 'stopped'
@@ -111,8 +131,8 @@ export interface Operation {
 
 export interface Instance {
   name: string;
-  providerId: string;
-  game: string;
+  templateId: string;
+  category: Category;
   image: string;
   env: Record<string, string>;
   secretKeys?: string[];
@@ -162,7 +182,7 @@ export interface SystemInfo {
 
 export interface SpecRequest {
   name: string;
-  providerId: string;
+  templateId: string;
   image?: string;
   values: Record<string, string>;
   ports?: PortBinding[];

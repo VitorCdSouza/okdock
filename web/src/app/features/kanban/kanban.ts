@@ -189,7 +189,7 @@ export class Kanban {
   }
 
   short(i: Instance): string {
-    return this.store.provider(i.providerId)?.short ?? '··';
+    return this.store.template(i.templateId)?.short ?? '··';
   }
 
   onAction({ instance, verb }: { instance: Instance; verb: ActionVerb }): void {

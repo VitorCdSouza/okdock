@@ -1,0 +1,264 @@
+<div class="backdrop" (click)="close.emit()"></div>
+
+<div class="dialog" role="dialog" [attr.aria-label]="t('templates.title')">
+  <header>
+    <h2>{{ t('templates.title') }}</h2>
+    <div class="actions">
+      <button class="btn btn-sm btn-primary" (click)="create()">{{ t('templates.new') }}</button>
+      <button class="btn btn-sm" (click)="close.emit()" [attr.aria-label]="t('common.close')">✕</button>
+    </div>
+  </header>
+
+  <div class="body">
+    <aside class="list">
+      @for (group of groups(); track group.category) {
+        <div class="category-title">{{ t(categoryKey(group.category)) }}</div>
+        @for (tmpl of group.templates; track tmpl.id) {
+          <button class="row" [class.on]="draft()?.id === tmpl.id && !isNew()" (click)="edit(tmpl)">
+            <gd-game-icon class="badge" [template]="tmpl.id" [fallback]="tmpl.short" />
+            <span class="ident">
+              <span class="name">{{ tmpl.name }}</span>
+              <span class="image mono">{{ tmpl.image || t('templates.noImage') }}</span>
+            </span>
+            @if (tmpl.builtin) {
+              <span class="tag mono">{{ t('templates.builtin') }}</span>
+            }
+          </button>
+        }
+      }
+    </aside>
+
+    <section class="editor">
+      @if (draft(); as d) {
+        @if (error(); as err) {
+          <div class="alert bad">
+            <strong>{{ err.message }}</strong>
+            @if (err.problems.length) {
+              <ul>
+                @for (p of err.problems; track p.field + p.code) { <li class="mono">{{ problem(p) }}</li> }
+              </ul>
+            }
+          </div>
+        }
+        @if (saved()) { <div class="ok-note">{{ t('templates.saved') }}</div> }
+
+        <div class="section-title">{{ t('templates.identity') }}</div>
+        <div class="grid">
+          <div class="field">
+            <label for="tpl-id">
+              {{ t('templates.id') }} <span class="req">*</span>
+              <gd-info [text]="t('templates.idTip')" />
+            </label>
+            <input id="tpl-id" class="mono" [disabled]="!isNew()" [ngModel]="d.id"
+                   (ngModelChange)="patch({ id: $event })" placeholder="jellyfin">
+          </div>
+
+          <div class="field">
+            <label for="tpl-name">{{ t('templates.name') }} <span class="req">*</span></label>
+            <input id="tpl-name" [ngModel]="d.name" (ngModelChange)="patch({ name: $event })"
+                   placeholder="Jellyfin">
+          </div>
+
+          <div class="field">
+            <label for="tpl-cat">{{ t('templates.category') }}</label>
+            <select id="tpl-cat" [ngModel]="d.category" (ngModelChange)="patch({ category: $event })">
+              @for (c of categories(); track c) {
+                <option [value]="c">{{ t(categoryKey(c)) }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="tpl-short">
+              {{ t('templates.short') }}
+              <gd-info [text]="t('templates.shortTip')" />
+            </label>
+            <input id="tpl-short" class="mono" maxlength="3" [ngModel]="d.short"
+                   (ngModelChange)="patch({ short: $event })" placeholder="JF">
+          </div>
+
+          <div class="field wide">
+            <label for="tpl-image">{{ t('templates.image') }} <span class="req">*</span></label>
+            <input id="tpl-image" class="mono" [ngModel]="d.image"
+                   (ngModelChange)="patch({ image: $event })" placeholder="jellyfin/jellyfin:10.9">
+          </div>
+
+          <div class="field">
+            <label for="tpl-tags">
+              {{ t('templates.tags') }}
+              <gd-info [text]="t('templates.tagsTip')" />
+            </label>
+            <input id="tpl-tags" class="mono" [ngModel]="tagsText()"
+                   (ngModelChange)="setTags($event)" placeholder="10.9, 10.8, latest">
+          </div>
+
+          <div class="field">
+            <label for="tpl-pattern">
+              {{ t('templates.imagePattern') }}
+              <gd-info [text]="t('templates.imagePatternTip')" />
+            </label>
+            <input id="tpl-pattern" class="mono" [ngModel]="d.imagePattern ?? ''"
+                   (ngModelChange)="patch({ imagePattern: $event })" placeholder="^jellyfin/jellyfin(:|$)">
+          </div>
+
+          <div class="field wide">
+            <label for="tpl-desc">{{ t('templates.description') }}</label>
+            <input id="tpl-desc" [ngModel]="d.description"
+                   (ngModelChange)="patch({ description: $event })">
+          </div>
+
+          <div class="field wide">
+            <label for="tpl-docs">{{ t('templates.docs') }}</label>
+            <input id="tpl-docs" class="mono" [ngModel]="d.docs ?? ''"
+                   (ngModelChange)="patch({ docs: $event })" placeholder="https://">
+          </div>
+        </div>
+
+        <div class="section-title">{{ t('templates.resources') }}</div>
+        <div class="grid">
+          <div class="field">
+            <label for="tpl-mem">{{ t('templates.defaultMemory') }}</label>
+            <input id="tpl-mem" class="mono" [ngModel]="d.defaultMemory"
+                   (ngModelChange)="patch({ defaultMemory: $event })" placeholder="2g">
+          </div>
+          <div class="field">
+            <label for="tpl-min">
+              {{ t('templates.minMemory') }}
+              <gd-info [text]="t('templates.minMemoryTip')" />
+            </label>
+            <input id="tpl-min" class="mono" [ngModel]="d.minMemory"
+                   (ngModelChange)="patch({ minMemory: $event })" placeholder="512m">
+          </div>
+          <div class="field">
+            <label for="tpl-cpus">{{ t('templates.defaultCpus') }}</label>
+            <input id="tpl-cpus" type="number" step="0.5" min="0.5" class="mono" [ngModel]="d.defaultCpus"
+                   (ngModelChange)="patch({ defaultCpus: +$event })">
+          </div>
+          <div class="field">
+            <label for="tpl-grace">
+              {{ t('templates.stopGrace') }}
+              <gd-info [text]="t('templates.stopGraceTip')" />
+            </label>
+            <input id="tpl-grace" type="number" min="0" class="mono" [ngModel]="d.stopGraceSeconds"
+                   (ngModelChange)="patch({ stopGraceSeconds: +$event })">
+          </div>
+        </div>
+
+        <div class="section-title">
+          {{ t('templates.ports') }}
+          <button class="btn btn-sm" (click)="addPort()">{{ t('templates.add') }}</button>
+        </div>
+        @for (port of d.ports ?? []; track $index) {
+          <div class="line">
+            <input class="mono" type="number" [ngModel]="port.container"
+                   (ngModelChange)="patchPort($index, { container: +$event })"
+                   [attr.aria-label]="t('templates.portContainer')">
+            <select [ngModel]="port.protocol" (ngModelChange)="patchPort($index, { protocol: $event })">
+              <option value="tcp">tcp</option>
+              <option value="udp">udp</option>
+            </select>
+            <input class="mono" type="number" [ngModel]="port.defaultHost"
+                   (ngModelChange)="patchPort($index, { defaultHost: +$event })"
+                   [attr.aria-label]="t('templates.portHost')">
+            <input class="mono" [ngModel]="port.label" (ngModelChange)="patchPort($index, { label: $event })"
+                   [attr.aria-label]="t('templates.portLabel')" placeholder="web">
+            <button class="icon" (click)="removePort($index)"
+                    [attr.aria-label]="t('templates.remove')">✕</button>
+          </div>
+        }
+
+        <div class="section-title">
+          {{ t('templates.volumes') }}
+          <button class="btn btn-sm" (click)="addVolume()">{{ t('templates.add') }}</button>
+        </div>
+        @for (vol of d.volumes; track $index) {
+          <div class="line">
+            <input class="mono" [ngModel]="vol.host" (ngModelChange)="patchVolume($index, { host: $event })"
+                   [attr.aria-label]="t('templates.volumeHost')" placeholder="./data">
+            <input class="mono" [ngModel]="vol.container"
+                   (ngModelChange)="patchVolume($index, { container: $event })"
+                   [attr.aria-label]="t('templates.volumeContainer')" placeholder="/config">
+            <label class="check">
+              <input type="checkbox" [checked]="!!vol.data"
+                     (change)="patchVolume($index, { data: $any($event.target).checked })">
+              <span>{{ t('templates.volumeData') }}</span>
+            </label>
+            <button class="icon" (click)="removeVolume($index)"
+                    [attr.aria-label]="t('templates.remove')">✕</button>
+          </div>
+        }
+
+        <div class="section-title">
+          {{ t('templates.fields') }}
+          <button class="btn btn-sm" (click)="addField()">{{ t('templates.add') }}</button>
+          <gd-info [text]="t('templates.fieldsTip')" />
+        </div>
+        @for (field of d.fields ?? []; track $index) {
+          <div class="field-card">
+            <div class="line">
+              <input class="mono" [ngModel]="field.key" (ngModelChange)="patchField($index, { key: $event })"
+                     [attr.aria-label]="t('templates.fieldKey')" placeholder="TZ">
+              <input [ngModel]="field.label" (ngModelChange)="patchField($index, { label: $event })"
+                     [attr.aria-label]="t('templates.fieldLabel')" placeholder="Fuso horário">
+              <select [ngModel]="field.type" (ngModelChange)="patchField($index, { type: $event })">
+                @for (type of fieldTypes; track type) {
+                  <option [value]="type">{{ type }}</option>
+                }
+              </select>
+              <input class="mono" [ngModel]="field.default ?? ''"
+                     (ngModelChange)="patchField($index, { default: $event })"
+                     [attr.aria-label]="t('templates.fieldDefault')" placeholder="America/Sao_Paulo">
+              <button class="icon" (click)="removeField($index)"
+                      [attr.aria-label]="t('templates.remove')">✕</button>
+            </div>
+
+            <div class="line flags">
+              <label class="check">
+                <input type="checkbox" [checked]="!!field.required"
+                       (change)="patchField($index, { required: $any($event.target).checked })">
+                <span>{{ t('templates.fieldRequired') }}</span>
+              </label>
+              <label class="check">
+                <input type="checkbox" [checked]="!!field.secret"
+                       (change)="patchField($index, { secret: $any($event.target).checked })">
+                <span>{{ t('templates.fieldSecret') }}</span>
+              </label>
+              <label class="check">
+                <input type="checkbox" [checked]="!!field.advanced"
+                       (change)="patchField($index, { advanced: $any($event.target).checked })">
+                <span>{{ t('templates.fieldAdvanced') }}</span>
+              </label>
+
+              @if (field.type === 'enum') {
+                <input class="mono grow" [ngModel]="optionsText(field)"
+                       (ngModelChange)="setOptions($index, $event)"
+                       [attr.aria-label]="t('templates.fieldOptions')"
+                       [placeholder]="t('templates.fieldOptionsPlaceholder')">
+              }
+            </div>
+          </div>
+        }
+
+        <div class="foot">
+          <span class="hint mono">{{ isNew() ? t('templates.newHint') : t('templates.editHint') }}</span>
+          <div class="foot-actions">
+            @if (!isNew()) {
+              <button class="btn btn-danger" (click)="remove()" [disabled]="busy()">
+                {{ t('templates.delete') }}
+              </button>
+            }
+            <button class="btn" (click)="cancel()" [disabled]="busy()">{{ t('common.cancel') }}</button>
+            <button class="btn btn-primary" (click)="save()" [disabled]="busy()">
+              {{ busy() ? t('common.saving') : t('common.save') }}
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="empty">
+          <p>{{ t('templates.pick') }}</p>
+          <button class="btn btn-primary" (click)="create()">{{ t('templates.new') }}</button>
+        </div>
+      }
+    </section>
+  </div>
+</div>

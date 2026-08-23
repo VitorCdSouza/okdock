@@ -97,6 +97,6 @@
   }
 }
 
-@if (!(provider().fields ?? []).length) {
+@if (!(template().fields ?? []).length) {
   <p class="none">{{ t('form.noSchema') }}</p>
 }

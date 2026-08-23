@@ -10,17 +10,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/VitorCdSouza/okdock/api/internal/catalog"
 	"github.com/VitorCdSouza/okdock/api/internal/compose"
 	"github.com/VitorCdSouza/okdock/api/internal/dockerx"
 	"github.com/VitorCdSouza/okdock/api/internal/duckdns"
 	"github.com/VitorCdSouza/okdock/api/internal/instance"
 	"github.com/VitorCdSouza/okdock/api/internal/store"
 	"github.com/VitorCdSouza/okdock/api/internal/system"
+	"github.com/VitorCdSouza/okdock/api/internal/template"
 )
 
 type Options struct {
 	Store         *store.Store
+	Templates     *template.Catalog
 	Docker        dockerx.Runner
 	System        system.Reader
 	DNS           duckdns.Client
@@ -31,11 +32,12 @@ type Options struct {
 const DefaultMemoryReserve = 2 << 30
 
 type Manager struct {
-	store   *store.Store
-	docker  dockerx.Runner
-	sys     system.Reader
-	reserve int64
-	now     func() time.Time
+	store     *store.Store
+	templates *template.Catalog
+	docker    dockerx.Runner
+	sys       system.Reader
+	reserve   int64
+	now       func() time.Time
 
 	mu  sync.Mutex
 	ops map[string]*instance.Operation
@@ -63,15 +65,16 @@ func New(o Options) *Manager {
 	}
 
 	return &Manager{
-		store:   o.Store,
-		docker:  o.Docker,
-		sys:     o.System,
-		reserve: reserve,
-		now:     now,
-		ops:     map[string]*instance.Operation{},
-		dns:     o.DNS,
-		dnsCfg:  dnsCfg,
-		hub:     NewHub(),
+		store:     o.Store,
+		templates: o.Templates,
+		docker:    o.Docker,
+		sys:       o.System,
+		reserve:   reserve,
+		now:       now,
+		ops:       map[string]*instance.Operation{},
+		dns:       o.DNS,
+		dnsCfg:    dnsCfg,
+		hub:       NewHub(),
 	}
 }
 
@@ -435,51 +438,51 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 	if err := instance.ValidateName(req.Name); err != nil {
 		return instance.Spec{}, err
 	}
-	prov, ok := catalog.Get(req.ProviderID)
+	tmpl, ok := m.templates.Get(req.TemplateID)
 	if !ok {
-		return instance.Spec{}, fmt.Errorf("provedor desconhecido: %q", req.ProviderID)
+		return instance.Spec{}, fmt.Errorf("template desconhecido: %q", req.TemplateID)
 	}
 
 	image := strings.TrimSpace(req.Image)
 	if image == "" {
-		image = prov.Image
+		image = tmpl.Image
 	}
 	if image == "" {
 		return instance.Spec{}, errors.New("a imagem custom precisa de um nome de imagem")
 	}
-	if !prov.AcceptsImage(image) {
-		if owner, ok := catalog.ProviderForImage(image); ok {
-			return instance.Spec{}, &catalog.ValidationError{Problems: []catalog.Problem{{
+	if !tmpl.AcceptsImage(image) {
+		if owner, ok := m.templates.TemplateForImage(image); ok {
+			return instance.Spec{}, &template.ValidationError{Problems: []template.Problem{{
 				Field: "image",
 				Code:  "image_owned_by",
 				Params: map[string]any{
 					"image":    image,
-					"owner":    owner.GameLabel,
-					"provider": prov.GameLabel,
+					"owner":    owner.Name,
+					"template": tmpl.Name,
 				},
 			}}}
 		}
-		return instance.Spec{}, &catalog.ValidationError{Problems: []catalog.Problem{{
+		return instance.Spec{}, &template.ValidationError{Problems: []template.Problem{{
 			Field: "image",
 			Code:  "image_not_accepted",
 			Params: map[string]any{
 				"image":    image,
-				"provider": prov.GameLabel,
-				"pattern":  prov.ImagePattern,
+				"template": tmpl.Name,
+				"pattern":  tmpl.ImagePattern,
 			},
 		}}}
 	}
 
-	validated, err := prov.Validate(req.Values)
+	validated, err := tmpl.Validate(req.Values)
 	if err != nil {
 		return instance.Spec{}, err
 	}
-	env, args := prov.SplitValues(validated)
+	env, args := tmpl.SplitValues(validated)
 
 	secretKeys := req.SecretKeys
-	if prov.ID != catalog.CustomProviderID {
+	if tmpl.ID != template.CustomID {
 		secretKeys = nil
-		for _, f := range prov.Fields {
+		for _, f := range tmpl.Fields {
 			if f.Secret {
 				secretKeys = append(secretKeys, f.Key)
 			}
@@ -489,7 +492,7 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 
 	ports := req.Ports
 	if len(ports) == 0 {
-		for _, p := range prov.Ports {
+		for _, p := range tmpl.Ports {
 			if p.Optional {
 				continue
 			}
@@ -512,28 +515,28 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 
 	mounts := req.Mounts
 	if len(mounts) == 0 {
-		for _, v := range prov.Volumes {
+		for _, v := range tmpl.Volumes {
 			mounts = append(mounts, instance.Mount{Host: v.Host, Container: v.Container, Data: v.Data})
 		}
 	}
 
 	memLimit := strings.TrimSpace(req.MemoryLimit)
 	if memLimit == "" {
-		memLimit = prov.DefaultMemory
+		memLimit = tmpl.DefaultMemory
 	}
 	want, err := instance.ParseMemory(memLimit)
 	if err != nil {
 		return instance.Spec{}, err
 	}
-	if min, err := instance.ParseMemory(prov.MinMemory); err == nil && min > 0 && want < min {
+	if min, err := instance.ParseMemory(tmpl.MinMemory); err == nil && min > 0 && want < min {
 		return instance.Spec{}, fmt.Errorf(
 			"%s pede pelo menos %s de RAM; %s não sobe (a imagem morre com exit 137)",
-			prov.GameLabel, prov.MinMemory, memLimit)
+			tmpl.Name, tmpl.MinMemory, memLimit)
 	}
 
 	cpus := req.CPUs
 	if cpus <= 0 {
-		cpus = prov.DefaultCPUs
+		cpus = tmpl.DefaultCPUs
 	}
 	restart := req.Restart
 	if restart == "" {
@@ -542,8 +545,8 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 
 	return instance.Spec{
 		Name:             req.Name,
-		ProviderID:       prov.ID,
-		Game:             prov.Game,
+		TemplateID:       tmpl.ID,
+		Category:         string(tmpl.Category),
 		Image:            image,
 		Env:              env,
 		Command:          args,
@@ -553,14 +556,14 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 		MemoryLimit:      instance.FormatMemory(want),
 		CPUs:             cpus,
 		Restart:          restart,
-		StopGraceSeconds: prov.StopGraceSeconds,
+		StopGraceSeconds: tmpl.StopGraceSeconds,
 		UpdatedAt:        m.now(),
 	}, nil
 }
 
 type SpecRequest struct {
 	Name        string                 `json:"name"`
-	ProviderID  string                 `json:"providerId"`
+	TemplateID  string                 `json:"templateId"`
 	Image       string                 `json:"image,omitempty"`
 	Values      map[string]string      `json:"values"`
 	Ports       []instance.PortBinding `json:"ports,omitempty"`
@@ -631,8 +634,8 @@ func (m *Manager) Update(ctx context.Context, name string, req SpecRequest) (ins
 		return instance.Spec{}, err
 	}
 	req.Name = name
-	if req.ProviderID == "" {
-		req.ProviderID = old.ProviderID
+	if req.TemplateID == "" {
+		req.TemplateID = old.TemplateID
 	}
 	spec, err := m.BuildSpec(req)
 	if err != nil {

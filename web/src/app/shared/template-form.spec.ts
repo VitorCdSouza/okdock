@@ -1,28 +1,28 @@
 import { TestBed } from '@angular/core/testing';
 
-import { ProviderForm } from './provider-form';
+import { TemplateForm } from './template-form';
 import { I18n } from '../core/i18n/i18n';
-import { Provider } from '../core/models';
+import { Template } from '../core/models';
 
 const minecraft = {
-  id: 'itzg/minecraft-server',
+  id: 'minecraft-java',
   fields: [
     { key: 'EULA', label: 'EULA da Mojang', type: 'bool', default: 'true', required: true,
       help: 'A imagem não sobe sem isto aceito.' },
     { key: 'MAX_PLAYERS', label: 'Máximo de jogadores', type: 'int', default: '10' },
     { key: 'VIEW_DISTANCE', label: 'Distância de render', type: 'int', default: '10', advanced: true },
   ],
-} as Provider;
+} as Template;
 
 const desconhecido = {
   id: 'algum/jogo-novo',
   fields: [{ key: 'SEED', label: 'Seed', type: 'text', help: 'texto que só o catálogo tem' }],
-} as Provider;
+} as Template;
 
-describe('ProviderForm', () => {
-  function form(provider: Provider): ProviderForm {
-    const fixture = TestBed.createComponent(ProviderForm);
-    fixture.componentRef.setInput('provider', provider);
+describe('TemplateForm', () => {
+  function form(template: Template): TemplateForm {
+    const fixture = TestBed.createComponent(TemplateForm);
+    fixture.componentRef.setInput('template', template);
     fixture.componentRef.setInput('values', {});
     return fixture.componentInstance;
   }
@@ -43,8 +43,8 @@ describe('ProviderForm', () => {
   });
 
   it('escreve o problema do campo pelo código que a API mandou', () => {
-    const fixture = TestBed.createComponent(ProviderForm);
-    fixture.componentRef.setInput('provider', minecraft);
+    const fixture = TestBed.createComponent(TemplateForm);
+    fixture.componentRef.setInput('template', minecraft);
     fixture.componentRef.setInput('values', {});
     fixture.componentRef.setInput('problems', [
       { field: 'MAX_PLAYERS', code: 'below_min', params: { min: 1 } },
@@ -55,8 +55,8 @@ describe('ProviderForm', () => {
   });
 
   it('mostra o código quando o problema é de uma versão mais nova da API', () => {
-    const fixture = TestBed.createComponent(ProviderForm);
-    fixture.componentRef.setInput('provider', minecraft);
+    const fixture = TestBed.createComponent(TemplateForm);
+    fixture.componentRef.setInput('template', minecraft);
     fixture.componentRef.setInput('values', {});
     fixture.componentRef.setInput('problems', [{ field: 'EULA', code: 'regra_nova' }]);
 

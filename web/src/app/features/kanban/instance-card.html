@@ -3,7 +3,7 @@
          (dragstart)="onDragStart($event)"
          (dragend)="onDragEnd()">
   <header>
-    <gd-game-icon class="badge" [game]="instance().game" [fallback]="short()"
+    <gd-game-icon class="badge" [template]="instance().templateId" [fallback]="short()"
                   [style.background]="colors().bg" [style.color]="colors().fg" />
     <div class="ident">
       <div class="name">{{ instance().name }}</div>

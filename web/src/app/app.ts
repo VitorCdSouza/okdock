@@ -5,16 +5,17 @@ import { Api } from './core/api';
 import { Store } from './core/state';
 import { Prefs } from './core/prefs';
 import { I18n } from './core/i18n/i18n';
-import { Instance } from './core/models';
+import { CATEGORY_KEY, Category, Instance } from './core/models';
 import { gigabytes } from './core/format';
 import { Kanban } from './features/kanban/kanban';
 import { InstanceDetail } from './features/instance-detail/instance-detail';
 import { NewInstance } from './features/new-instance/new-instance';
 import { Settings } from './features/settings/settings';
+import { Templates } from './features/templates/templates';
 
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, Kanban, InstanceDetail, NewInstance, Settings],
+  imports: [FormsModule, Kanban, InstanceDetail, NewInstance, Settings, Templates],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -30,6 +31,7 @@ export class App {
   readonly detailFor = signal<string | null>(null);
   readonly creating = signal(false);
   readonly settingsOpen = signal(false);
+  readonly templatesOpen = signal(false);
 
   readonly system = computed(() => this.store.system());
 
@@ -104,7 +106,11 @@ export class App {
     this.store.notify(this.t('app.created', { name }));
   }
 
-  setFilter(game: string | null): void {
-    this.store.gameFilter.set(this.store.gameFilter() === game ? null : game);
+  setFilter(category: Category | null): void {
+    this.store.categoryFilter.set(this.store.categoryFilter() === category ? null : category);
+  }
+
+  categoryKey(category: Category) {
+    return CATEGORY_KEY[category];
   }
 }

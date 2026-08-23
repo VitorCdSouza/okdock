@@ -1,19 +1,35 @@
-# Catálogo de provedores
+# Templates
 
-Um **provedor** é uma imagem Docker mais o schema dos campos que ela aceita. É
+Um **template** é uma imagem Docker mais o schema dos campos que ela aceita. É
 daqui que o wizard tira o formulário — o frontend não conhece nenhuma variável
-de nenhum jogo.
+de nenhuma imagem.
 
-Tudo vive em [`api/internal/catalog/providers.go`](../api/internal/catalog/providers.go).
+Template é JSON. Os que vêm com o OkDock estão em
+[`api/internal/template/builtin/`](../api/internal/template/builtin/), embutidos
+no binário por `go:embed`. Os que você cadastra pela tela **Novo template** vão
+para `<raiz de boot>/.okdock/templates/<id>.json`, e um arquivo com o mesmo id
+vence o de fábrica: é assim que se edita um template pronto sem perder o
+original, que volta quando a edição é apagada.
 
-## O que está no catálogo
+## Categorias
 
-| Jogo | Imagem | RAM padrão / mínima | Portas |
-|---|---|---|---|
-| Minecraft (Java) | `itzg/minecraft-server:java21` | 4g / 2g | 25565/tcp |
-| Terraria (TShock) | `ryshe/terraria:tshock-1.4.5.6-6.1.0` | 2g / 512m | 7777/tcp |
-| Terraria (vanilla) | `ryshe/terraria:vanilla-1.4.5.7` | 2g / 512m | 7777/tcp |
-| Imagem custom | qualquer | 2g / 256m | você define |
+Lista fechada — `games`, `media`, `database`, `network`, `utilities`, `other` —
+porque cada uma tem cor, ícone e tradução própria no painel; texto livre viraria
+grupo duplicado à primeira diferença de acento. Categoria nova é uma constante
+em `internal/template/template.go` mais duas chaves em `messages.*.ts`.
+
+## O que vem de fábrica
+
+| Template | Id | Categoria | Imagem | RAM padrão / mínima | Portas |
+|---|---|---|---|---|---|
+| Minecraft (Java) | `minecraft-java` | games | `itzg/minecraft-server:java21` | 4g / 2g | 25565/tcp |
+| Terraria (TShock) | `terraria-tshock` | games | `ryshe/terraria:tshock-1.4.5.6-6.1.0` | 2g / 512m | 7777/tcp |
+| Terraria (vanilla) | `terraria-vanilla` | games | `ryshe/terraria:vanilla-1.4.5.7` | 2g / 512m | 7777/tcp |
+| Imagem custom | `custom` | other | qualquer | 2g / 256m | você define |
+
+O id é o nome do arquivo em disco: minúsculas, dígitos e hífen. Instância criada
+antes disso gravou o id com barra (`itzg/minecraft-server`); a busca no catálogo
+traduz esses três ids antigos.
 
 ## As duas variantes de Terraria
 
@@ -28,7 +44,7 @@ imagens andam em velocidades diferentes.
 Quando o jogo atualiza e o cliente para de conectar, a saída é a variante
 vanilla — ou esperar o TShock.
 
-Os dois provedores existem separados porque **não são a mesma imagem com outra
+Os dois templates existem separados porque **não são a mesma imagem com outra
 tag**: o `bootstrap.sh` é diferente. O da TShock aceita `WORLD_FILENAME` e cria
 o mundo se `-autocreate` estiver nos argumentos. O da vanilla **sai com erro**
 se `WORLD_FILENAME` estiver preenchido e o mundo não existir — lá o caminho do
@@ -36,16 +52,15 @@ mundo vai por `-world`, e `WORLD_FILENAME` fica vazio.
 
 Trocar só a tag de uma instância TShock para vanilla, portanto, não funciona: o
 container morre no boot e, com `restart: unless-stopped`, entra em crashloop. O
-`ImagePattern` de cada provedor recusa essa combinação no momento de salvar,
+`imagePattern` de cada template recusa essa combinação no momento de salvar,
 com uma mensagem que diz o que fazer. Para migrar de variante, crie outra
 instância apontando para a mesma pasta de mundo.
 
-## ImagePattern
+## imagePattern
 
-Cada provedor de jogo declara quais imagens sabe configurar, como expressão
-regular:
+Cada template declara quais imagens sabe configurar, como expressão regular:
 
-| Provedor | Padrão |
+| Template | Padrão |
 |---|---|
 | Minecraft (Java) | `^itzg/minecraft-server(:\|$)` |
 | Terraria (TShock) | `^ryshe/terraria:tshock-` |
@@ -55,7 +70,7 @@ regular:
 O padrão precisa ser largo o bastante para deixar trocar de versão (é assim que
 se atualiza uma instância) e estreito o bastante para barrar outra variante. Os
 testes cobrem os dois lados, e checam que nenhum padrão rejeita a própria
-imagem padrão do provedor.
+imagem padrão do template. Template sem padrão aceita qualquer imagem.
 
 ## Tags fixas
 
@@ -67,12 +82,13 @@ falha se alguém reintroduzir uma.
 Atualizar de versão é trocar o campo **Imagem** da instância no painel e salvar
 — o mundo nos volumes é preservado.
 
-O provedor `custom` é o único que aceita variáveis fora do schema — é a saída
-para uma imagem que o catálogo ainda não descreve.
+`freeEnv: true` é o que deixa um template aceitar variável fora do schema; o
+`custom` é o único de fábrica com isso ligado — é a saída para uma imagem que
+nenhum template descreve.
 
 ## Estado de verificação dos schemas
 
-Os dois provedores de jogo foram exercitados contra um container de verdade em
+Os dois templates de jogo foram exercitados contra um container de verdade em
 21/08/2026: criar instância pelo painel, subir, e confirmar que a configuração
 pegou. Minecraft gera o mundo e aceita conexão; Terraria idem, com
 `okdock.wld` criado pelo `-autocreate`.
@@ -85,7 +101,7 @@ recuperá-los de lá em vez de reescrever do zero, mas **sem confiar neles**: s�
 Minecraft e Terraria foram executados, e o caso do Terraria mostrou que o erro
 pode não ser um nome trocado e sim o mecanismo inteiro estar errado.
 
-Ao voltar com um provedor, o roteiro que funcionou foi:
+Ao escrever um template para uma imagem nova, o roteiro que funcionou foi:
 
 1. `skopeo inspect --config docker://<imagem>` — mostra entrypoint e variáveis
    declaradas sem baixar a imagem.
@@ -103,17 +119,24 @@ configuração não pegar. Configuração que a imagem espera como **argumento**
 pior: o sintoma é o container subir e não fazer nada, como aconteceu com
 Terraria antes do `TargetArg`.
 
-Nada disso impede usar um jogo fora do catálogo — o provedor `custom` sempre
+Nada disso impede usar uma imagem fora do catálogo — o template `custom` sempre
 aceita a imagem com as variáveis digitadas à mão.
 
-## Adicionando um provedor
+## Adicionando um template
 
-1. Acrescente uma entrada em `providers` no `providers.go`.
-2. `go test ./internal/catalog/` — `TestAllProvidersAreUsable` já cobre o
-   básico: identificação completa, volume de mundo marcado, chaves sem
-   repetição, enum com opções, e **todo default passando na própria
-   validação** (um default fora do schema faria a instância nascer inválida sem
-   o usuário ter tocado em nada).
+Pelo painel: **Novo template**, no topo. Grava em `.okdock/templates/` e já
+aparece no wizard — nada precisa ser recompilado.
+
+Para incluir um template que venha com o OkDock:
+
+1. Acrescente o `.json` em `internal/template/builtin/`, com o id igual ao nome
+   do arquivo.
+2. `go test ./internal/template/` — `TestAllBuiltinTemplatesAreUsable` já cobre
+   o básico: identificação completa, volume de dados marcado, chaves sem
+   repetição, enum com opções, e **todo default passando na própria validação**
+   (um default fora do schema faria a instância nascer inválida sem o usuário
+   ter tocado em nada). `Template.Check` roda no carregamento, então JSON
+   inválido derruba o boot em vez de aparecer quebrado na tela.
 3. Nada muda no frontend.
 
 ### Campo que vira argumento, e não variável
@@ -121,7 +144,7 @@ aceita a imagem com as variáveis digitadas à mão.
 `Target: TargetArg` mais `Flag: "-autocreate"` manda o valor para o `command:`
 do serviço em vez do ambiente. Campo booleano emite só a flag quando
 verdadeiro, sem valor. A ordem dos argumentos segue a ordem dos campos no
-provedor, e não a do mapa, para o compose gerado não mudar a cada renderização.
+template, e não a do mapa, para o compose gerado não mudar a cada renderização.
 
 Campo secreto que é argumento vira `${CHAVE}` no compose, e o valor vai para o
 `.env` — o `docker compose` interpola lendo o `.env` do diretório do projeto.
@@ -143,6 +166,6 @@ Os campos que merecem atenção:
 
 ## Como a validação funciona
 
-`Provider.Validate` aplica os defaults, confere tipo, faixa e enum, e junta
+`Template.Validate` aplica os defaults, confere tipo, faixa e enum, e junta
 **todos** os problemas antes de devolver — o formulário marca os campos errados
 de uma vez em vez de obrigar a salvar várias vezes para descobrir o resto.
