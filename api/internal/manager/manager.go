@@ -136,10 +136,13 @@ func (m *Manager) listExternal(ctx context.Context, managed []instance.Instance)
 
 		inst := instance.Instance{
 			Spec: instance.Spec{
-				Name:      c.Name,
-				Image:     c.Image,
-				Category:  string(template.CategoryOther),
-				Env:       map[string]string{},
+				Name:     c.Name,
+				Image:    c.Image,
+				Category: string(template.CategoryOther),
+				Env:      map[string]string{},
+				// lista vazia, nunca nula: a tela conta os itens sem perguntar se o campo veio
+				Ports:     []instance.PortBinding{},
+				Mounts:    []instance.Mount{},
 				CreatedAt: now,
 				UpdatedAt: now,
 			},

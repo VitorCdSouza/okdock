@@ -52,7 +52,7 @@ export class Store {
         i.name,
         i.image,
         i.templateId,
-        ...i.ports.map((p) => String(p.host)),
+        ...(i.ports ?? []).map((p) => String(p.host)),
       ]
         .join(' ')
         .toLowerCase();

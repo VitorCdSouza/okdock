@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"strings"
@@ -712,4 +713,30 @@ func containsCall(calls []string, want string) bool {
 		}
 	}
 	return false
+}
+
+func TestContainerExternoNuncaTemListaNula(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	sem := hostContainer("duckdns", "duckdns")
+	sem.Ports = nil
+	fake.HostList = []dockerx.HostContainer{sem}
+
+	list, err := m.List(t.Context())
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	raw, err := json.Marshal(list[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	var body map[string]any
+	if err := json.Unmarshal(raw, &body); err != nil {
+		t.Fatal(err)
+	}
+	for _, field := range []string{"ports", "mounts"} {
+		if body[field] == nil {
+			t.Errorf("%s veio null; a tela conta os itens sem checar: %s", field, raw)
+		}
+	}
 }

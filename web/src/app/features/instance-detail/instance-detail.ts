@@ -127,7 +127,7 @@ export class InstanceDetail {
   readonly dnsSuffix = computed(() => this.store.dns()?.suffix ?? '.duckdns.org');
   readonly hasToken = computed(() => !!this.store.dns()?.token);
 
-  readonly mainPort = computed(() => this.instance()?.ports[0]?.host ?? 0);
+  readonly mainPort = computed(() => (this.instance()?.ports ?? [])[0]?.host ?? 0);
 
   readonly dnsAddress = computed(() => {
     const dns = this.instance()?.dns;
@@ -154,7 +154,7 @@ export class InstanceDetail {
       this.memoryLimit.set(i.memoryLimit);
       this.cpus.set(i.cpus);
       this.hostPorts.set(
-        Object.fromEntries(i.ports.map((p) => [`${p.container}/${p.protocol}`, p.host])),
+        Object.fromEntries((i.ports ?? []).map((p) => [`${p.container}/${p.protocol}`, p.host])),
       );
       this.error.set(null);
       this.dnsDomain.set(i.dns?.domain ?? '');
@@ -323,7 +323,7 @@ export class InstanceDetail {
       templateId: i.templateId,
       image: i.image,
       values: this.values(),
-      ports: i.ports.map((p) => ({
+      ports: (i.ports ?? []).map((p) => ({
         host: this.hostPorts()[`${p.container}/${p.protocol}`] ?? p.host,
         container: p.container,
         protocol: p.protocol,

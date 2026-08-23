@@ -40,6 +40,21 @@ describe('InstanceCard', () => {
 
   afterEach(() => localStorage.removeItem('okdock.locale'));
 
+  it('não quebra com container externo, que vem sem portas nem volumes', () => {
+    const externo = card({
+      external: true,
+      project: 'media',
+      ports: null as never,
+      mounts: null as never,
+      memoryLimit: '',
+      cpus: 0,
+    });
+
+    expect(externo.portList()).toBe('—');
+    expect(externo.portCount()).toBe(0);
+    expect(externo.address()).toBe('');
+  });
+
   it('traduz a etapa da operação que veio em código', () => {
     expect(card({ operation: { kind: 'provision', code: 'creating', message: '', startedAt: '' } }).opLabel())
       .toBe('criando container');

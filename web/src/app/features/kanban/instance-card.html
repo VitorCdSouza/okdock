@@ -35,7 +35,7 @@
   </header>
 
   <dl class="specs mono">
-    <dt>{{ instance().ports.length > 1 ? t('card.port.other') : t('card.port.one') }}</dt>
+    <dt>{{ portCount() > 1 ? t('card.port.other') : t('card.port.one') }}</dt>
     <dd>{{ portList() }}</dd>
     @if (!instance().external) {
       <dt>{{ t('card.ramAllocated') }}</dt>

@@ -37,7 +37,7 @@ export class InstanceCard {
 
   readonly address = computed(() => {
     const i = this.instance();
-    const port = i.ports[0]?.host;
+    const port = (i.ports ?? [])[0]?.host;
     if (!i.dns || !port) return i.dns?.hostname ?? '';
     return `${i.dns.hostname}:${port}`;
   });
@@ -83,10 +83,12 @@ export class InstanceCard {
   readonly dot = computed(() => STATE_DOT[this.instance().state]);
 
   readonly portList = computed(() => {
-    const ports = this.instance().ports;
+    const ports = this.instance().ports ?? [];
     if (!ports.length) return '—';
     return ports.map((p) => `${p.host}${p.protocol === 'udp' ? '/udp' : ''}`).join(', ');
   });
+
+  readonly portCount = computed(() => (this.instance().ports ?? []).length);
 
   readonly memoryAlloc = computed(() =>
     memoryLabel(this.instance().memoryLimit, this.t('card.noLimit')),
