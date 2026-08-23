@@ -28,5 +28,5 @@ jobs:
             sleep 1
           done
           [ -n "$ok" ] || { docker logs okdock; exit 1; }
-          curl -fs http://localhost:8080/api/v1/providers | grep -q 'itzg/minecraft-server'
+          curl -fs http://localhost:8080/api/v1/templates | grep -q 'itzg/minecraft-server'
           curl -fs http://localhost:8080/ | grep -q '<app-root>'
