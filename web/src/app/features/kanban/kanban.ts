@@ -16,17 +16,32 @@ import { Api, OkDockError } from '../../core/api';
 import { Store } from '../../core/state';
 import { COLUMN_OF, Instance, STATE_DOT, STATE_KEY, State } from '../../core/models';
 import { I18n } from '../../core/i18n/i18n';
+import { GameIcon, templateColors } from '../../shared/game-icon';
 import { ActionVerb, InstanceCard } from './instance-card';
 
 type HiddenColumn = { title: string; count: number };
+type MiniIcon = { name: string; templateId: string; short: string; bg: string; fg: string };
+type CardItem = { kind: 'card'; key: string; instance: Instance };
+type GroupItem = {
+  kind: 'group';
+  key: string;
+  name: string;
+  members: Instance[];
+  icons: MiniIcon[];
+  open: boolean;
+};
+type Item = CardItem | GroupItem;
 
 @Component({
   selector: 'ok-kanban',
-  imports: [InstanceCard],
+  imports: [GameIcon, InstanceCard],
   templateUrl: './kanban.html',
   styleUrl: './kanban.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(window:resize)': 'measure()' },
+  host: {
+    '(window:resize)': 'measure()',
+    '(document:keydown.escape)': 'openGroup.set(null)',
+  },
 })
 export class Kanban {
   private readonly api = inject(Api);
@@ -68,21 +83,72 @@ export class Kanban {
     });
   }
 
-  readonly columns = computed(() =>
-    this.store
+  readonly openGroup = signal<string | null>(null);
+
+  toggleGroup(key: string): void {
+    this.openGroup.update((current) => (current === key ? null : key));
+  }
+
+  readonly columns = computed(() => {
+    const opened = this.openGroup();
+    return this.store
       .states()
       .filter((state) => COLUMN_OF[state] === state)
       .map((state) => {
         const cards = this.store.byColumn(state);
+        const items = this.pack(state, cards, opened);
         return {
           state,
           dot: STATE_DOT[state],
           title: this.t(STATE_KEY[state]),
           cards,
-          grow: Math.min(3, Math.max(1, Math.ceil(cards.length / 4))),
+          items,
+          grow: Math.min(3, Math.max(1, Math.ceil(this.slots(items) / 4))),
         };
-      }),
-  );
+      });
+  });
+
+  // containers of the same compose stack collapse into one tile, opened one at a time
+  private pack(state: State, cards: Instance[], opened: string | null): Item[] {
+    const stacks = new Map<string, Instance[]>();
+    for (const card of cards) {
+      if (!card.project) continue;
+      stacks.set(card.project, [...(stacks.get(card.project) ?? []), card]);
+    }
+
+    const items: Item[] = [];
+    const done = new Set<string>();
+    for (const card of cards) {
+      const project = card.project;
+      const members = project ? stacks.get(project) ?? [] : [];
+      if (!project || members.length < 2) {
+        items.push({ kind: 'card', key: card.name, instance: card });
+        continue;
+      }
+      if (done.has(project)) continue;
+      done.add(project);
+      const key = `${state}:${project}`;
+      items.push({
+        kind: 'group',
+        key,
+        name: project,
+        members,
+        icons: members.slice(0, 4).map((m) => this.icon(m)),
+        open: opened === key,
+      });
+    }
+    return items;
+  }
+
+  private icon(instance: Instance): MiniIcon {
+    const { bg, fg } = templateColors(instance.templateId, instance.category);
+    return { name: instance.name, templateId: instance.templateId, short: this.short(instance), bg, fg };
+  }
+
+  // an open group takes the room of its cards, so the column grows with what is on screen
+  private slots(items: Item[]): number {
+    return items.reduce((n, item) => n + (item.kind === 'group' && item.open ? item.members.length : 1), 0);
+  }
 
   private readonly board = viewChild<ElementRef<HTMLElement>>('board');
   private readonly columnEls = viewChildren<ElementRef<HTMLElement>>('columnEl');

@@ -5,7 +5,6 @@ import { Api } from './core/api';
 import { Store } from './core/state';
 import { Prefs } from './core/prefs';
 import { I18n } from './core/i18n/i18n';
-import { InfoDot } from './shared/info-dot';
 import { Category, Instance } from './core/models';
 import { gigabytes } from './core/format';
 import { Kanban } from './features/kanban/kanban';
@@ -16,7 +15,7 @@ import { Templates } from './features/templates/templates';
 
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, InfoDot, Kanban, InstanceDetail, NewInstance, Settings, Templates],
+  imports: [FormsModule, Kanban, InstanceDetail, NewInstance, Settings, Templates],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -109,10 +108,6 @@ export class App {
 
   setFilter(category: Category | null): void {
     this.store.categoryFilter.set(this.store.categoryFilter() === category ? null : category);
-  }
-
-  setNetwork(network: string | null): void {
-    this.store.networkFilter.set(this.store.networkFilter() === network ? null : network);
   }
 
   categoryName(category: Category): string {

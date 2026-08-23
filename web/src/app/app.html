@@ -70,21 +70,6 @@
       </button>
     }
   </div>
-
-  @if (store.networkCounts().length > 1) {
-    <div class="chips networks">
-      <ok-info [text]="t('app.networksTip')" />
-      <button class="chip" [class.on]="store.networkFilter() === null" (click)="setNetwork(null)">
-        {{ t('app.allNetworks') }}
-      </button>
-      @for (n of store.networkCounts(); track n.network) {
-        <button class="chip mono" [class.on]="store.networkFilter() === n.network"
-                (click)="setNetwork(n.network)">
-          {{ n.network }} {{ n.count }}
-        </button>
-      }
-    </div>
-  }
 </div>
 
 <main>

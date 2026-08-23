@@ -200,6 +200,78 @@ describe('Kanban: dragging a card into a column', () => {
     expect(store.toastBad()).toBeTrue();
   });
 
+  it('containers of the same stack collapse into one tile, and single ones stay as cards', () => {
+    store.states.set(['running']);
+    store.instances.set([
+      instance({ name: 'nextcloud', external: true, project: 'nextcloud' }),
+      instance({ name: 'nextcloud-db', external: true, project: 'nextcloud' }),
+      instance({ name: 'jellyfin', external: true, project: 'media' }),
+      instance({ name: 'smp' }),
+    ]);
+
+    const items = kanban.columns()[0].items;
+
+    expect(items.map((i) => i.key)).toEqual(['running:nextcloud', 'jellyfin', 'smp']);
+    const group = items[0];
+    expect(group.kind).toBe('group');
+    if (group.kind !== 'group') return;
+    expect(group.members.map((m) => m.name)).toEqual(['nextcloud', 'nextcloud-db']);
+    expect(group.icons.length).withContext('the tile shows at most four icons').toBe(2);
+    expect(group.open).withContext('a group is born closed').toBeFalse();
+  });
+
+  it('one group opens at a time, and the tile closes it again', () => {
+    store.states.set(['running']);
+    store.instances.set([
+      instance({ name: 'nextcloud', external: true, project: 'nextcloud' }),
+      instance({ name: 'nextcloud-db', external: true, project: 'nextcloud' }),
+      instance({ name: 'jellyfin', external: true, project: 'media' }),
+      instance({ name: 'jellyfin-db', external: true, project: 'media' }),
+    ]);
+
+    kanban.toggleGroup('running:nextcloud');
+    expect(kanban.columns()[0].items.map((i) => i.kind === 'group' && i.open)).toEqual([true, false]);
+
+    kanban.toggleGroup('running:media');
+    expect(kanban.columns()[0].items.map((i) => i.kind === 'group' && i.open)).toEqual([false, true]);
+
+    kanban.toggleGroup('running:media');
+    expect(kanban.columns()[0].items.map((i) => i.kind === 'group' && i.open)).toEqual([false, false]);
+  });
+
+  it('the same stack split between two columns opens one column at a time', () => {
+    store.states.set(['running', 'stopped']);
+    store.instances.set([
+      instance({ name: 'nextcloud', external: true, project: 'nextcloud' }),
+      instance({ name: 'nextcloud-db', external: true, project: 'nextcloud' }),
+      instance({ name: 'nextcloud-cron', external: true, project: 'nextcloud', state: 'stopped' }),
+      instance({ name: 'nextcloud-redis', external: true, project: 'nextcloud', state: 'stopped' }),
+    ]);
+
+    kanban.toggleGroup('running:nextcloud');
+
+    const open = new Map(
+      kanban.columns().map((c) => [c.state, c.items.map((i) => i.kind === 'group' && i.open)]),
+    );
+    expect(open.get('running')).toEqual([true]);
+    expect(open.get('stopped')).withContext('the stopped half stays closed').toEqual([false]);
+  });
+
+  it('a closed group does not widen the column', () => {
+    store.states.set(['running', 'stopped']);
+    store.instances.set(
+      Array.from({ length: 12 }, (_, i) =>
+        instance({ name: `media-${i}`, external: true, project: 'media' }),
+      ),
+    );
+
+    const grow = new Map(kanban.columns().map((c) => [c.state, c.grow]));
+    expect(grow.get('running')).withContext('twelve containers behind one tile take one tile of room').toBe(1);
+
+    kanban.toggleGroup('running:media');
+    expect(kanban.columns().find((c) => c.state === 'running')!.grow).toBe(3);
+  });
+
   it('the full column ends up wider than the empty one', () => {
     store.states.set(['running', 'stopped']);
     store.instances.set(

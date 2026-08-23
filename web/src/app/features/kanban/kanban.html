@@ -30,15 +30,51 @@
           }
 
           <div class="cards">
-            @for (card of col.cards; track card.name) {
-              <ok-instance-card
-                [instance]="card"
-                [short]="short(card)"
-                (open)="open.emit($event)"
-                (act)="onAction($event)"
-                (remove)="askRemove($event)"
-                (dragChange)="onDragChange($event)"
-                (copied)="store.notify(t('common.copied', { text: $event }))" />
+            @for (item of col.items; track item.key) {
+              @if (item.kind === 'card') {
+                <ok-instance-card
+                  [instance]="item.instance"
+                  [short]="short(item.instance)"
+                  (open)="open.emit($event)"
+                  (act)="onAction($event)"
+                  (remove)="askRemove($event)"
+                  (dragChange)="onDragChange($event)"
+                  (copied)="store.notify(t('common.copied', { text: $event }))" />
+              } @else {
+                <div class="group" [class.open]="item.open">
+                  <button class="tile" (click)="toggleGroup(item.key)"
+                          [attr.aria-expanded]="item.open"
+                          [attr.aria-label]="item.open
+                            ? t('kanban.group.close', { name: item.name })
+                            : t('kanban.group.open', { name: item.name })">
+                    <span class="stack" aria-hidden="true">
+                      @for (icon of item.icons; track icon.name) {
+                        <ok-game-icon class="mini" [template]="icon.templateId" [fallback]="icon.short"
+                                      [style.background]="icon.bg" [style.color]="icon.fg" />
+                      }
+                    </span>
+                    <span class="label">
+                      <span class="stack-name">{{ item.name }}</span>
+                      <span class="count mono">{{ item.members.length }}</span>
+                    </span>
+                  </button>
+
+                  @if (item.open) {
+                    <div class="members">
+                      @for (card of item.members; track card.name) {
+                        <ok-instance-card
+                          [instance]="card"
+                          [short]="short(card)"
+                          (open)="open.emit($event)"
+                          (act)="onAction($event)"
+                          (remove)="askRemove($event)"
+                          (dragChange)="onDragChange($event)"
+                          (copied)="store.notify(t('common.copied', { text: $event }))" />
+                      }
+                    </div>
+                  }
+                </div>
+              }
             }
 
             @if (col.state === 'stopped') {

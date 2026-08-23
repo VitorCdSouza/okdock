@@ -230,9 +230,10 @@ A Spec saved when a template was called a provider has `providerId` and `game`
 in place of the first two; the read accepts both names and the next write swaps
 them for the new ones.
 
-`networks` is what `docker ps` answered for that container, and it is what the
-panel filters by to show one service at a time: the containers around nextcloud
-share `nextcloud_default`. It is absent while Docker does not answer.
+`networks` is what `docker ps` answered for that container. It is absent while
+Docker does not answer. What the board groups by is `project`, the compose
+project the container belongs to, which the panel reads from the
+`com.docker.compose.project` label.
 
 `env` includes the secrets: the API is local and the form needs them to edit.
 They are only kept out of `docker-compose.yml`.

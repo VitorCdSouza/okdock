@@ -29,6 +29,57 @@
   gap: 10px;
 }
 
+.group { min-width: 0; }
+.group.open { grid-column: 1 / -1; }
+
+.tile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px;
+  text-align: left;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+.tile:hover { border-color: var(--line-hover); }
+.group.open .tile { border-color: var(--accent-line); }
+
+.tile .stack {
+  display: grid;
+  grid-template-columns: repeat(2, 15px);
+  grid-auto-rows: 15px;
+  gap: 3px;
+  flex: none;
+  padding: 4px;
+  border-radius: var(--r-sm);
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+}
+.tile .mini { border-radius: var(--r-xs); }
+
+.tile .label { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.tile .stack-name {
+  font: 600 var(--fs-md) var(--sans);
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.members {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(216px, 100%), 1fr));
+  align-items: start;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r);
+  background: var(--bg-sunken);
+}
+
 .peek {
   position: absolute;
   top: 14px;
