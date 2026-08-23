@@ -108,6 +108,9 @@ not depend on the version installed on the host.
   copy. The subdomain has to exist in the account first: the duckdns API does
   not create names, it only updates IPs. And it knows nothing about ports, so
   forwarding the port on the router is still manual work.
+- **View by service**: the bar lists the docker networks in use, and picking one
+  leaves on the board only what sits on it. What talks to nextcloud shares
+  `nextcloud_default`, so the app, the database and the cache come out together.
 - **Live console** and a read of `docker-compose.yml` as it is on disk.
 - **Whatever was already running on the server**: a container created outside
   the panel shows up on the board all the same, with the category guessed from

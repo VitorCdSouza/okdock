@@ -67,7 +67,7 @@ func indexOf(s, sub string) int {
 }
 
 func TestParseHostPS(t *testing.T) {
-	out := []byte(`{"Names":"jellyfin","Image":"jellyfin/jellyfin:latest","State":"running","Status":"Up 35 hours (healthy)","Ports":"0.0.0.0:8096->8096/tcp, [::]:8096->8096/tcp","Labels":"com.docker.compose.project=media,com.docker.compose.service=jellyfin,com.docker.compose.project.working_dir=/home/vitorcds/servidor/media"}
+	out := []byte(`{"Names":"jellyfin","Image":"jellyfin/jellyfin:latest","State":"running","Status":"Up 35 hours (healthy)","Ports":"0.0.0.0:8096->8096/tcp, [::]:8096->8096/tcp","Labels":"com.docker.compose.project=media,com.docker.compose.service=jellyfin,com.docker.compose.project.working_dir=/home/vitorcds/servidor/media","Networks":"media_default, proxy"}
 {"Names":"nextcloud-mysql","Image":"mariadb:10.6","State":"exited","Status":"Exited (137) 2 hours ago","Ports":"3306/tcp","Labels":"com.docker.compose.project=nextcloud,com.docker.compose.service=db"}`)
 
 	list, err := parseHostPS(out)
@@ -84,6 +84,9 @@ func TestParseHostPS(t *testing.T) {
 	}
 	if jelly.WorkDir != "/home/vitorcds/servidor/media" {
 		t.Errorf("workDir = %q", jelly.WorkDir)
+	}
+	if len(jelly.Networks) != 2 || jelly.Networks[0] != "media_default" || jelly.Networks[1] != "proxy" {
+		t.Errorf("networks = %v", jelly.Networks)
 	}
 	if jelly.Health != "healthy" {
 		t.Errorf("health = %q", jelly.Health)

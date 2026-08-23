@@ -27,6 +27,7 @@ export class Store {
   readonly dns = signal<DnsStatus | null>(null);
   readonly loading = signal(true);
   readonly categoryFilter = signal<Category | null>(null);
+  readonly networkFilter = signal<string | null>(null);
   readonly search = signal('');
 
   readonly dragging = signal<string | null>(null);
@@ -55,8 +56,10 @@ export class Store {
   readonly filtered = computed(() => {
     const term = this.search().trim().toLowerCase();
     const category = this.categoryFilter();
+    const network = this.networkFilter();
     return this.instances().filter((i) => {
       if (category && i.category !== category) return false;
+      if (network && !(i.networks ?? []).includes(network)) return false;
       if (!term) return true;
       const haystack = [
         i.name,
@@ -78,6 +81,19 @@ export class Store {
     return this.categories()
       .filter((c) => counts.has(c))
       .map((category) => ({ category, count: counts.get(category)! }));
+  });
+
+  // one network is the closest the panel gets to a service: what talks to nextcloud is on its network
+  readonly networkCounts = computed(() => {
+    const counts = new Map<string, number>();
+    for (const i of this.instances()) {
+      for (const network of i.networks ?? []) {
+        counts.set(network, (counts.get(network) ?? 0) + 1);
+      }
+    }
+    return [...counts]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([network, count]) => ({ network, count }));
   });
 
   readonly byCategory = computed(() => {

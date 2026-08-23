@@ -300,13 +300,14 @@ func (c CLI) Version(ctx context.Context) (string, error) {
 }
 
 type hostPSLine struct {
-	ID     string `json:"ID"`
-	Names  string `json:"Names"`
-	Image  string `json:"Image"`
-	State  string `json:"State"`
-	Status string `json:"Status"`
-	Ports  string `json:"Ports"`
-	Labels string `json:"Labels"`
+	ID       string `json:"ID"`
+	Names    string `json:"Names"`
+	Image    string `json:"Image"`
+	State    string `json:"State"`
+	Status   string `json:"Status"`
+	Ports    string `json:"Ports"`
+	Labels   string `json:"Labels"`
+	Networks string `json:"Networks"`
 }
 
 func (c CLI) PSAll(ctx context.Context) ([]HostContainer, error) {
@@ -345,6 +346,7 @@ func parseHostPS(out []byte) ([]HostContainer, error) {
 			Service:  labels["com.docker.compose.service"],
 			WorkDir:  labels["com.docker.compose.project.working_dir"],
 			Labels:   labels,
+			Networks: splitList(l.Networks),
 			Ports:    parsePorts(l.Ports),
 		})
 	}
@@ -352,6 +354,16 @@ func parseHostPS(out []byte) ([]HostContainer, error) {
 		return nil, err
 	}
 	return list, nil
+}
+
+func splitList(raw string) []string {
+	var out []string
+	for _, part := range strings.Split(raw, ",") {
+		if part = strings.TrimSpace(part); part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
 }
 
 func parseLabels(raw string) map[string]string {

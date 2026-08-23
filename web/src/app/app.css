@@ -91,6 +91,8 @@
   font: 500 var(--fs-sm) var(--sans);
   color: var(--fg-muted);
 }
+.chips.networks { align-items: center; gap: 6px; }
+.chips.networks .chip { font-size: var(--fs-xs); padding: 4px 9px; }
 .chip:hover { border-color: var(--line-hover); color: var(--fg-soft); }
 .chip.on { border-color: var(--accent-line); background: #1f2531; color: var(--fg); }
 

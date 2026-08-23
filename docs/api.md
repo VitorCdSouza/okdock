@@ -218,6 +218,7 @@ An instance joins what is on disk with what Docker answered just now:
   "createdAt": "2026-08-21T12:00:00Z", "updatedAt": "2026-08-21T12:00:00Z",
 
   "dir": "/srv/games/smp-family",
+  "networks": ["smp-family_default"],
   "state": "running",
   "status": "Up 3 days (healthy)",
   "health": "healthy",
@@ -228,6 +229,10 @@ An instance joins what is on disk with what Docker answered just now:
 A Spec saved when a template was called a provider has `providerId` and `game`
 in place of the first two; the read accepts both names and the next write swaps
 them for the new ones.
+
+`networks` is what `docker ps` answered for that container, and it is what the
+panel filters by to show one service at a time: the containers around nextcloud
+share `nextcloud_default`. It is absent while Docker does not answer.
 
 `env` includes the secrets: the API is local and the form needs them to edit.
 They are only kept out of `docker-compose.yml`.

@@ -614,6 +614,35 @@ func TestListShowsAContainerThatWasAlreadyThere(t *testing.T) {
 	}
 }
 
+func TestListCarriesTheNetworksOfEveryContainer(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	if _, err := m.Create(t.Context(), SpecRequest{Name: "smp", TemplateID: "minecraft-java"}); err != nil {
+		t.Fatal(err)
+	}
+
+	outside := hostContainer("nextcloud-db", "nextcloud")
+	outside.Networks = []string{"nextcloud_default"}
+	fake.HostList = []dockerx.HostContainer{
+		{Name: "smp", State: "running", Status: "Up 1 minute", WorkDir: m.store.Dir("smp"), Networks: []string{"smp_default"}},
+		outside,
+	}
+
+	list, err := m.List(t.Context())
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	byName := map[string][]string{}
+	for _, inst := range list {
+		byName[inst.Name] = inst.Networks
+	}
+	if got := byName["smp"]; len(got) != 1 || got[0] != "smp_default" {
+		t.Errorf("networks of the panel instance = %v", got)
+	}
+	if got := byName["nextcloud-db"]; len(got) != 1 || got[0] != "nextcloud_default" {
+		t.Errorf("networks of the outside container = %v", got)
+	}
+}
+
 func TestListDoesNotDuplicateAPanelInstance(t *testing.T) {
 	m, fake := newManager(t, 16*gb)
 	inst, err := m.Create(t.Context(), SpecRequest{Name: "smp", TemplateID: "minecraft-java"})

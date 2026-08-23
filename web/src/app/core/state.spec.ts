@@ -51,6 +51,27 @@ describe('Store', () => {
 
   afterEach(() => localStorage.removeItem('okdock.locale'));
 
+  it('the network filter leaves only what shares that network', () => {
+    store.instances.set([
+      instance({ name: 'nextcloud', networks: ['nextcloud_default', 'proxy'] }),
+      instance({ name: 'nextcloud-db', networks: ['nextcloud_default'] }),
+      instance({ name: 'jellyfin', networks: ['media_default'] }),
+      instance({ name: 'smp' }),
+    ]);
+
+    expect(store.networkCounts()).toEqual([
+      { network: 'nextcloud_default', count: 2 },
+      { network: 'media_default', count: 1 },
+      { network: 'proxy', count: 1 },
+    ]);
+
+    store.networkFilter.set('nextcloud_default');
+    expect(store.filtered().map((i) => i.name)).toEqual(['nextcloud', 'nextcloud-db']);
+
+    store.networkFilter.set(null);
+    expect(store.filtered().length).withContext('with no filter nobody is hidden by the network').toBe(4);
+  });
+
   it('filters by name, port and image', () => {
     store.instances.set([instance(), instance({ name: 'terra', templateId: 'terraria-tshock', ports: [] })]);
 

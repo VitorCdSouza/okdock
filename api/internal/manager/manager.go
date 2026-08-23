@@ -96,7 +96,13 @@ func (m *Manager) List(ctx context.Context) ([]instance.Instance, error) {
 		}
 		out = append(out, inst)
 	}
-	external, upExternal := m.listExternal(ctx, out)
+	containers, err := m.docker.PSAll(ctx)
+	if err != nil {
+		slog.Debug("could not list the host containers", "err", err)
+	}
+	attachNetworks(out, containers)
+
+	external, upExternal := m.listExternal(out, containers)
 	out = append(out, external...)
 	running = append(running, upExternal...)
 
@@ -104,13 +110,18 @@ func (m *Manager) List(ctx context.Context) ([]instance.Instance, error) {
 	return out, nil
 }
 
-func (m *Manager) listExternal(ctx context.Context, managed []instance.Instance) (list []instance.Instance, running []string) {
-	containers, err := m.docker.PSAll(ctx)
-	if err != nil {
-		slog.Debug("could not list the host containers", "err", err)
-		return nil, nil
+// the managed container carries the instance name, which is how docker ps finds it again
+func attachNetworks(list []instance.Instance, containers []dockerx.HostContainer) {
+	byName := make(map[string][]string, len(containers))
+	for _, c := range containers {
+		byName[c.Name] = c.Networks
 	}
+	for i := range list {
+		list[i].Networks = byName[list[i].Name]
+	}
+}
 
+func (m *Manager) listExternal(managed []instance.Instance, containers []dockerx.HostContainer) (list []instance.Instance, running []string) {
 	// inside the container the hostname is the container own short id
 	self, _ := os.Hostname()
 
@@ -144,6 +155,7 @@ func (m *Manager) listExternal(ctx context.Context, managed []instance.Instance)
 				UpdatedAt: now,
 			},
 			Dir:      c.WorkDir,
+			Networks: c.Networks,
 			External: true,
 			Project:  c.Project,
 			Service:  c.Service,

@@ -107,6 +107,8 @@ type Instance struct {
 	Operation *Operation `json:"operation,omitempty"`
 	DNS       *DNS       `json:"dns,omitempty"`
 
+	Networks []string `json:"networks,omitempty"`
+
 	External bool   `json:"external,omitempty"`
 	Project  string `json:"project,omitempty"`
 	Service  string `json:"service,omitempty"`

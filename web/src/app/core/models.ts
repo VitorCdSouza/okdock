@@ -156,6 +156,7 @@ export interface Instance {
   stats?: Stats;
   operation?: Operation;
 
+  networks?: string[];
   external?: boolean;
   project?: string;
   service?: string;

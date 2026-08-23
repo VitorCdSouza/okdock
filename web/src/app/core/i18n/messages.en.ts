@@ -43,6 +43,8 @@ export const en: Record<MessageKey, string> = {
   'app.hostReserve': 'host reserve: {gb} GB',
   'app.searchPlaceholder': 'filter by name, port, image…',
   'app.allCategories': 'All',
+  'app.allNetworks': 'All networks',
+  'app.networksTip': 'A docker network. What talks to the same service shares its network: filtering by nextcloud_default leaves the app, the database and the cache on screen.',
   'app.created': '{name} was created',
   'app.dns.noToken': 'duckdns no token',
   'app.dns.noNames': 'duckdns no names',

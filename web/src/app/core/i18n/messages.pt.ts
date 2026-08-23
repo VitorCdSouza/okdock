@@ -41,6 +41,8 @@ export const pt = {
   'app.hostReserve': 'reserva do host: {gb} GB',
   'app.searchPlaceholder': 'filtrar por nome, porta, imagem…',
   'app.allCategories': 'Todos',
+  'app.allNetworks': 'Todas as redes',
+  'app.networksTip': 'Rede do docker. Quem conversa com o mesmo serviço divide a rede dele: filtrar por nextcloud_default deixa na tela o app, o banco e o cache.',
   'app.created': '{name} foi criada',
   'app.dns.noToken': 'duckdns sem token',
   'app.dns.noNames': 'duckdns sem nome',
