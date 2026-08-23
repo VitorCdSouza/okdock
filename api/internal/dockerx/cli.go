@@ -301,6 +301,7 @@ func (c CLI) Version(ctx context.Context) (string, error) {
 }
 
 type hostPSLine struct {
+	ID     string `json:"ID"`
 	Names  string `json:"Names"`
 	Image  string `json:"Image"`
 	State  string `json:"State"`
@@ -335,6 +336,7 @@ func parseHostPS(out []byte) ([]HostContainer, error) {
 		labels := parseLabels(l.Labels)
 		health, code := parseStatus(l.Status)
 		list = append(list, HostContainer{
+			ID: l.ID,
 			// um container pode ter mais de um nome, o primeiro e o que o docker usa nos comandos
 			Name:     strings.TrimSpace(strings.Split(l.Names, ",")[0]),
 			Image:    l.Image,

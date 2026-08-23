@@ -17,6 +17,7 @@ type Container struct {
 
 // HostContainer e um container visto pelo docker do host, com project e workdir dos labels
 type HostContainer struct {
+	ID       string
 	Name     string
 	Image    string
 	State    string

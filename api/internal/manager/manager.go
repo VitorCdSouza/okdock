@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -112,6 +113,9 @@ func (m *Manager) listExternal(ctx context.Context, managed []instance.Instance)
 		return nil, nil
 	}
 
+	// o painel tambem e um container, e um botao de parar nele seria convite a se desligar
+	self, _ := os.Hostname()
+
 	ours := make(map[string]bool, len(managed)*2)
 	for _, inst := range managed {
 		ours[filepath.Clean(inst.Dir)] = true
@@ -120,6 +124,9 @@ func (m *Manager) listExternal(ctx context.Context, managed []instance.Instance)
 
 	now := m.now()
 	for _, c := range containers {
+		if self != "" && strings.HasPrefix(c.ID, self) {
+			continue
+		}
 		if c.WorkDir != "" && ours[filepath.Clean(c.WorkDir)] {
 			continue
 		}

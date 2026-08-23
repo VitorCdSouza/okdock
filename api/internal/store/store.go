@@ -160,6 +160,10 @@ func (s *Store) List() ([]instance.Spec, error) {
 		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") {
 			continue
 		}
+		// a raiz pode ter outras coisas dentro, e nome que o painel nao aceitaria nao e instancia dele
+		if instance.ValidateName(e.Name()) != nil {
+			continue
+		}
 		spec, err := s.Get(e.Name())
 		if errors.Is(err, ErrNotFound) {
 			continue

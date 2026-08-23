@@ -3,6 +3,7 @@ package manager
 import (
 	"context"
 	"errors"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -635,6 +636,31 @@ func TestListNaoDuplicaInstanciaDoPainel(t *testing.T) {
 	}
 	if list[0].External {
 		t.Error("instância criada pelo painel não é externa")
+	}
+}
+
+func TestListNaoMostraOProprioPainel(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	self, err := os.Hostname()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fake.HostList = []dockerx.HostContainer{
+		{ID: self + "abc123", Name: "okdock", Image: "okdock:local", State: "running"},
+		hostContainer("jellyfin", "media"),
+	}
+
+	list, err := m.List(t.Context())
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	for _, inst := range list {
+		if inst.Name == "okdock" {
+			t.Fatal("o painel não pode aparecer no próprio quadro com botão de parar")
+		}
+	}
+	if len(list) != 1 {
+		t.Errorf("esperava só o jellyfin: %+v", list)
 	}
 }
 
