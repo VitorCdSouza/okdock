@@ -341,3 +341,44 @@ func parseSeconds(raw string) int {
 	}
 	return 0
 }
+
+// ParseEnv reads back what RenderEnv wrote, undoing only the escaping this package emits
+func ParseEnv(data []byte) map[string]string {
+	out := map[string]string{}
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		k, v, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		out[strings.TrimSpace(k)] = unescapeEnv(v)
+	}
+	return out
+}
+
+func unescapeEnv(v string) string {
+	if len(v) < 2 || !strings.HasPrefix(v, `"`) || !strings.HasSuffix(v, `"`) {
+		return v
+	}
+	v = v[1 : len(v)-1]
+	var b strings.Builder
+	for i := 0; i < len(v); i++ {
+		if v[i] != '\\' || i+1 >= len(v) {
+			b.WriteByte(v[i])
+			continue
+		}
+		i++
+		switch v[i] {
+		case 'n':
+			b.WriteByte('\n')
+		case 'r':
+			b.WriteByte('\r')
+		default:
+			b.WriteByte(v[i])
+		}
+	}
+	return b.String()
+}

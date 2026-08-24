@@ -172,10 +172,41 @@ func (s *Store) List() ([]instance.Spec, error) {
 	return out, nil
 }
 
+// Get reads the instance from the compose and the sidecar, which answers when the compose cannot
 func (s *Store) Get(name string) (instance.Spec, error) {
 	if err := instance.ValidateName(name); err != nil {
 		return instance.Spec{}, err
 	}
+	meta, err := s.meta(name)
+	if err != nil {
+		return instance.Spec{}, err
+	}
+	spec := meta
+	spec.Name = name
+
+	if svc, err := s.service(name); err != nil {
+		slog.Warn("reading the compose file, falling back to the sidecar",
+			"instance", name, "err", err)
+	} else {
+		spec = merge(meta, svc.Spec())
+		spec.Name = name
+	}
+	if spec.Env == nil {
+		spec.Env = map[string]string{}
+	}
+
+	// the secret never goes to the compose file, it lives in the .env
+	raw, err := os.ReadFile(filepath.Join(s.Dir(name), envFile))
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return instance.Spec{}, err
+	}
+	for k, v := range compose.ParseEnv(raw) {
+		spec.Env[k] = v
+	}
+	return spec, nil
+}
+
+func (s *Store) meta(name string) (instance.Spec, error) {
 	raw, err := os.ReadFile(filepath.Join(s.Dir(name), metaFile))
 	if errors.Is(err, os.ErrNotExist) {
 		raw, err = os.ReadFile(filepath.Join(s.Dir(name), legacyMetaFile))
@@ -188,10 +219,59 @@ func (s *Store) Get(name string) (instance.Spec, error) {
 	}
 	var spec instance.Spec
 	if err := json.Unmarshal(raw, &spec); err != nil {
-		return instance.Spec{}, fmt.Errorf("lendo %s de %s: %w", metaFile, name, err)
+		return instance.Spec{}, fmt.Errorf("reading %s of %s: %w", metaFile, name, err)
 	}
-	spec.Name = name
 	return spec, nil
+}
+
+func (s *Store) service(name string) (compose.Service, error) {
+	raw, err := os.ReadFile(s.ComposePath(name))
+	if err != nil {
+		return compose.Service{}, err
+	}
+	project, err := compose.Parse(raw)
+	if err != nil {
+		return compose.Service{}, err
+	}
+	svc, ok := project.Service(name)
+	if !ok {
+		return compose.Service{}, fmt.Errorf("%s has no service named %s", composeFile, name)
+	}
+	return svc, nil
+}
+
+// the compose answers for the config, the sidecar for what the format cannot say
+func merge(meta, fromFile instance.Spec) instance.Spec {
+	out := fromFile
+	out.SecretKeys = meta.SecretKeys
+	out.Archived = meta.Archived
+	out.CreatedAt, out.UpdatedAt = meta.CreatedAt, meta.UpdatedAt
+	if out.TemplateID == "" {
+		out.TemplateID = meta.TemplateID
+	}
+	if out.Category == "" {
+		out.Category = meta.Category
+	}
+	if out.Env == nil {
+		out.Env = map[string]string{}
+	}
+
+	labels := make(map[int]string, len(meta.Ports))
+	for _, p := range meta.Ports {
+		labels[p.Container] = p.Label
+	}
+	for i, p := range out.Ports {
+		out.Ports[i].Label = labels[p.Container]
+	}
+
+	data := make(map[string]bool, len(meta.Mounts))
+	for _, m := range meta.Mounts {
+		data[m.Container] = m.Data
+	}
+	for i, m := range out.Mounts {
+		out.Mounts[i].Data = data[m.Container]
+	}
+	return out
 }
 
 func (s *Store) Exists(name string) bool {
@@ -251,7 +331,7 @@ func (s *Store) write(spec instance.Spec) error {
 		return err
 	}
 
-	meta, err := json.MarshalIndent(spec, "", "  ")
+	meta, err := json.MarshalIndent(withoutSecrets(spec), "", "  ")
 	if err != nil {
 		return err
 	}
@@ -271,6 +351,19 @@ func (s *Store) write(spec instance.Spec) error {
 		}
 	}
 	return nil
+}
+
+// the sidecar is world readable, so it keeps the key list and the .env keeps the password
+func withoutSecrets(spec instance.Spec) instance.Spec {
+	env := make(map[string]string, len(spec.Env))
+	for k, v := range spec.Env {
+		env[k] = v
+	}
+	for _, k := range spec.SecretKeys {
+		delete(env, k)
+	}
+	spec.Env = env
+	return spec
 }
 
 func writeAtomic(path string, data []byte, perm os.FileMode) error {

@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/VitorCdSouza/okdock/api/internal/instance"
@@ -363,5 +364,84 @@ func TestListSkipsAFolderNamedLikeNoInstance(t *testing.T) {
 	}
 	if len(list) != 1 || list[0].Name != "smp" {
 		t.Errorf("expected only the panel instance, got %+v", list)
+	}
+}
+
+func TestGetReadsTheComposeFile(t *testing.T) {
+	s := newStore(t)
+	if err := s.Create(spec("smp")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	// what a hand edit of the file looks like
+	raw, err := os.ReadFile(s.ComposePath("smp"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	edited := strings.Replace(string(raw), "25565:25565/tcp", "25566:25565/tcp", 1)
+	edited = strings.Replace(edited, "itzg/minecraft-server:java21", "itzg/minecraft-server:java17", 1)
+	if err := os.WriteFile(s.ComposePath("smp"), []byte(edited), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := s.Get("smp")
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if got.Image != "itzg/minecraft-server:java17" {
+		t.Errorf("image = %q, the compose file is not the truth", got.Image)
+	}
+	if len(got.Ports) != 1 || got.Ports[0].Host != 25566 {
+		t.Errorf("ports = %+v", got.Ports)
+	}
+	// the sidecar still answers for what compose cannot say
+	if !got.Mounts[0].Data {
+		t.Error("the data flag of the mount was lost")
+	}
+	if len(got.SecretKeys) != 1 || got.SecretKeys[0] != "SENHA" {
+		t.Errorf("secret keys = %v", got.SecretKeys)
+	}
+	if got.Env["SENHA"] != "hunter2" {
+		t.Errorf("the secret did not come back from the .env: %v", got.Env)
+	}
+	if got.CreatedAt.IsZero() {
+		t.Error("createdAt was lost")
+	}
+}
+
+func TestSidecarHasNoPassword(t *testing.T) {
+	s := newStore(t)
+	if err := s.Create(spec("smp")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	raw, err := os.ReadFile(filepath.Join(s.Dir("smp"), ".okdock.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(raw), "hunter2") {
+		t.Fatalf("the password is in the world readable sidecar:\n%s", raw)
+	}
+	if !strings.Contains(string(raw), "SENHA") {
+		t.Fatal("the secret key list is not in the sidecar")
+	}
+}
+
+func TestGetFallsBackWhenTheComposeIsBroken(t *testing.T) {
+	s := newStore(t)
+	if err := s.Create(spec("smp")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if err := os.WriteFile(s.ComposePath("smp"), []byte("services: [!!!"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.Get("smp")
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if got.Image != "itzg/minecraft-server:java21" {
+		t.Errorf("image = %q, the sidecar did not answer", got.Image)
+	}
+	if got.Env["EULA"] != "true" || got.Env["SENHA"] != "hunter2" {
+		t.Errorf("env = %v", got.Env)
 	}
 }
