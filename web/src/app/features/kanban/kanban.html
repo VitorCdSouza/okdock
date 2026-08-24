@@ -70,6 +70,7 @@
                         <ok-instance-card
                           [instance]="card"
                           [short]="short(card)"
+                          [inStack]="true"
                           (open)="open.emit($event)"
                           (act)="onAction($event)"
                           (remove)="askRemove($event)"

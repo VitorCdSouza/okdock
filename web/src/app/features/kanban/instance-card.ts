@@ -26,6 +26,7 @@ export class InstanceCard {
 
   readonly instance = input.required<Instance>();
   readonly short = input('··');
+  readonly inStack = input(false);
 
   readonly open = output<Instance>();
   readonly copied = output<string>();
@@ -34,6 +35,13 @@ export class InstanceCard {
   readonly dragChange = output<string | null>();
 
   readonly menuOpen = signal(false);
+
+  // inside a stack the project is the group title, and one named after the container says nothing
+  readonly showProject = computed(() => {
+    const i = this.instance();
+    if (!i.external || this.inStack()) return false;
+    return i.project !== i.name;
+  });
 
   readonly address = computed(() => {
     const i = this.instance();

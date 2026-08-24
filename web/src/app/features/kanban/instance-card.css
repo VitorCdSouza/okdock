@@ -23,8 +23,15 @@ header { display: flex; gap: 9px; align-items: flex-start; }
 
 .ident { flex: 1; min-width: 0; }
 .name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
   font: 600 var(--fs-md) var(--sans);
   color: var(--fg);
+}
+.name .text {
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -159,12 +166,17 @@ footer {
 .addr.stale { color: var(--fg-muted); background: var(--bg-chip); border-color: var(--line-strong); }
 
 .ext {
-  margin-left: 6px;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 45%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   padding: 1px 5px;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-xs);
   font-size: var(--fs-2xs);
   font-weight: 500;
   color: var(--fg-dim);
-  vertical-align: middle;
+  line-height: 1.5;
 }

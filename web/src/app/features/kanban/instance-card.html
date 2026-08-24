@@ -7,8 +7,8 @@
                   [style.background]="colors().bg" [style.color]="colors().fg" />
     <div class="ident">
       <div class="name">
-        {{ instance().name }}
-        @if (instance().external) {
+        <span class="text">{{ instance().name }}</span>
+        @if (showProject()) {
           <span class="ext mono" [title]="t('card.externalTip')">
             {{ instance().project || t('card.external') }}
           </span>
