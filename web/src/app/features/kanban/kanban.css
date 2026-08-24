@@ -34,7 +34,7 @@
 
 .tile {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   width: 100%;
   padding: 9px;
@@ -59,7 +59,23 @@
 }
 .tile .mini { border-radius: var(--r-xs); }
 
-.tile .label { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.tile .label { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
+.tile .head { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+
+/* the names fill at most the height of a card, the clamp puts the ellipsis on the last line */
+.tile .summary {
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--fg-dim);
+  text-align: left;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+}
+
 .tile .stack-name {
   font: 600 var(--fs-md) var(--sans);
   color: var(--fg);

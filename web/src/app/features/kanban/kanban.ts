@@ -28,6 +28,7 @@ type GroupItem = {
   name: string;
   members: Instance[];
   icons: MiniIcon[];
+  summary: string;
   open: boolean;
 };
 type Item = CardItem | GroupItem;
@@ -40,7 +41,7 @@ type Item = CardItem | GroupItem;
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(window:resize)': 'measure()',
-    '(document:keydown.escape)': 'openGroup.set(null)',
+    '(document:keydown.escape)': 'closeGroups()',
   },
 })
 export class Kanban {
@@ -83,14 +84,22 @@ export class Kanban {
     });
   }
 
-  readonly openGroup = signal<string | null>(null);
+  readonly openGroups = signal<ReadonlySet<string>>(new Set());
 
   toggleGroup(key: string): void {
-    this.openGroup.update((current) => (current === key ? null : key));
+    this.openGroups.update((current) => {
+      const next = new Set(current);
+      if (!next.delete(key)) next.add(key);
+      return next;
+    });
+  }
+
+  closeGroups(): void {
+    this.openGroups.set(new Set());
   }
 
   readonly columns = computed(() => {
-    const opened = this.openGroup();
+    const opened = this.openGroups();
     return this.store
       .states()
       .filter((state) => COLUMN_OF[state] === state)
@@ -109,7 +118,7 @@ export class Kanban {
   });
 
   // containers of the same compose stack collapse into one tile, opened one at a time
-  private pack(state: State, cards: Instance[], opened: string | null): Item[] {
+  private pack(state: State, cards: Instance[], opened: ReadonlySet<string>): Item[] {
     const stacks = new Map<string, Instance[]>();
     for (const card of cards) {
       if (!card.project) continue;
@@ -135,7 +144,8 @@ export class Kanban {
         name: project,
         members,
         icons: members.slice(0, 4).map((m) => this.icon(m)),
-        open: opened === key,
+        summary: members.map((m) => m.name).join(', '),
+        open: opened.has(key),
       });
     }
     // the tiles go on top, so an open group never pushes the loose cards around

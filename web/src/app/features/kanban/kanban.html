@@ -54,8 +54,13 @@
                       }
                     </span>
                     <span class="label">
-                      <span class="stack-name">{{ item.name }}</span>
-                      <span class="count mono">{{ item.members.length }}</span>
+                      <span class="head">
+                        <span class="stack-name">{{ item.name }}</span>
+                        <span class="count mono">{{ item.members.length }}</span>
+                      </span>
+                      @if (!item.open) {
+                        <span class="summary mono">{{ item.summary }}</span>
+                      }
                     </span>
                   </button>
 

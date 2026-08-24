@@ -219,10 +219,11 @@ describe('Kanban: dragging a card into a column', () => {
     if (group.kind !== 'group') return;
     expect(group.members.map((m) => m.name)).toEqual(['nextcloud', 'nextcloud-db']);
     expect(group.icons.length).withContext('the tile shows at most four icons').toBe(2);
+    expect(group.summary).withContext('the closed tile names what is inside').toBe('nextcloud, nextcloud-db');
     expect(group.open).withContext('a group is born closed').toBeFalse();
   });
 
-  it('one group opens at a time, and the tile closes it again', () => {
+  it('groups open side by side, and the tile closes each one again', () => {
     store.states.set(['running']);
     store.instances.set([
       instance({ name: 'nextcloud', external: true, project: 'nextcloud' }),
@@ -235,9 +236,14 @@ describe('Kanban: dragging a card into a column', () => {
     expect(kanban.columns()[0].items.map((i) => i.kind === 'group' && i.open)).toEqual([true, false]);
 
     kanban.toggleGroup('running:media');
-    expect(kanban.columns()[0].items.map((i) => i.kind === 'group' && i.open)).toEqual([false, true]);
+    expect(kanban.columns()[0].items.map((i) => i.kind === 'group' && i.open))
+      .withContext('opening one group cannot close the other')
+      .toEqual([true, true]);
 
     kanban.toggleGroup('running:media');
+    expect(kanban.columns()[0].items.map((i) => i.kind === 'group' && i.open)).toEqual([true, false]);
+
+    kanban.closeGroups();
     expect(kanban.columns()[0].items.map((i) => i.kind === 'group' && i.open)).toEqual([false, false]);
   });
 
