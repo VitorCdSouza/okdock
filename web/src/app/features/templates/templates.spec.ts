@@ -13,7 +13,6 @@ function template(over: Partial<Template> = {}): Template {
     category: 'games',
     short: 'MC',
     image: 'itzg/minecraft-server:java21',
-    description: '',
     ports: [],
     volumes: [{ host: './data', container: '/data', data: true }],
     defaultMemory: '4g',

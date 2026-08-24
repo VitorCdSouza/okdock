@@ -4,8 +4,6 @@
   "category": "games",
   "short": "TV",
   "image": "ryshe/terraria:vanilla-1.4.5.7",
-  "description": "Terraria 1.4.5.7 without TShock: no plugins and no admin commands, but it follows the client version much faster.",
-  "docs": "https://github.com/ryshe/docker-terraria",
   "ports": [
     {
       "container": 7777,
@@ -28,7 +26,6 @@
   "defaultMemory": "2g",
   "minMemory": "512m",
   "defaultCpus": 2,
-  "imagePattern": "^ryshe/terraria:vanilla-",
   "stopGraceSeconds": 60,
   "fields": [
     {

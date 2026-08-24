@@ -39,7 +39,6 @@ function blank(): Template {
     category: 'other',
     short: '',
     image: '',
-    description: '',
     ports: [],
     volumes: [{ host: './data', container: '/data', data: true }],
     defaultMemory: '2g',
@@ -116,8 +115,6 @@ export class Templates {
 
   readonly isNew = computed(() => this.editingId() === '');
 
-  readonly tagsText = computed(() => (this.draft()?.tags ?? []).join(', '));
-
   categoryName(category: Category): string {
     return this.i18n.category(category);
   }
@@ -175,14 +172,6 @@ export class Templates {
     const cur = this.draft();
     if (!cur) return;
     this.draft.set({ ...cur, ...change });
-  }
-
-  setTags(raw: string): void {
-    const tags = raw
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean);
-    this.patch({ tags: tags.length ? tags : undefined });
   }
 
   addPort(): void {

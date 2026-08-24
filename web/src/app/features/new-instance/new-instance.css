@@ -71,7 +71,6 @@ h2 { margin: 0; font: 600 var(--fs-2xl) var(--sans); }
 }
 .template .name { font: 600 var(--fs-md) var(--sans); color: var(--fg); }
 .template .id { font-size: var(--fs-xs); color: var(--accent); }
-.template .desc { font: 400 var(--fs-sm)/1.5 var(--sans); color: var(--fg-muted); }
 .template .meta { font-size: var(--fs-xs); color: var(--fg-dim); }
 
 section { display: flex; flex-direction: column; gap: 12px; }

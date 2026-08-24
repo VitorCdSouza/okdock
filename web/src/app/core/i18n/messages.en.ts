@@ -232,13 +232,6 @@ export const en: Record<MessageKey, string> = {
   'templates.short': 'Short',
   'templates.shortTip': 'Up to 3 characters. Shown on the card when the panel has no icon for this template.',
   'templates.image': 'Image',
-  'templates.tags': 'Suggested tags',
-  'templates.tagsTip': 'Comma separated. They become the suggestion list when creating the instance; any other tag still works.',
-  'templates.imagePattern': 'Image pattern',
-  'templates.imagePatternTip':
-    'Regular expression. The panel refuses to create an instance with an image that does not match, and that is what stops the wrong template being picked. Empty accepts any image.',
-  'templates.description': 'Description',
-  'templates.docs': 'Documentation',
   'templates.resources': 'RESOURCES',
   'templates.defaultMemory': 'Suggested RAM',
   'templates.minMemory': 'Minimum RAM',
@@ -358,10 +351,6 @@ export const en: Record<MessageKey, string> = {
   'problem.below_min': 'the minimum is {min}',
   'problem.above_max': 'the maximum is {max}',
   'problem.not_option': '{value} is not one of: {allowed}',
-  'problem.image_owned_by':
-    '{image} is configured by the {owner} template, not {template}. Create the instance by picking {owner} from the list, leaving the Image field alone: the two variants bootstrap differently, changing the tag is not enough.',
-  'problem.image_not_accepted':
-    '{template} does not know how to configure {image}. It expects an image matching {pattern}, and switching the tag to another version works. For an image outside the catalog, use the custom image template, where you set the variables by hand.',
 
   'op.preparing': 'preparing',
   'op.creating': 'creating container',
@@ -378,13 +367,6 @@ export const en: Record<MessageKey, string> = {
   'event.instance.uptodate': '{name} is already on the newest image',
   'event.instance.updated': '{name} was updated; the world in the volumes was preserved',
 
-  'template.minecraft-java.desc':
-    'Java server with vanilla, Paper, Fabric, Forge and modpack support.',
-  'template.terraria-tshock.desc':
-    'Terraria 1.4.5.6 with TShock 6.1.0: plugins, permissions and admin commands. TShock usually takes weeks to catch up with a Terraria release; if the client complains about the version, use the vanilla variant.',
-  'template.terraria-vanilla.desc':
-    'Terraria 1.4.5.7 without TShock: no plugins and no admin commands, but it follows the client version much faster.',
-  'template.custom.desc': 'Any image. You set ports, volumes and variables by hand.',
 
   'field.minecraft-java.EULA.help': 'The image does not start without this accepted.',
   'field.minecraft-java.VERSION.help':

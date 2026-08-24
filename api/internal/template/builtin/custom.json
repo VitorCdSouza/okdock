@@ -4,7 +4,6 @@
   "category": "other",
   "short": "··",
   "image": "",
-  "description": "Any image. You provide ports, volumes and variables by hand.",
   "ports": [],
   "volumes": [
     {

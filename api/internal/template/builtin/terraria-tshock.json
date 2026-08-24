@@ -4,8 +4,6 @@
   "category": "games",
   "short": "TR",
   "image": "ryshe/terraria:tshock-1.4.5.6-6.1.0",
-  "description": "Terraria 1.4.5.6 with TShock 6.1.0: plugins, permissions and admin commands. TShock usually takes weeks to catch up with a Terraria release, so use the vanilla variant when the client complains about the version.",
-  "docs": "https://github.com/ryshe/docker-terraria",
   "ports": [
     {
       "container": 7777,
@@ -24,7 +22,6 @@
   "defaultMemory": "2g",
   "minMemory": "512m",
   "defaultCpus": 2,
-  "imagePattern": "^ryshe/terraria:tshock-",
   "stopGraceSeconds": 60,
   "fields": [
     {

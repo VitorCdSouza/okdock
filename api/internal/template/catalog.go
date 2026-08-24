@@ -210,18 +210,6 @@ func (c *Catalog) Categories() []Category {
 	return append(out, CategoryOther)
 }
 
-func (c *Catalog) TemplateForImage(image string) (Template, bool) {
-	for _, t := range c.All() {
-		if t.ID == CustomID || t.ImagePattern == "" {
-			continue
-		}
-		if t.AcceptsImage(image) {
-			return t, true
-		}
-	}
-	return Template{}, false
-}
-
 func (c *Catalog) Save(t Template) error {
 	if problems := t.Check(); len(problems) > 0 {
 		return &ValidationError{Problems: problems}
@@ -283,11 +271,6 @@ func (t Template) Check() []Problem {
 	}
 	if strings.TrimSpace(t.Image) == "" && t.ID != CustomID {
 		problems = append(problems, Problem{Field: "image", Code: "required"})
-	}
-	if t.ImagePattern != "" {
-		if _, err := regexp.Compile(t.ImagePattern); err != nil {
-			problems = append(problems, Problem{Field: "imagePattern", Code: "bad_pattern", Params: map[string]any{"value": t.ImagePattern}})
-		}
 	}
 	problems = append(problems, t.checkMemory()...)
 	problems = append(problems, t.checkPorts()...)

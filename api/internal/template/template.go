@@ -6,7 +6,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 type FieldType string
@@ -107,15 +106,11 @@ type Template struct {
 	Category         Category `json:"category"`
 	Short            string   `json:"short"`
 	Image            string   `json:"image"`
-	Description      string   `json:"description"`
-	Docs             string   `json:"docs,omitempty"`
 	Ports            []Port   `json:"ports"`
 	Volumes          []Volume `json:"volumes"`
 	DefaultMemory    string   `json:"defaultMemory"`
 	MinMemory        string   `json:"minMemory"`
 	DefaultCPUs      float64  `json:"defaultCpus"`
-	Tags             []string `json:"tags,omitempty"`
-	ImagePattern     string   `json:"imagePattern,omitempty"`
 	StopGraceSeconds int      `json:"stopGraceSeconds"`
 	Fields           []Field  `json:"fields"`
 	FreeEnv          bool     `json:"freeEnv,omitempty"`
@@ -253,24 +248,6 @@ func validateField(f Field, v string) (string, *Problem) {
 	default:
 		return v, nil
 	}
-}
-
-var imagePatterns sync.Map
-
-func (p Template) AcceptsImage(image string) bool {
-	if p.ImagePattern == "" {
-		return true
-	}
-	re, ok := imagePatterns.Load(p.ImagePattern)
-	if !ok {
-		compiled, err := regexp.Compile(p.ImagePattern)
-		if err != nil {
-			return true
-		}
-		imagePatterns.Store(p.ImagePattern, compiled)
-		re = compiled
-	}
-	return re.(*regexp.Regexp).MatchString(image)
 }
 
 type Problem struct {

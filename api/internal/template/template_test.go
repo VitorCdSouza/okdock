@@ -4,7 +4,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 )
@@ -274,67 +273,6 @@ func TestGameImagesArePinned(t *testing.T) {
 		if !strings.Contains(p.Image, ":") {
 			t.Errorf("%s has no tag on image %q", p.ID, p.Image)
 		}
-	}
-}
-
-func TestAcceptsImageSeparatesTerrariaVariants(t *testing.T) {
-	tshock, _ := testCatalog(t).Get("terraria-tshock")
-	vanilla, _ := testCatalog(t).Get("terraria-vanilla")
-
-	if !tshock.AcceptsImage("ryshe/terraria:tshock-1.4.5.6-6.1.0") {
-		t.Error("the TShock template should accept its own image")
-	}
-	if !vanilla.AcceptsImage("ryshe/terraria:vanilla-1.4.5.7") {
-		t.Error("the vanilla template should accept its own image")
-	}
-	if tshock.AcceptsImage("ryshe/terraria:vanilla-1.4.5.7") {
-		t.Error("the TShock template must not accept the vanilla image")
-	}
-	if vanilla.AcceptsImage("ryshe/terraria:tshock-1.4.5.6-6.1.0") {
-		t.Error("the vanilla template must not accept the TShock image")
-	}
-}
-
-func TestAcceptsImageAllowsNewerTagsOfTheSameVariant(t *testing.T) {
-	p, _ := testCatalog(t).Get("terraria-vanilla")
-	if !p.AcceptsImage("ryshe/terraria:vanilla-1.4.6.0") {
-		t.Error("a newer version of the same variant should be accepted")
-	}
-}
-
-func TestCustomTemplateAcceptsAnyImage(t *testing.T) {
-	p, _ := testCatalog(t).Get(CustomID)
-	if !p.AcceptsImage("qualquer/coisa:1") {
-		t.Error("o template custom precisa aceitar qualquer imagem")
-	}
-}
-
-func TestImagePatternsCompileAndMatchTheirOwnDefault(t *testing.T) {
-	for _, p := range testCatalog(t).All() {
-		if p.ImagePattern == "" {
-			continue
-		}
-		if _, err := regexp.Compile(p.ImagePattern); err != nil {
-			t.Errorf("%s: invalid pattern %q: %v", p.ID, p.ImagePattern, err)
-			continue
-		}
-		if !p.AcceptsImage(p.Image) {
-			t.Errorf("%s: pattern %q rejects the default image %q", p.ID, p.ImagePattern, p.Image)
-		}
-	}
-}
-
-func TestTemplateForImageFindsTheRightVariant(t *testing.T) {
-	p, ok := testCatalog(t).TemplateForImage("ryshe/terraria:vanilla-1.4.5.7")
-	if !ok || p.ID != "terraria-vanilla" {
-		t.Fatalf("TemplateForImage = %q, %v", p.ID, ok)
-	}
-	p, ok = testCatalog(t).TemplateForImage("ryshe/terraria:tshock-1.4.5.6-6.1.0")
-	if !ok || p.ID != "terraria-tshock" {
-		t.Fatalf("TemplateForImage = %q, %v", p.ID, ok)
-	}
-	if p, ok := testCatalog(t).TemplateForImage("nginx:alpine"); ok {
-		t.Errorf("an image outside the catalog should not match %q", p.ID)
 	}
 }
 

@@ -90,7 +90,6 @@ export class ImageRef {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly image = model.required<string>();
-  readonly tags = input<string[]>([]);
   readonly free = input(false);
   readonly label = input('');
   readonly tip = input('');
@@ -102,13 +101,13 @@ export class ImageRef {
   private readonly fetched = signal<string[]>([]);
   private asked = '';
 
-  // the template says which tags it was written for, and the Hub answers when it says nothing
-  readonly options = computed(() => (this.tags().length ? this.tags() : this.fetched()));
+  // the tags come from the Hub, and a repository it does not host offers no list
+  readonly options = this.fetched.asReadonly();
 
   constructor() {
     effect(() => {
       const repo = this.repo();
-      if (this.free() || this.tags().length || repo === this.asked) return;
+      if (this.free() || repo === this.asked) return;
       this.asked = repo;
       this.fetched.set([]);
       if (!isHubRepo(repo)) return;

@@ -107,10 +107,6 @@ export class NewInstance {
     return this.i18n.category(category);
   }
 
-  description(p: Template): string {
-    return this.i18n.maybe(`template.${p.id}.desc`) ?? p.description;
-  }
-
   portLabel(label: string | undefined): string {
     if (!label) return this.t('detail.portFallbackLabel');
     return this.i18n.maybe(`port.${label}`) ?? label;

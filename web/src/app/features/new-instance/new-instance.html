@@ -37,7 +37,6 @@
                   <span class="name">{{ p.name }}</span>
                 </div>
                 <div class="id mono">{{ p.image || p.id }}</div>
-                <div class="desc">{{ description(p) }}</div>
                 <div class="meta mono">
                   {{ t('new.templateMeta', { fields: (p.fields ?? []).length, memory: p.minMemory }) }}
                 </div>
@@ -70,7 +69,7 @@
                     <ok-info [text]="t('new.imageTip')" />
                   </label>
                 }
-                <ok-image-ref [(image)]="image" [tags]="p.tags ?? []" [free]="p.id === 'custom'"
+                <ok-image-ref [(image)]="image" [free]="p.id === 'custom'"
                               [label]="t('new.image')" [tip]="t('new.imageTip')"
                               listId="inst-image-tags" />
               </div>

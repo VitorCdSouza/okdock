@@ -46,10 +46,6 @@ export interface Template {
   category: Category;
   short: string;
   image: string;
-  description: string;
-  docs?: string;
-  tags?: string[];
-  imagePattern?: string;
   ports: TemplatePort[] | null;
   volumes: TemplateVolume[];
   defaultMemory: string;

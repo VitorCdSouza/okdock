@@ -170,9 +170,6 @@ func labelText(labels map[string]string) string {
 }
 
 func (c *Catalog) CategoryFor(h Hints) Category {
-	if t, ok := c.TemplateForImage(h.Image); ok {
-		return t.Category
-	}
 	category, _ := GuessCategory(h)
 	return category
 }

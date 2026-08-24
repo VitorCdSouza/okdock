@@ -173,12 +173,6 @@ func (m *Manager) listExternal(managed []instance.Instance, containers []dockerx
 			})
 		}
 		readExternalCompose(&inst, c)
-		if inst.TemplateID == "" {
-			if tmpl, ok := m.templates.TemplateForImage(inst.Image); ok {
-				inst.TemplateID = tmpl.ID
-				inst.Category = string(tmpl.Category)
-			}
-		}
 		inst.Operation = m.operation(c.Name)
 		inst.State = externalState(c)
 		if inst.State == instance.StateError && c.ExitCode != 0 {
@@ -675,29 +669,6 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 	if image == "" {
 		return instance.Spec{}, errors.New("the custom template needs an image name")
 	}
-	if !tmpl.AcceptsImage(image) {
-		if owner, ok := m.templates.TemplateForImage(image); ok {
-			return instance.Spec{}, &template.ValidationError{Problems: []template.Problem{{
-				Field: "image",
-				Code:  "image_owned_by",
-				Params: map[string]any{
-					"image":    image,
-					"owner":    owner.Name,
-					"template": tmpl.Name,
-				},
-			}}}
-		}
-		return instance.Spec{}, &template.ValidationError{Problems: []template.Problem{{
-			Field: "image",
-			Code:  "image_not_accepted",
-			Params: map[string]any{
-				"image":    image,
-				"template": tmpl.Name,
-				"pattern":  tmpl.ImagePattern,
-			},
-		}}}
-	}
-
 	validated, err := tmpl.Validate(req.Values)
 	if err != nil {
 		return instance.Spec{}, err

@@ -178,8 +178,7 @@ The API does not send a finished sentence either: an error becomes `error` +
 operation becomes `code`. The one writing the sentence is always the panel, with
 the table of the current language. The text that still travels in `message` is
 the last resort: a code the screen does not know falls back to it instead of
-showing up empty. Template text (field `help`, description) follows the same
-rule: the screen looks for the key `field.<template>.<FIELD>.help` and falls back
+showing up empty. Template text (the `help` of a field) follows the same rule: the screen looks for the key `field.<template>.<FIELD>.help` and falls back
 to the API text when it does not find one, which is the only possible road for a
 template registered through the panel. Log lines and container status belong to
 docker and pass through untouched.

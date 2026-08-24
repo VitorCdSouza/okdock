@@ -59,26 +59,10 @@ does not exist; there the world path goes through `-world`, and
 
 Switching only the tag of a TShock instance to vanilla therefore does not work:
 the container dies at boot and, with `restart: unless-stopped`, enters a
-crashloop. The `imagePattern` of each template refuses that combination at save
-time, with a message that says what to do. To migrate between variants, create
-another instance pointing at the same world folder.
-
-## imagePattern
-
-Each template declares which images it knows how to configure, as a regular
-expression:
-
-| Template | Pattern |
-|---|---|
-| Minecraft (Java) | `^itzg/minecraft-server(:\|$)` |
-| Terraria (TShock) | `^ryshe/terraria:tshock-` |
-| Terraria (vanilla) | `^ryshe/terraria:vanilla-` |
-| Custom image | empty, accepts anything |
-
-The pattern has to be wide enough to allow a version change (that is how an
-instance is updated) and narrow enough to block another variant. The tests cover
-both sides, and check that no pattern rejects the default image of its own
-template. A template with no pattern accepts any image.
+crashloop. Nothing in the panel refuses that combination: a template no longer
+declares which images it accepts, so the pairing is on whoever fills the Image
+field. To migrate between variants, create another instance pointing at the
+same world folder.
 
 ## Pinned tags
 

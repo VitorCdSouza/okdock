@@ -108,36 +108,6 @@
                              [label]="t('templates.image')" [required]="true"
                              placeholder="jellyfin/jellyfin" />
           </div>
-
-          <div class="field">
-            <label for="tpl-tags">
-              {{ t('templates.tags') }}
-              <ok-info [text]="t('templates.tagsTip')" />
-            </label>
-            <input id="tpl-tags" class="mono" [ngModel]="tagsText()"
-                   (ngModelChange)="setTags($event)" placeholder="10.9, 10.8, latest">
-          </div>
-
-          <div class="field">
-            <label for="tpl-pattern">
-              {{ t('templates.imagePattern') }}
-              <ok-info [text]="t('templates.imagePatternTip')" />
-            </label>
-            <input id="tpl-pattern" class="mono" [ngModel]="d.imagePattern ?? ''"
-                   (ngModelChange)="patch({ imagePattern: $event })" placeholder="^jellyfin/jellyfin(:|$)">
-          </div>
-
-          <div class="field wide">
-            <label for="tpl-desc">{{ t('templates.description') }}</label>
-            <input id="tpl-desc" [ngModel]="d.description"
-                   (ngModelChange)="patch({ description: $event })">
-          </div>
-
-          <div class="field wide">
-            <label for="tpl-docs">{{ t('templates.docs') }}</label>
-            <input id="tpl-docs" class="mono" [ngModel]="d.docs ?? ''"
-                   (ngModelChange)="patch({ docs: $event })" placeholder="https://">
-          </div>
         </div>
 
         <div class="section-title">{{ t('templates.resources') }}</div>

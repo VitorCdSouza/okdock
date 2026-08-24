@@ -4,8 +4,6 @@
   "category": "games",
   "short": "MC",
   "image": "itzg/minecraft-server:java21",
-  "description": "Java server supporting vanilla, Paper, Fabric, Forge and modpacks.",
-  "docs": "https://docker-minecraft-server.readthedocs.io/",
   "ports": [
     {
       "container": 25565,
@@ -24,13 +22,6 @@
   "defaultMemory": "4g",
   "minMemory": "2g",
   "defaultCpus": 2,
-  "tags": [
-    "java21",
-    "java17",
-    "java8",
-    "latest"
-  ],
-  "imagePattern": "^itzg/minecraft-server(:|$)",
   "stopGraceSeconds": 120,
   "fields": [
     {

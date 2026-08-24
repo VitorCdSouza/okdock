@@ -226,13 +226,6 @@ export const pt = {
   'templates.short': 'Sigla',
   'templates.shortTip': 'Até 3 caracteres. Aparece no card quando o painel não tem ícone para este template.',
   'templates.image': 'Imagem',
-  'templates.tags': 'Etiquetas sugeridas',
-  'templates.tagsTip': 'Separadas por vírgula. Viram a lista de sugestões na hora de criar a instância; qualquer outra etiqueta continua valendo.',
-  'templates.imagePattern': 'Padrão da imagem',
-  'templates.imagePatternTip':
-    'Expressão regular. O painel recusa criar a instância com imagem que não case, e é isso que impede escolher o template errado. Em branco, aceita qualquer imagem.',
-  'templates.description': 'Descrição',
-  'templates.docs': 'Documentação',
   'templates.resources': 'RECURSOS',
   'templates.defaultMemory': 'RAM sugerida',
   'templates.minMemory': 'RAM mínima',
@@ -352,10 +345,6 @@ export const pt = {
   'problem.below_min': 'mínimo é {min}',
   'problem.above_max': 'máximo é {max}',
   'problem.not_option': '{value} não é uma das opções: {allowed}',
-  'problem.image_owned_by':
-    'quem configura {image} é o template {owner}, não {template}. Crie a instância escolhendo {owner} na lista, sem mexer no campo Imagem: as duas variantes têm bootstrap diferente, não basta trocar a tag.',
-  'problem.image_not_accepted':
-    '{template} não sabe configurar {image}. Ele espera uma imagem que case com {pattern}, e trocar a tag para outra versão funciona. Para uma imagem fora do catálogo, use o template Imagem custom, onde você define as variáveis à mão.',
 
   'op.preparing': 'preparando',
   'op.creating': 'criando container',
@@ -372,13 +361,6 @@ export const pt = {
   'event.instance.uptodate': '{name} já está na imagem mais nova',
   'event.instance.updated': '{name} foi atualizada; o mundo nos volumes foi preservado',
 
-  'template.minecraft-java.desc':
-    'Servidor Java com suporte a vanilla, Paper, Fabric, Forge e modpacks.',
-  'template.terraria-tshock.desc':
-    'Terraria 1.4.5.6 com TShock 6.1.0: plugins, permissões e comandos de admin. O TShock costuma demorar semanas para acompanhar um lançamento do Terraria; se o cliente reclamar de versão, use a variante vanilla.',
-  'template.terraria-vanilla.desc':
-    'Terraria 1.4.5.7 sem TShock: sem plugins nem comandos de admin, mas acompanha a versão do cliente muito mais rápido.',
-  'template.custom.desc': 'Qualquer imagem. Você informa portas, volumes e variáveis à mão.',
 
   'field.minecraft-java.EULA.help': 'A imagem não sobe sem isto aceito.',
   'field.minecraft-java.VERSION.help':

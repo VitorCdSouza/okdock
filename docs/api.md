@@ -41,8 +41,7 @@ the field:
 ```
 
 Problem codes: `required`, `unknown_field`, `not_int`, `not_number`, `not_bool`,
-`below_min`, `above_max`, `not_option`, `image_owned_by` and
-`image_not_accepted`.
+`below_min`, `above_max` and `not_option`.
 
 Some errors refine the reason inside `params.reason`: `invalid_root` uses
 `not_absolute`, `create_failed`, `unreadable`, `not_dir` or `unwritable`.
