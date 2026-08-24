@@ -21,6 +21,7 @@ function instance(over: Partial<Instance> = {}): Instance {
     updatedAt: new Date().toISOString(),
     dir: '/srv/games/smp',
     state: 'stopped',
+    editable: true,
     ...over,
   };
 }
@@ -55,15 +56,43 @@ describe('InstanceCard', () => {
     expect(external.address()).toBe('');
   });
 
-  it('an external container reaches the console through the menu, with no delete option', () => {
+  it('an external container with no readable compose only reaches the console', () => {
     const fixture = TestBed.createComponent(InstanceCard);
-    fixture.componentRef.setInput('instance', instance({ external: true, project: 'media', state: 'running' }));
+    fixture.componentRef.setInput(
+      'instance',
+      instance({ external: true, editable: false, project: 'media', state: 'running' }),
+    );
     fixture.componentInstance.menuOpen.set(true);
     fixture.detectChanges();
 
     const itens: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('.menu button'));
 
     expect(itens.map((b) => b.textContent!.trim())).toEqual(['Detalhes']);
+  });
+
+  it('an external container whose compose was read is edited, but still not deleted', () => {
+    const fixture = TestBed.createComponent(InstanceCard);
+    fixture.componentRef.setInput(
+      'instance',
+      instance({ external: true, editable: true, project: 'media', state: 'running' }),
+    );
+    fixture.componentInstance.menuOpen.set(true);
+    fixture.detectChanges();
+
+    const itens: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('.menu button'));
+
+    expect(itens.map((b) => b.textContent!.trim())).toEqual(['Editar']);
+  });
+
+  it('the project chip only shows what the name does not already say', () => {
+    expect(card({ external: true, project: 'bottelegram' }).showProject()).toBeTrue();
+    // the project repeating the container name is noise
+    expect(card({ external: true, project: 'smp' }).showProject()).toBeFalse();
+    // and inside the stack tile the project is already the title
+    const fixture = TestBed.createComponent(InstanceCard);
+    fixture.componentRef.setInput('instance', instance({ external: true, project: 'media' }));
+    fixture.componentRef.setInput('inStack', true);
+    expect(fixture.componentInstance.showProject()).toBeFalse();
   });
 
   it('a panel instance keeps edit and delete', () => {

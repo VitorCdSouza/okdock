@@ -91,7 +91,7 @@ export const pt = {
 
   'card.external': 'externo',
   'card.externalTip':
-    'Container que já existia no servidor, fora do OkDock. O painel sobe, para e mostra o console; editar campos, atualizar imagem e excluir continuam no terminal.',
+    'Container que já existia no servidor, fora do OkDock. Quando o painel acha o compose dele, edita e atualiza esse serviço no arquivo original; excluir continua no terminal.',
   'card.optionsAria': 'Opções de {name}',
   'card.edit': 'Editar',
   'card.delete': 'Excluir',
@@ -127,6 +127,8 @@ export const pt = {
     'O template {id} não está mais no catálogo. Edite pelo docker-compose.yml.',
   'detail.externalNote':
     'Container externo, do projeto compose {project} em {dir}. O OkDock sobe, para, reinicia e mostra o console; o resto continua sendo do compose original.',
+  'detail.externalEditable':
+    'Container do projeto compose {project}. O que você salvar aqui é escrito em {file}, só neste serviço, e só ele sobe de novo. Os outros serviços do stack ficam como estão.',
   'detail.noPublishedPorts': 'nenhuma porta publicada no host',
   'detail.resourcesTitle': 'RECURSOS E REDE',
   'detail.ramLimit': 'Limite de RAM',
@@ -318,7 +320,7 @@ export const pt = {
   'error.dns_taken': '{domain} já está vinculado a {instance}',
   'error.docker_failed': 'o docker recusou o comando: {detail}',
   'error.external_instance':
-    '{name} é um container externo: o OkDock sobe, para e mostra o console, mas quem edita é o compose original.',
+    '{name} é um container externo e o painel não achou um compose que saiba escrever: sobe, para e mostra o console, o resto continua no terminal.',
   'error.invalid_fields': 'alguns campos não passaram na validação do template',
   'error.bad_request': 'a requisição veio malformada',
   'error.internal': 'erro interno no painel',

@@ -160,6 +160,8 @@ export interface Instance {
   external?: boolean;
   project?: string;
   service?: string;
+  editable?: boolean;
+  composeFile?: string;
   dns?: InstanceDNS;
 }
 

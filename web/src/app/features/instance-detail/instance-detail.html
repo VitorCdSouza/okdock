@@ -47,7 +47,7 @@
     </header>
 
     <nav class="tabs">
-      @if (!inst.external) {
+      @if (inst.editable && template()) {
         <button [class.on]="tab() === 'config'" (click)="select('config')">
           {{ t('detail.tab.config') }}
         </button>
@@ -58,7 +58,7 @@
       <button [class.on]="tab() === 'console'" (click)="select('console')">
         {{ t('detail.tab.console') }}
       </button>
-      @if (!inst.external) {
+      @if (inst.editable) {
         <button [class.on]="tab() === 'compose'" (click)="select('compose')">compose.yml</button>
       }
     </nav>
@@ -91,8 +91,12 @@
           @case ('recursos') {
             @if (inst.external) {
               <div class="alert warn">
-                {{ t('detail.externalNote', { project: inst.project || '-', dir: inst.dir || '-' }) }}
+                {{ inst.editable
+                  ? t('detail.externalEditable', { project: inst.project || '-', file: inst.composeFile || '-' })
+                  : t('detail.externalNote', { project: inst.project || '-', dir: inst.dir || '-' }) }}
               </div>
+            }
+            @if (inst.external && !inst.editable) {
               <div class="section-title">{{ t('detail.resourcesTitle') }}</div>
               <ul class="mounts mono">
                 @for (p of inst.ports ?? []; track p.container + '/' + p.protocol) {
@@ -213,7 +217,7 @@
       </div>
     </div>
 
-    @if (!inst.external && (tab() === 'config' || tab() === 'recursos')) {
+    @if (inst.editable && (tab() === 'config' || tab() === 'recursos')) {
       <footer class="edit-bar">
         @if (recreate().length) {
           <div class="alert warn">

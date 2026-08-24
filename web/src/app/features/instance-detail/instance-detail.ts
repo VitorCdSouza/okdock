@@ -147,7 +147,7 @@ export class InstanceDetail {
       const i = this.instance();
       if (!i || this.loadedFor === i.name) return;
       this.loadedFor = i.name;
-      if (i.external && this.tab() === 'config') this.select('recursos');
+      if (this.tab() === 'config' && !this.template()) this.select('recursos');
       this.values.set({ ...i.env });
       this.memoryLimit.set(i.memoryLimit);
       this.cpus.set(i.cpus);

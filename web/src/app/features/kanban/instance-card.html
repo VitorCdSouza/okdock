@@ -24,7 +24,7 @@
       @if (menuOpen()) {
         <div class="menu" role="menu" (click)="$event.stopPropagation()">
           <button role="menuitem" (click)="pickEdit($event)">
-            {{ instance().external ? t('card.action.details') : t('card.edit') }}
+            {{ instance().editable ? t('card.edit') : t('card.action.details') }}
           </button>
           @if (!instance().external) {
             <button role="menuitem" class="destructive" (click)="pickRemove($event)">

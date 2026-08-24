@@ -211,7 +211,11 @@ export class Kanban {
   });
 
   allows(inst: Instance, target: State): boolean {
-    if (inst.external && target !== 'running' && target !== 'stopped') return false;
+    if (inst.external) {
+      // archiving is a panel concept, and updating needs the compose file
+      if (target === 'archived') return false;
+      if (target === 'updating' && !inst.editable) return false;
+    }
     switch (target) {
       case 'updating':
         return !inst.archived && inst.state !== 'updating';
