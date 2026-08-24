@@ -75,6 +75,58 @@ describe('ImageSearch', () => {
     http.expectNone(() => true);
   }));
 
+  it('the version waits for an image that exists, not for any typing', fakeAsync(() => {
+    const c = field();
+    c.typeRepo('jellyf');
+    tick(300);
+    http.expectOne('/api/v1/images?q=jellyf').flush({
+      images: [{ name: 'jellyfin/jellyfin', description: '', stars: 10 }],
+    });
+
+    // half a name is not an image, even with the list showing something
+    expect(c.validImage()).toBeFalse();
+
+    c.pick({ name: 'jellyfin/jellyfin', description: '', stars: 10 });
+    expect(c.validImage()).toBeTrue();
+    tick(300);
+    http.expectOne('/api/v1/images/tags?image=jellyfin%2Fjellyfin').flush({ tags: ['latest'] });
+
+    // editing the image again puts the version back to sleep
+    c.typeRepo('jellyfin/jelly');
+    expect(c.validImage()).toBeFalse();
+    tick(300);
+    http.expectOne('/api/v1/images?q=jellyfin%2Fjelly').flush({ images: [] });
+  }));
+
+  it('a name typed whole counts once the search finds exactly it', fakeAsync(() => {
+    const c = field();
+    c.typeRepo('nginx');
+    tick(300);
+    http.expectOne('/api/v1/images?q=nginx').flush({
+      images: [
+        { name: 'nginx', description: '', stars: 20000, official: true },
+        { name: 'nginxinc/nginx-unprivileged', description: '', stars: 100 },
+      ],
+    });
+
+    expect(c.validImage()).toBeTrue();
+  }));
+
+  it('an image from a registry the panel cannot search is not held back', fakeAsync(() => {
+    const c = field();
+    c.typeRepo('ghcr.io/vitorcdsouza/okdock');
+
+    // nothing can confirm it, so blocking the version would only get in the way
+    expect(c.validImage()).toBeTrue();
+
+    tick(300);
+    http.expectOne('/api/v1/images?q=ghcr.io%2Fvitorcdsouza%2Fokdock').flush({ images: [] });
+  }));
+
+  it('an image that came from outside the field is taken as given', () => {
+    expect(field('jellyfin/jellyfin:10.9').validImage()).toBeTrue();
+  });
+
   it('a whole reference pasted in the image box splits itself', fakeAsync(() => {
     const c = field();
     c.typeRepo('jellyfin/jellyfin:10.9.11');

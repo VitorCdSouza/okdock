@@ -72,13 +72,28 @@ type Open = 'repo' | 'tag' | null;
               </svg>
             </button>
           </span>
+
+          @if (open() === 'repo' && hits().length) {
+            <ul class="hits" role="listbox">
+              @for (hit of hits(); track hit.name) {
+                <li>
+                  <button type="button" role="option" (click)="pick(hit)">
+                    <span class="name mono">{{ hit.name }}</span>
+                    @if (hit.official) { <span class="tag">{{ t('images.official') }}</span> }
+                    <span class="stars mono">★ {{ hit.stars }}</span>
+                    @if (hit.description) { <span class="desc">{{ hit.description }}</span> }
+                  </button>
+                </li>
+              }
+            </ul>
+          }
         </span>
 
         <span class="box version">
           <label [attr.for]="versionId()">{{ t('images.version') }}</label>
           <span class="entry">
             <input class="mono" spellcheck="false" placeholder="latest"
-                   [attr.id]="versionId()" [disabled]="!repo()" [ngModel]="tag()"
+                   [attr.id]="versionId()" [disabled]="!validImage()" [ngModel]="tag()"
                    (ngModelChange)="typeTag($event)" (focus)="openTags()">
             @if (open() === 'tag' && busy()) {
               <span class="state mono">{{ t('images.searching') }}</span>
@@ -87,46 +102,33 @@ type Open = 'repo' | 'tag' | null;
             } @else if (open() === 'tag' && notHub()) {
               <span class="state mono">{{ t('images.tagsOnlyHub') }}</span>
             }
-            <button type="button" class="caret" tabindex="-1" [disabled]="!repo()"
+            <button type="button" class="caret" tabindex="-1" [disabled]="!validImage()"
                     [attr.aria-label]="t('images.openList')" (click)="openTags()">
               <svg viewBox="0 0 10 6" aria-hidden="true">
                 <path d="M1 1l4 4 4-4" />
               </svg>
             </button>
           </span>
+
+          @if (open() === 'tag' && tags().length) {
+            <ul class="hits" role="listbox">
+              @for (tag of tags(); track tag) {
+                <li>
+                  <button type="button" role="option" (click)="pickTag(tag)">
+                    <span class="name mono">{{ tag }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
         </span>
       </div>
-
-      @if (open() === 'tag' && tags().length) {
-        <ul class="hits tags" role="listbox">
-          @for (tag of tags(); track tag) {
-            <li>
-              <button type="button" role="option" (click)="pickTag(tag)">
-                <span class="name mono">{{ tag }}</span>
-              </button>
-            </li>
-          }
-        </ul>
-      } @else if (open() === 'repo' && hits().length) {
-        <ul class="hits" role="listbox">
-          @for (hit of hits(); track hit.name) {
-            <li>
-              <button type="button" role="option" (click)="pick(hit)">
-                <span class="name mono">{{ hit.name }}</span>
-                @if (hit.official) { <span class="tag">{{ t('images.official') }}</span> }
-                <span class="stars mono">★ {{ hit.stars }}</span>
-                @if (hit.description) { <span class="desc">{{ hit.description }}</span> }
-              </button>
-            </li>
-          }
-        </ul>
-      }
     </div>
   `,
   styles: `
     .wrap { position: relative; }
     .fields { display: flex; gap: 8px; align-items: flex-end; }
-    .box { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .box { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
     .grow { flex: 1; }
     .version { flex: none; width: 168px; }
     label {
@@ -194,7 +196,6 @@ type Open = 'repo' | 'tag' | null;
       border-radius: var(--r-sm);
       box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
     }
-    .hits.tags { left: auto; width: 168px; }
     .hits button {
       display: grid;
       grid-template-columns: 1fr auto auto;
@@ -251,6 +252,17 @@ export class ImageSearch {
   private readonly searched = signal('');
   private readonly allTags = signal<string[]>([]);
 
+  // the version means something over an image that exists, picked from the list or found by search
+  private readonly typedByHand = signal(false);
+  private readonly confirmed = signal('');
+
+  readonly validImage = computed(() => {
+    const repo = this.repo();
+    if (!repo) return false;
+    if (!this.typedByHand() || !isHubRepo(repo)) return true;
+    return this.confirmed() === repo;
+  });
+
   readonly empty = computed(
     () => this.searched() !== '' && !this.failed() && this.hits().length === 0,
   );
@@ -279,6 +291,9 @@ export class ImageSearch {
         if (res.kind === 'repo') {
           this.searched.set(res.term);
           this.hits.set(res.hits);
+          if (res.hits.some((hit) => hit.name === res.term)) {
+            this.confirmed.set(res.term);
+          }
         } else if (res.kind === 'tag') {
           this.allTags.set(res.tags);
         }
@@ -313,10 +328,11 @@ export class ImageSearch {
     );
   }
 
-  // a whole reference pasted into the image box splits itself
+  // a whole reference pasted into the image box splits itself, tag of the old repository included
   typeRepo(raw: string): void {
     const { repo, tag } = splitImage(raw.trim());
-    this.setRef(repo, tag || this.tag());
+    this.setRef(repo, tag);
+    this.typedByHand.set(true);
     this.open.set('repo');
     this.allTags.set([]);
     this.notHub.set(false);
@@ -337,7 +353,7 @@ export class ImageSearch {
 
   openTags(): void {
     const repo = this.repo();
-    if (!repo) return;
+    if (!this.validImage()) return;
     this.open.set('tag');
     this.hits.set([]);
     this.typed.next(`tag:${repo}`);
@@ -346,6 +362,8 @@ export class ImageSearch {
   // picking the repository is half of the reference, so the version box is offered next
   pick(hit: ImageHit): void {
     this.setRef(hit.name, this.tag());
+    this.confirmed.set(hit.name);
+    this.typedByHand.set(false);
     this.hits.set([]);
     this.openTags();
   }
