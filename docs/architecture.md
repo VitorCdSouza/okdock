@@ -56,6 +56,14 @@ limit. But docker also records which compose file each container came from, so
 the panel reads that file and gets the whole configuration, the same way it
 reads its own.
 
+The panel runs in a container, so a path the daemon reports is not necessarily
+a path it can open. When it cannot, the container stays read only and the
+screen says which of the four reasons it is (`no_compose`, `not_visible`,
+`unreadable`, `unsupported`) instead of silently offering less. The fix for
+`not_visible` is a bind mount of that folder into the panel, at the same path
+on both sides, which the compose CLI needs anyway: it reads the file inside the
+panel while the daemon resolves that file bind mounts outside.
+
 Saving writes back only that one service, through `compose.Apply`, which edits
 the YAML node in place: the other services of the stack, the comments and the
 anchors survive. Then only that service comes back up, with `--no-deps`. The

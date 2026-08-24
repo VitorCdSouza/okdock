@@ -116,6 +116,8 @@ type Instance struct {
 	// whether the panel can write this instance back, true for what it created and for a whole read
 	Editable    bool   `json:"editable,omitempty"`
 	ComposeFile string `json:"composeFile,omitempty"`
+	// why it is not editable: no_compose, not_visible, unreadable or unsupported
+	ReadOnly string `json:"readOnly,omitempty"`
 }
 
 type Operation struct {

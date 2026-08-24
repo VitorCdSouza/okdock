@@ -162,6 +162,7 @@ export interface Instance {
   service?: string;
   editable?: boolean;
   composeFile?: string;
+  readOnly?: string;
   dns?: InstanceDNS;
 }
 

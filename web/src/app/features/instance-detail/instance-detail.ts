@@ -103,6 +103,17 @@ export class InstanceDetail {
     return parts.join(' · ');
   });
 
+  // an outside container that cannot be edited says which of the reasons it is
+  readonly readOnlyNote = computed(() => {
+    const i = this.instance();
+    if (!i) return '';
+    const file = i.composeFile || '-';
+    return (
+      this.i18n.maybe(`detail.readOnly.${i.readOnly}`, { file }) ??
+      this.t('detail.externalNote', { project: i.project || '-', dir: i.dir || '-' })
+    );
+  });
+
   readonly statsLine = computed(() => {
     const s = this.instance()?.stats;
     if (!s) return '';

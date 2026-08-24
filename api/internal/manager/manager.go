@@ -202,22 +202,29 @@ func (m *Manager) listExternal(managed []instance.Instance, containers []dockerx
 func readExternalCompose(inst *instance.Instance, c dockerx.HostContainer) {
 	file := composeFileOf(c)
 	if file == "" || c.Service == "" {
+		inst.ReadOnly = "no_compose"
 		return
 	}
+	inst.ComposeFile = file
+
 	raw, err := os.ReadFile(file)
 	if err != nil {
-		slog.Debug("could not read the compose file of an outside container",
+		// the panel runs in a container, so a path the daemon reported is not always one it can open
+		inst.ReadOnly = "not_visible"
+		slog.Warn("the compose file of an outside container is not visible from the panel",
 			"container", c.Name, "file", file, "err", err)
 		return
 	}
 	project, err := compose.Parse(raw)
 	if err != nil {
-		slog.Debug("could not parse the compose file of an outside container",
+		inst.ReadOnly = "unreadable"
+		slog.Warn("could not parse the compose file of an outside container",
 			"container", c.Name, "file", file, "err", err)
 		return
 	}
 	svc, ok := project.Service(c.Service)
 	if !ok {
+		inst.ReadOnly = "no_compose"
 		return
 	}
 
@@ -233,6 +240,11 @@ func readExternalCompose(inst *instance.Instance, c dockerx.HostContainer) {
 	inst.Spec = spec
 	inst.ComposeFile = file
 	inst.Editable = len(project.Unsupported) == 0
+	if !inst.Editable {
+		inst.ReadOnly = "unsupported"
+		slog.Warn("the compose file of an outside container has what the panel does not write back",
+			"container", c.Name, "file", file, "what", strings.Join(project.Unsupported, ", "))
+	}
 }
 
 // docker records the files it read, and more than one means the panel reads none of them
@@ -1046,7 +1058,8 @@ func (m *Manager) UpdateImage(ctx context.Context, name string) error {
 		if !ok {
 			return err
 		}
-		if inst.ComposeFile == "" {
+		// the compose CLI runs inside the panel, so it needs the file, not only the reported path
+		if !inst.Editable {
 			return &ExternalError{Name: name}
 		}
 		if err := m.beginOp(name, OpUpdate, "checking_update"); err != nil {

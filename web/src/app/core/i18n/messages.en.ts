@@ -130,6 +130,14 @@ export const en: Record<MessageKey, string> = {
     'Template {id} is no longer in the catalog. Edit it through docker-compose.yml.',
   'detail.externalNote':
     'External container, from the {project} compose project in {dir}. OkDock starts, stops, restarts and shows the console; the rest stays with the original compose.',
+  'detail.readOnly.no_compose':
+    'Docker does not say which compose file this container came from, so there is nothing to read and nothing to write. The panel starts, stops and shows the console.',
+  'detail.readOnly.not_visible':
+    'The compose of this container is {file}, and the panel cannot see that path. The panel runs in a container: mount the folder in its own docker-compose.yml, the same path on both sides, and reload.',
+  'detail.readOnly.unreadable':
+    'The panel could not read {file} as a compose file. Until it can, it starts, stops and shows the console, and writes nothing.',
+  'detail.readOnly.unsupported':
+    '{file} has something the panel does not write back, an include or a port range. It leaves the file alone rather than dropping that.',
   'detail.externalEditable':
     'Container of the {project} compose project. What you save here is written to {file}, to this service only, and only it comes back up. The other services of the stack stay as they are.',
   'detail.noPublishedPorts': 'no port published on the host',

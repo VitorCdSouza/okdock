@@ -1022,3 +1022,29 @@ func TestUpdateRefusesAContainerWithNoComposeFile(t *testing.T) {
 		t.Fatalf("err = %v, want the external error", err)
 	}
 }
+
+func TestAComposeFileThePanelCannotSeeSaysSo(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	_, c := outsideStack(t)
+	// the path the daemon reports is a host path, and the panel container does not have it mounted
+	c.Labels = map[string]string{"com.docker.compose.project.config_files": "/home/somebody/stack/docker-compose.yml"}
+	fake.HostList = []dockerx.HostContainer{c}
+
+	list, err := m.List(t.Context())
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	got := list[0]
+	if got.Editable {
+		t.Fatal("a file it cannot open is not editable")
+	}
+	if got.ReadOnly != "not_visible" {
+		t.Errorf("readOnly = %q, want not_visible", got.ReadOnly)
+	}
+	if got.ComposeFile != "/home/somebody/stack/docker-compose.yml" {
+		t.Errorf("composeFile = %q, the screen needs the path to name it", got.ComposeFile)
+	}
+	if err := m.UpdateImage(t.Context(), "nextcloud"); !errors.Is(err, ErrExternal) {
+		t.Errorf("err = %v, want the external error", err)
+	}
+}

@@ -127,6 +127,14 @@ export const pt = {
     'O template {id} não está mais no catálogo. Edite pelo docker-compose.yml.',
   'detail.externalNote':
     'Container externo, do projeto compose {project} em {dir}. O OkDock sobe, para, reinicia e mostra o console; o resto continua sendo do compose original.',
+  'detail.readOnly.no_compose':
+    'O docker não diz de qual arquivo compose este container veio, então não há o que ler nem o que escrever. O painel sobe, para e mostra o console.',
+  'detail.readOnly.not_visible':
+    'O compose deste container é {file}, e o painel não enxerga esse caminho. O painel roda em container: monte a pasta no docker-compose.yml dele, no mesmo caminho dos dois lados, e recarregue.',
+  'detail.readOnly.unreadable':
+    'O painel não conseguiu ler {file} como compose. Enquanto não ler, sobe, para e mostra o console, e não escreve nada.',
+  'detail.readOnly.unsupported':
+    '{file} tem algo que o painel não sabe reescrever, um include ou uma faixa de portas. Ele não escreve o arquivo pra não jogar isso fora.',
   'detail.externalEditable':
     'Container do projeto compose {project}. O que você salvar aqui é escrito em {file}, só neste serviço, e só ele sobe de novo. Os outros serviços do stack ficam como estão.',
   'detail.noPublishedPorts': 'nenhuma porta publicada no host',

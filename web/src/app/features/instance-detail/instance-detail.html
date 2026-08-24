@@ -93,7 +93,7 @@
               <div class="alert warn">
                 {{ inst.editable
                   ? t('detail.externalEditable', { project: inst.project || '-', file: inst.composeFile || '-' })
-                  : t('detail.externalNote', { project: inst.project || '-', dir: inst.dir || '-' }) }}
+                  : readOnlyNote() }}
               </div>
             }
             @if (inst.external && !inst.editable) {
