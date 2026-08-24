@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/VitorCdSouza/okdock/api/internal/dockerx"
 	"github.com/VitorCdSouza/okdock/api/internal/instance"
 	"github.com/VitorCdSouza/okdock/api/internal/manager"
 	"github.com/VitorCdSouza/okdock/api/internal/template"
@@ -176,6 +177,21 @@ func (s *Server) previewCompose(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	writeJSON(w, http.StatusOK, resp)
+}
+
+type imageSearchResponse struct {
+	Images []dockerx.ImageHit `json:"images"`
+}
+
+// the search is by repository name, the registry knows nothing about the tag
+func (s *Server) searchImages(w http.ResponseWriter, r *http.Request) {
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	hits, err := s.mgr.SearchImages(r.Context(), r.URL.Query().Get("q"), limit)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, imageSearchResponse{Images: hits})
 }
 
 func (s *Server) getCompose(w http.ResponseWriter, r *http.Request) {

@@ -92,6 +92,11 @@ export const en: Record<MessageKey, string> = {
     'Tears down the container and takes the instance off the board, keeping the volumes. The world stays in',
   'kanban.doArchive': 'Archive',
 
+  'images.searching': 'searching...',
+  'images.none': 'nothing on Docker Hub',
+  'images.failed': 'search failed',
+  'images.official': 'official',
+
   'card.external': 'external',
   'card.externalTip':
     'Container that already existed on the server, outside OkDock. When the panel finds its compose file, it edits and updates that service in the original file; deleting stays in the terminal.',

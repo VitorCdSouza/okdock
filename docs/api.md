@@ -185,6 +185,25 @@ way a new template enters the catalog without depending on the frontend, showing
 up in English until it gets a translation. The port `label` is a code (`game`)
 for the same reason.
 
+## Images
+
+### `GET /images?q=jellyfin&limit=25`
+
+```json
+{
+  "images": [
+    {"name": "jellyfin/jellyfin", "description": "Jellyfin media server", "stars": 1200},
+    {"name": "linuxserver/jellyfin", "description": "…", "stars": 800, "official": true}
+  ]
+}
+```
+
+This is `docker search`, so the daemon is the one reaching the registry and the
+panel needs no outbound route of its own. Two limits come with that: it only
+searches **Docker Hub**, so nothing from `ghcr.io` or `lscr.io` shows up, and it
+answers with repositories, never with tags. An empty `q` answers an empty list
+without asking docker anything. `limit` defaults to 25 and is capped at 100.
+
 ## Instances
 
 ### `GET /instances`

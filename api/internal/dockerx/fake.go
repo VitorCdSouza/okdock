@@ -22,6 +22,8 @@ type Fake struct {
 	ServerVersion  string
 	ImageIDs       map[string]string
 	PulledImageIDs map[string]string
+	SearchHits     map[string][]ImageHit
+	FailSearch     error
 
 	Calls []string
 }
@@ -34,6 +36,7 @@ func NewFake() *Fake {
 		FailUp:         map[string]error{},
 		FailPull:       map[string]error{},
 		FailDown:       map[string]error{},
+		SearchHits:     map[string][]ImageHit{},
 		FailAction:     map[string]error{},
 		ImageIDs:       map[string]string{},
 		PulledImageIDs: map[string]string{},
@@ -130,6 +133,20 @@ func (f *Fake) ImageID(_ context.Context, ref string) (string, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.ImageIDs[ref], nil
+}
+
+func (f *Fake) SearchImages(_ context.Context, term string, limit int) ([]ImageHit, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.record("search", term)
+	if f.FailSearch != nil {
+		return nil, f.FailSearch
+	}
+	hits := f.SearchHits[term]
+	if limit > 0 && len(hits) > limit {
+		hits = hits[:limit]
+	}
+	return hits, nil
 }
 
 func (f *Fake) Version(_ context.Context) (string, error) {

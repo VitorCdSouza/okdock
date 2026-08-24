@@ -52,6 +52,8 @@ func (s *Server) routes() {
 	m.HandleFunc("PUT /api/v1/templates/{id}", s.saveTemplate)
 	m.HandleFunc("DELETE /api/v1/templates/{id}", s.deleteTemplate)
 
+	m.HandleFunc("GET /api/v1/images", s.searchImages)
+
 	m.HandleFunc("GET /api/v1/dns", s.getDNS)
 	m.HandleFunc("PUT /api/v1/dns", s.setDNSToken)
 	m.HandleFunc("POST /api/v1/dns/sync", s.syncDNS)

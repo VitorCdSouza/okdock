@@ -89,6 +89,11 @@ export const pt = {
     'Derruba o container e tira a instância do quadro, mantendo os volumes. O mundo continua em',
   'kanban.doArchive': 'Arquivar',
 
+  'images.searching': 'buscando...',
+  'images.none': 'nada no Docker Hub',
+  'images.failed': 'busca falhou',
+  'images.official': 'oficial',
+
   'card.external': 'externo',
   'card.externalTip':
     'Container que já existia no servidor, fora do OkDock. Quando o painel acha o compose dele, edita e atualiza esse serviço no arquivo original; excluir continua no terminal.',

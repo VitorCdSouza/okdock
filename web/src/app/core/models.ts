@@ -61,6 +61,14 @@ export interface Template {
   builtin?: boolean;
 }
 
+// one repository docker search found, and the registry search reports no tags
+export interface ImageHit {
+  name: string;
+  description: string;
+  stars: number;
+  official?: boolean;
+}
+
 export interface TemplatesResponse {
   templates: Template[];
   categories: Category[];

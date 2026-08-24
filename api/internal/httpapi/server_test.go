@@ -31,20 +31,27 @@ func templates(t *testing.T) *template.Catalog {
 
 func newServer(t *testing.T) *Server {
 	t.Helper()
+	s, _ := newServerWithDocker(t)
+	return s
+}
+
+func newServerWithDocker(t *testing.T) (*Server, *dockerx.Fake) {
+	t.Helper()
 	st, err := store.New(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
 	cat := templates(t)
+	fake := dockerx.NewFake()
 	mgr := manager.New(manager.Options{
 		Store:     st,
 		Templates: cat,
-		Docker:    dockerx.NewFake(),
+		Docker:    fake,
 		System: system.StaticReader{Info: system.Info{
 			MemoryTotal: 16 << 30, MemoryAvailable: 12 << 30, CPUCount: 8,
 		}},
 	})
-	return New(Options{Manager: mgr, Templates: cat})
+	return New(Options{Manager: mgr, Templates: cat}), fake
 }
 
 func do(t *testing.T, s *Server, method, path string, body any) *httptest.ResponseRecorder {
@@ -414,5 +421,42 @@ func TestCORSOnlyWhenConfigured(t *testing.T) {
 	w := do(t, s, "GET", "/api/v1/health", nil)
 	if got := w.Header().Get("Access-Control-Allow-Origin"); got != "" {
 		t.Errorf("CORS opened with no configuration: %q", got)
+	}
+}
+
+func TestSearchImages(t *testing.T) {
+	s, fake := newServerWithDocker(t)
+	fake.SearchHits["jellyfin"] = []dockerx.ImageHit{
+		{Name: "jellyfin/jellyfin", Description: "media server", Stars: 1200},
+		{Name: "linuxserver/jellyfin", Stars: 800},
+	}
+
+	w := do(t, s, "GET", "/api/v1/images?q=jellyfin", nil)
+	if w.Code != 200 {
+		t.Fatalf("status = %d: %s", w.Code, w.Body)
+	}
+	var got struct {
+		Images []dockerx.ImageHit `json:"images"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Images) != 2 || got.Images[0].Name != "jellyfin/jellyfin" {
+		t.Fatalf("images = %+v", got.Images)
+	}
+}
+
+func TestSearchImagesWithNoTermAsksTheDaemonNothing(t *testing.T) {
+	s, fake := newServerWithDocker(t)
+
+	w := do(t, s, "GET", "/api/v1/images?q=%20", nil)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	if strings.Contains(strings.Join(fake.Calls, " "), "search") {
+		t.Errorf("an empty term reached docker: %v", fake.Calls)
+	}
+	if !strings.Contains(w.Body.String(), `"images":[]`) {
+		t.Errorf("body = %s, want an empty list", w.Body)
 	}
 }

@@ -7,6 +7,7 @@ import {
   ApiProblem,
   ComposePreview,
   DnsStatus,
+  ImageHit,
   Instance,
   InstanceDNS,
   InstancesResponse,
@@ -40,6 +41,14 @@ export class Api {
 
   system(): Observable<SystemInfo> {
     return this.get<SystemInfo>(`${BASE}/system`);
+  }
+
+  // this one does not go through wrap: a lookup that failed while typing raises no banner
+  searchImages(term: string): Observable<ImageHit[]> {
+    const q = encodeURIComponent(term);
+    return this.http
+      .get<{ images: ImageHit[] }>(`${BASE}/images?q=${q}`)
+      .pipe(map((r) => r.images));
   }
 
   templates(): Observable<TemplatesResponse> {

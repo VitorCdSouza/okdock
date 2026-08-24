@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { ImageSearch } from './image-search';
+
 export function splitImage(ref: string): { repo: string; tag: string } {
   const slash = ref.lastIndexOf('/');
   const colon = ref.lastIndexOf(':');
@@ -10,12 +12,11 @@ export function splitImage(ref: string): { repo: string; tag: string } {
 
 @Component({
   selector: 'ok-image-ref',
-  imports: [FormsModule],
+  imports: [FormsModule, ImageSearch],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (free()) {
-      <input class="mono whole" [ngModel]="image()" (ngModelChange)="image.set($event)"
-             placeholder="repositorio/imagem:tag" spellcheck="false">
+      <ok-image-search [(image)]="image" placeholder="repositorio/imagem:tag" />
     } @else {
       <div class="ref">
         <span class="repo mono" [title]="repo()">{{ repo() }}:</span>

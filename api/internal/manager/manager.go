@@ -1217,4 +1217,20 @@ func (m *Manager) Compose(ctx context.Context, name string) ([]byte, error) {
 	return nil, err
 }
 
+// SearchImages goes through the daemon, so a failure there is a docker failure like any other
+func (m *Manager) SearchImages(ctx context.Context, term string, limit int) ([]dockerx.ImageHit, error) {
+	term = strings.TrimSpace(term)
+	if term == "" {
+		return []dockerx.ImageHit{}, nil
+	}
+	hits, err := m.docker.SearchImages(ctx, term, limit)
+	if err != nil {
+		return nil, err
+	}
+	if hits == nil {
+		hits = []dockerx.ImageHit{}
+	}
+	return hits, nil
+}
+
 func (m *Manager) Store() *store.Store { return m.store }

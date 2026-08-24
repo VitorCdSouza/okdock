@@ -14,6 +14,7 @@ import {
 import { I18n } from '../../core/i18n/i18n';
 import { GameIcon } from '../../shared/game-icon';
 import { InfoDot } from '../../shared/info-dot';
+import { ImageSearch } from '../../shared/image-search';
 
 const FIELD_TYPES: FieldType[] = ['text', 'password', 'int', 'float', 'bool', 'enum'];
 
@@ -50,7 +51,7 @@ function blank(): Template {
 
 @Component({
   selector: 'ok-templates',
-  imports: [FormsModule, GameIcon, InfoDot],
+  imports: [FormsModule, GameIcon, InfoDot, ImageSearch],
   templateUrl: './templates.html',
   styleUrl: './templates.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

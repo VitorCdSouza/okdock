@@ -106,3 +106,25 @@ func TestParseHostPS(t *testing.T) {
 		t.Errorf("a port exposed but not published never reaches the host: %+v", db.Ports)
 	}
 }
+
+func TestParseSearchAcceptsBothShapes(t *testing.T) {
+	// the official flag comes as "[OK]" in one docker version and "true" in another
+	out := []byte(`{"Description":"Official build of Nginx.","IsAutomated":"false","IsOfficial":"[OK]","Name":"nginx","StarCount":20734}
+{"Description":"Jellyfin media server","IsAutomated":"true","IsOfficial":"false","Name":"jellyfin/jellyfin","StarCount":"1200"}
+
+{"Description":"","IsOfficial":"true","Name":"","StarCount":0}`)
+
+	hits, err := parseSearch(out)
+	if err != nil {
+		t.Fatalf("parseSearch: %v", err)
+	}
+	if len(hits) != 2 {
+		t.Fatalf("hits = %+v, the nameless line should be dropped", hits)
+	}
+	if hits[0] != (ImageHit{Name: "nginx", Description: "Official build of Nginx.", Stars: 20734, Official: true}) {
+		t.Errorf("hits[0] = %+v", hits[0])
+	}
+	if hits[1] != (ImageHit{Name: "jellyfin/jellyfin", Description: "Jellyfin media server", Stars: 1200}) {
+		t.Errorf("hits[1] = %+v", hits[1])
+	}
+}

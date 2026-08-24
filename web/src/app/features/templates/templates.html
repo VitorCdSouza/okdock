@@ -104,8 +104,9 @@
 
           <div class="field wide">
             <label for="tpl-image">{{ t('templates.image') }} <span class="req">*</span></label>
-            <input id="tpl-image" class="mono" [ngModel]="d.image"
-                   (ngModelChange)="patch({ image: $event })" placeholder="jellyfin/jellyfin:10.9">
+            <ok-image-search fieldId="tpl-image" [image]="d.image"
+                             (imageChange)="patch({ image: $event })"
+                             placeholder="jellyfin/jellyfin:10.9" />
           </div>
 
           <div class="field">

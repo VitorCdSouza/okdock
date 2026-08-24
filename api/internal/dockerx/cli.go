@@ -299,6 +299,55 @@ func (c CLI) ImageID(ctx context.Context, ref string) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
+// the daemon reaches the registry, so the panel needs no outbound route of its own
+func (c CLI) SearchImages(ctx context.Context, term string, limit int) ([]ImageHit, error) {
+	if limit <= 0 || limit > 100 {
+		limit = 25
+	}
+	out, err := c.run(ctx, shortTimeout,
+		"search", "--limit", strconv.Itoa(limit), "--format", "{{json .}}", term)
+	if err != nil {
+		return nil, err
+	}
+	return parseSearch(out)
+}
+
+// the shape changed across docker versions: IsOfficial and StarCount arrive in two forms each
+type searchLine struct {
+	Name        string      `json:"Name"`
+	Description string      `json:"Description"`
+	StarCount   json.Number `json:"StarCount"`
+	IsOfficial  string      `json:"IsOfficial"`
+}
+
+func parseSearch(out []byte) ([]ImageHit, error) {
+	sc := bufio.NewScanner(bytes.NewReader(bytes.TrimSpace(out)))
+	sc.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+
+	var list []ImageHit
+	for sc.Scan() {
+		line := bytes.TrimSpace(sc.Bytes())
+		if len(line) == 0 {
+			continue
+		}
+		var l searchLine
+		if err := json.Unmarshal(line, &l); err != nil {
+			return nil, fmt.Errorf("reading docker search: %w", err)
+		}
+		if l.Name == "" {
+			continue
+		}
+		stars, _ := strconv.Atoi(l.StarCount.String())
+		list = append(list, ImageHit{
+			Name:        l.Name,
+			Description: strings.TrimSpace(l.Description),
+			Stars:       stars,
+			Official:    l.IsOfficial == "true" || l.IsOfficial == "[OK]",
+		})
+	}
+	return list, sc.Err()
+}
+
 func (c CLI) Version(ctx context.Context) (string, error) {
 	out, err := c.run(ctx, shortTimeout, "version", "--format", "{{.Server.Version}}")
 	if err != nil {

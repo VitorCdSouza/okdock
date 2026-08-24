@@ -37,6 +37,14 @@ type HostPort struct {
 	Protocol  string
 }
 
+// one repository the registry answered with, docker search says no more than that
+type ImageHit struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Stars       int    `json:"stars"`
+	Official    bool   `json:"official,omitempty"`
+}
+
 type Stats struct {
 	Name        string
 	CPUPercent  float64
@@ -56,6 +64,7 @@ type Runner interface {
 	ContainerLogs(ctx context.Context, name string, tail int, follow bool) (io.ReadCloser, error)
 	Stats(ctx context.Context, names []string) ([]Stats, error)
 	ImageID(ctx context.Context, ref string) (string, error)
+	SearchImages(ctx context.Context, term string, limit int) ([]ImageHit, error)
 	Version(ctx context.Context) (string, error)
 }
 
