@@ -29,8 +29,8 @@
   gap: 10px;
 }
 
-.group { min-width: 0; }
-.group.open { grid-column: 1 / -1; }
+/* a stack takes the whole width of the column, closed or open */
+.group { grid-column: 1 / -1; min-width: 0; }
 
 .tile {
   display: flex;
