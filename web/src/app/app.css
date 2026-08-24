@@ -94,7 +94,8 @@
 .chip:hover { border-color: var(--line-hover); color: var(--fg-soft); }
 .chip.on { border-color: var(--accent-line); background: #1f2531; color: var(--fg); }
 
-main { flex: 1; min-height: 0; overflow: auto; }
+/* the gutter stays reserved: a group opening cannot make the scrollbar appear and shift the board sideways */
+main { flex: 1; min-height: 0; overflow: auto; scrollbar-gutter: stable; }
 
 @media (max-width: 900px) {
   .topbar { flex-wrap: wrap; }
