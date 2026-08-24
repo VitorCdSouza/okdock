@@ -45,6 +45,12 @@ type ImageHit struct {
 	Official    bool   `json:"official,omitempty"`
 }
 
+// what an image declares about itself, where a port and a volume suggestion comes from
+type ImageInfo struct {
+	Ports   []HostPort
+	Volumes []string
+}
+
 type Stats struct {
 	Name        string
 	CPUPercent  float64
@@ -65,6 +71,8 @@ type Runner interface {
 	Stats(ctx context.Context, names []string) ([]Stats, error)
 	ImageID(ctx context.Context, ref string) (string, error)
 	SearchImages(ctx context.Context, term string, limit int) ([]ImageHit, error)
+	ImageConfig(ctx context.Context, ref string) (ImageInfo, error)
+	ContainerVolumes(ctx context.Context, image string) ([]string, error)
 	Version(ctx context.Context) (string, error)
 }
 

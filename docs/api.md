@@ -219,6 +219,26 @@ did not answer is `409 registry_unreachable`, and a repository that does not
 exist is an empty list, not an error. A tag in `image` is ignored, only the
 repository part is used.
 
+### `GET /images/suggest?image=jellyfin/jellyfin:10.9`
+
+```json
+{
+  "ports": [{"container": 8096, "protocol": "tcp", "defaultHost": 8096, "label": ""}],
+  "volumes": [{"host": "./cache", "container": "/cache"}, {"host": "./config", "container": "/config"}]
+}
+```
+
+What the panel can fill into a template on its own. Three sources, in order:
+`docker image inspect` for an image on the host, which answers for the ports
+always and for the volumes it declares; a container already running that image,
+which is the only source for an image that declares no `VOLUME`, the whole
+linuxserver family included; and the registry config blob for an image nobody
+has pulled, which costs four anonymous requests and no gigabyte of pull.
+
+The fields of the form are not in here, and will not be: an image does not
+declare the variables its entrypoint reads, only build time leftovers like
+`PATH` and `LANG`. Nothing to suggest is an empty answer, never an error.
+
 ## Instances
 
 ### `GET /instances`

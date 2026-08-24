@@ -1048,3 +1048,77 @@ func TestAComposeFileThePanelCannotSeeSaysSo(t *testing.T) {
 		t.Errorf("err = %v, want the external error", err)
 	}
 }
+
+func TestSuggestFromTheImageItself(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	fake.ImageConfigs["jellyfin/jellyfin:10.9"] = dockerx.ImageInfo{
+		Ports:   []dockerx.HostPort{{Container: 8096, Protocol: "tcp"}},
+		Volumes: []string{"/cache", "/config"},
+	}
+
+	got, err := m.SuggestFromImage(t.Context(), "jellyfin/jellyfin:10.9")
+	if err != nil {
+		t.Fatalf("SuggestFromImage: %v", err)
+	}
+	if len(got.Ports) != 1 || got.Ports[0].Container != 8096 || got.Ports[0].DefaultHost != 8096 {
+		t.Fatalf("ports = %+v", got.Ports)
+	}
+	want := []template.Volume{
+		{Host: "./cache", Container: "/cache"},
+		{Host: "./config", Container: "/config"},
+	}
+	for i := range want {
+		if got.Volumes[i] != want[i] {
+			t.Fatalf("volumes = %+v, want %+v", got.Volumes, want)
+		}
+	}
+}
+
+func TestSuggestFallsBackToAContainerForTheVolumes(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	// the whole linuxserver family declares no VOLUME, only the container knows
+	fake.ImageConfigs["lscr.io/linuxserver/sonarr"] = dockerx.ImageInfo{}
+	fake.MountsByImage["lscr.io/linuxserver/sonarr"] = []string{"/config", "/downloads", "/media"}
+
+	got, err := m.SuggestFromImage(t.Context(), "lscr.io/linuxserver/sonarr")
+	if err != nil {
+		t.Fatalf("SuggestFromImage: %v", err)
+	}
+	if len(got.Volumes) != 3 || got.Volumes[0].Host != "./config" {
+		t.Fatalf("volumes = %+v", got.Volumes)
+	}
+	if len(got.Ports) != 0 {
+		t.Fatalf("ports = %+v, the image exposes none", got.Ports)
+	}
+}
+
+func TestSuggestDodgesAPortAlreadyTaken(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	if _, err := m.Create(t.Context(), SpecRequest{Name: "smp", TemplateID: "minecraft-java"}); err != nil {
+		t.Fatal(err)
+	}
+	fake.ImageConfigs["itzg/minecraft-server"] = dockerx.ImageInfo{
+		Ports: []dockerx.HostPort{{Container: 25565, Protocol: "tcp"}},
+	}
+
+	got, err := m.SuggestFromImage(t.Context(), "itzg/minecraft-server")
+	if err != nil {
+		t.Fatalf("SuggestFromImage: %v", err)
+	}
+	if got.Ports[0].DefaultHost == 25565 {
+		t.Fatalf("the suggested host port collides with the instance already there: %+v", got.Ports)
+	}
+}
+
+func TestSuggestForAnImageNobodyHasPulled(t *testing.T) {
+	m, _ := newManager(t, 16*gb)
+
+	got, err := m.SuggestFromImage(t.Context(), "somebody/never-pulled")
+	if err != nil {
+		t.Fatalf("SuggestFromImage: %v", err)
+	}
+	// no image, no container and no registry: nothing to suggest is an empty answer, not a failure
+	if len(got.Ports) != 0 || len(got.Volumes) != 0 {
+		t.Fatalf("got = %+v", got)
+	}
+}

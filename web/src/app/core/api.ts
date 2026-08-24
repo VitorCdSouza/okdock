@@ -8,6 +8,7 @@ import {
   ComposePreview,
   DnsStatus,
   ImageHit,
+  ImageSuggestion,
   Instance,
   InstanceDNS,
   InstancesResponse,
@@ -57,6 +58,11 @@ export class Api {
     return this.http
       .get<{ tags: string[] }>(`${BASE}/images/tags?image=${image}`)
       .pipe(map((r) => r.tags));
+  }
+
+  // a lookup like the other two, so a failure does not raise the global banner
+  suggestFromImage(image: string): Observable<ImageSuggestion> {
+    return this.http.get<ImageSuggestion>(`${BASE}/images/suggest?image=${encodeURIComponent(image)}`);
   }
 
   templates(): Observable<TemplatesResponse> {

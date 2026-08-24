@@ -24,6 +24,8 @@ type Fake struct {
 	PulledImageIDs map[string]string
 	SearchHits     map[string][]ImageHit
 	FailSearch     error
+	ImageConfigs   map[string]ImageInfo
+	MountsByImage  map[string][]string
 
 	Calls []string
 }
@@ -37,6 +39,8 @@ func NewFake() *Fake {
 		FailPull:       map[string]error{},
 		FailDown:       map[string]error{},
 		SearchHits:     map[string][]ImageHit{},
+		ImageConfigs:   map[string]ImageInfo{},
+		MountsByImage:  map[string][]string{},
 		FailAction:     map[string]error{},
 		ImageIDs:       map[string]string{},
 		PulledImageIDs: map[string]string{},
@@ -147,6 +151,24 @@ func (f *Fake) SearchImages(_ context.Context, term string, limit int) ([]ImageH
 		hits = hits[:limit]
 	}
 	return hits, nil
+}
+
+func (f *Fake) ImageConfig(_ context.Context, ref string) (ImageInfo, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.record("image-config", ref)
+	info, ok := f.ImageConfigs[ref]
+	if !ok {
+		return ImageInfo{}, fmt.Errorf("No such image: %s", ref)
+	}
+	return info, nil
+}
+
+func (f *Fake) ContainerVolumes(_ context.Context, image string) ([]string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.record("container-volumes", image)
+	return f.MountsByImage[image], nil
 }
 
 func (f *Fake) Version(_ context.Context) (string, error) {

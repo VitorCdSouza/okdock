@@ -9,6 +9,7 @@ import (
 	"io"
 	"os/exec"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -346,6 +347,77 @@ func parseSearch(out []byte) ([]ImageHit, error) {
 		})
 	}
 	return list, sc.Err()
+}
+
+// ImageConfig reads what an image on the host says, pulling gigabytes for a form is no trade
+func (c CLI) ImageConfig(ctx context.Context, ref string) (ImageInfo, error) {
+	out, err := c.run(ctx, shortTimeout, "image", "inspect", ref, "--format", "{{json .Config}}")
+	if err != nil {
+		return ImageInfo{}, err
+	}
+	var cfg imageConfigLine
+	if err := json.Unmarshal(bytes.TrimSpace(out), &cfg); err != nil {
+		return ImageInfo{}, fmt.Errorf("reading the image config: %w", err)
+	}
+	return cfg.info(), nil
+}
+
+type imageConfigLine struct {
+	ExposedPorts map[string]struct{} `json:"ExposedPorts"`
+	Volumes      map[string]struct{} `json:"Volumes"`
+}
+
+func (l imageConfigLine) info() ImageInfo {
+	info := ImageInfo{}
+	for raw := range l.ExposedPorts {
+		port, proto, ok := strings.Cut(raw, "/")
+		if !ok {
+			proto = "tcp"
+		}
+		n, err := strconv.Atoi(port)
+		if err != nil {
+			continue
+		}
+		info.Ports = append(info.Ports, HostPort{Host: n, Container: n, Protocol: proto})
+	}
+	for path := range l.Volumes {
+		info.Volumes = append(info.Volumes, path)
+	}
+	sort.Slice(info.Ports, func(i, j int) bool { return info.Ports[i].Container < info.Ports[j].Container })
+	sort.Strings(info.Volumes)
+	return info
+}
+
+// ContainerVolumes asks a running container, the only source for an image with no VOLUME
+func (c CLI) ContainerVolumes(ctx context.Context, image string) ([]string, error) {
+	out, err := c.run(ctx, shortTimeout, "ps", "--all", "--no-trunc",
+		"--filter", "ancestor="+image, "--format", "{{.Names}}")
+	if err != nil {
+		return nil, err
+	}
+	name := strings.TrimSpace(strings.Split(strings.TrimSpace(string(out)), "\n")[0])
+	if name == "" {
+		return nil, nil
+	}
+	out, err = c.run(ctx, shortTimeout, "container", "inspect", name,
+		"--format", "{{json .Mounts}}")
+	if err != nil {
+		return nil, err
+	}
+	var mounts []struct {
+		Destination string `json:"Destination"`
+	}
+	if err := json.Unmarshal(bytes.TrimSpace(out), &mounts); err != nil {
+		return nil, fmt.Errorf("reading the mounts of %s: %w", name, err)
+	}
+	var out2 []string
+	for _, m := range mounts {
+		if m.Destination != "" {
+			out2 = append(out2, m.Destination)
+		}
+	}
+	sort.Strings(out2)
+	return out2, nil
 }
 
 func (c CLI) Version(ctx context.Context) (string, error) {

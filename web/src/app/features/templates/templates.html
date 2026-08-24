@@ -143,6 +143,10 @@
         <div class="section-title">
           {{ t('templates.ports') }}
           <button class="btn btn-sm" (click)="addPort()">{{ t('templates.add') }}</button>
+          <button class="btn btn-sm" (click)="suggest()" [disabled]="!d.image || suggesting()">
+            {{ suggesting() ? t('common.loading') : t('templates.suggest') }}
+          </button>
+          <ok-info [text]="t('templates.suggestTip')" />
         </div>
         @for (port of d.ports ?? []; track $index) {
           <div class="line">

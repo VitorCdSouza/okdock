@@ -45,6 +45,50 @@ describe('Templates: registering a template', () => {
     http.verify();
   });
 
+  it('the suggestion fills what is missing and leaves what was typed', () => {
+    screen.create();
+    screen.patch({
+      image: 'jellyfin/jellyfin:10.9',
+      ports: [{ container: 8096, protocol: 'tcp', defaultHost: 9000, label: 'web' }],
+      volumes: [{ host: './meus-dados', container: '/config' }],
+    });
+
+    screen.suggest();
+    http.expectOne('/api/v1/images/suggest?image=jellyfin%2Fjellyfin%3A10.9').flush({
+      ports: [
+        { container: 8096, protocol: 'tcp', defaultHost: 8096, label: '' },
+        { container: 1900, protocol: 'udp', defaultHost: 1900, label: '' },
+      ],
+      volumes: [
+        { host: './config', container: '/config' },
+        { host: './cache', container: '/cache' },
+      ],
+    });
+
+    const draft = screen.draft()!;
+    // the port and the volume already there keep what the user chose
+    expect(draft.ports![0].defaultHost).toBe(9000);
+    expect(draft.volumes[0].host).toBe('./meus-dados');
+    // and only what was missing came in
+    expect(draft.ports!.length).toBe(2);
+    expect(draft.ports![1].container).toBe(1900);
+    expect(draft.volumes.length).toBe(2);
+    expect(draft.volumes[1].container).toBe('/cache');
+    expect(screen.suggesting()).toBeFalse();
+  });
+
+  it('a suggestion that failed leaves the form alone', () => {
+    screen.create();
+    screen.patch({ image: 'somebody/nothing' });
+
+    screen.suggest();
+    http.expectOne('/api/v1/images/suggest?image=somebody%2Fnothing')
+      .flush('boom', { status: 409, statusText: 'Conflict' });
+
+    expect(screen.suggesting()).toBeFalse();
+    expect(screen.draft()!.ports).toEqual([]);
+  });
+
   it('a new template goes by POST and reloads the catalog', () => {
     screen.create();
     screen.patch({ id: 'jellyfin', name: 'Jellyfin', category: 'media', image: 'jellyfin/jellyfin:10.9' });

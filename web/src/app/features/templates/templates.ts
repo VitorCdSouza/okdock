@@ -174,6 +174,34 @@ export class Templates {
     this.draft.set({ ...cur, ...change });
   }
 
+  readonly suggesting = signal(false);
+
+  // the image knows its ports and volumes, a running container knows the rest, and the form is kept
+  suggest(): void {
+    const draft = this.draft();
+    if (!draft?.image || this.suggesting()) return;
+    this.suggesting.set(true);
+    this.api.suggestFromImage(draft.image).subscribe({
+      next: (found) => {
+        this.suggesting.set(false);
+        const cur = this.draft();
+        if (!cur) return;
+        const ports = [...(cur.ports ?? [])];
+        for (const p of found.ports) {
+          if (ports.some((o) => o.container === p.container && o.protocol === p.protocol)) continue;
+          ports.push(p);
+        }
+        const volumes = [...(cur.volumes ?? [])];
+        for (const v of found.volumes) {
+          if (volumes.some((o) => o.container === v.container)) continue;
+          volumes.push(v);
+        }
+        this.patch({ ports, volumes });
+      },
+      error: () => this.suggesting.set(false),
+    });
+  }
+
   addPort(): void {
     const cur = this.draft();
     if (!cur) return;

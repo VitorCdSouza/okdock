@@ -207,6 +207,16 @@ func (s *Server) imageTags(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, imageTagsResponse{Tags: tags})
 }
 
+// what the panel fills in on its own, and a missing image is an empty answer, not an error
+func (s *Server) suggestFromImage(w http.ResponseWriter, r *http.Request) {
+	out, err := s.mgr.SuggestFromImage(r.Context(), r.URL.Query().Get("image"))
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
 func (s *Server) getCompose(w http.ResponseWriter, r *http.Request) {
 	raw, err := s.mgr.Compose(r.Context(), r.PathValue("name"))
 	if err != nil {

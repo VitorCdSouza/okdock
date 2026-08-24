@@ -13,7 +13,11 @@ import (
 	"time"
 )
 
-const defaultEndpoint = "https://hub.docker.com/v2/repositories"
+const (
+	defaultEndpoint = "https://hub.docker.com/v2/repositories"
+	defaultRegistry = "https://registry-1.docker.io"
+	defaultAuth     = "https://auth.docker.io/token"
+)
 
 var (
 	// docker search reports no tags, so the tag list comes from the Hub and only for what it hosts
@@ -31,10 +35,13 @@ func (e *UnreachableError) Is(target error) bool { return target == ErrUnreachab
 
 type Client interface {
 	Tags(ctx context.Context, repo string) ([]string, error)
+	ImageConfig(ctx context.Context, ref string) (Config, error)
 }
 
 type Hub struct {
 	Endpoint string
+	Registry string
+	Auth     string
 	Client   *http.Client
 	Limit    int
 }
@@ -162,13 +169,29 @@ func unwrapURL(err error) string {
 type Fake struct {
 	mu sync.Mutex
 
-	TagsByRepo map[string][]string
-	Err        error
-	Calls      []string
+	TagsByRepo  map[string][]string
+	ConfigByRef map[string]Config
+	Err         error
+	ErrOnConfig error
+	Calls       []string
 }
 
 func NewFake() *Fake {
-	return &Fake{TagsByRepo: map[string][]string{}}
+	return &Fake{TagsByRepo: map[string][]string{}, ConfigByRef: map[string]Config{}}
+}
+
+func (f *Fake) ImageConfig(_ context.Context, ref string) (Config, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	f.Calls = append(f.Calls, "config:"+ref)
+	if f.ErrOnConfig != nil {
+		return Config{}, f.ErrOnConfig
+	}
+	if _, err := HubPath(ref); err != nil {
+		return Config{}, err
+	}
+	return f.ConfigByRef[ref], nil
 }
 
 func (f *Fake) Tags(_ context.Context, repo string) ([]string, error) {
@@ -187,4 +210,136 @@ func (f *Fake) Tags(_ context.Context, repo string) ([]string, error) {
 		tags = []string{}
 	}
 	return tags, nil
+}
+
+// ImageConfig reads the config blob from the registry, four anonymous requests at worst
+func (h Hub) ImageConfig(ctx context.Context, ref string) (Config, error) {
+	path, err := HubPath(ref)
+	if err != nil {
+		return Config{}, err
+	}
+	tag := "latest"
+	if i := strings.LastIndex(ref, ":"); i > strings.LastIndex(ref, "/") {
+		tag = ref[i+1:]
+	}
+	client := h.Client
+	if client == nil {
+		client = &http.Client{Timeout: 15 * time.Second}
+	}
+	base := h.Registry
+	if base == "" {
+		base = defaultRegistry
+	}
+
+	token, err := h.token(ctx, client, path)
+	if err != nil {
+		return Config{}, err
+	}
+	digest, err := h.configDigest(ctx, client, base, token, path, tag)
+	if err != nil {
+		return Config{}, err
+	}
+
+	var blob struct {
+		Config Config `json:"config"`
+	}
+	if err := h.get(ctx, client, base+"/v2/"+path+"/blobs/"+digest, token, "", &blob); err != nil {
+		return Config{}, err
+	}
+	return blob.Config, nil
+}
+
+type Config struct {
+	ExposedPorts map[string]struct{} `json:"ExposedPorts"`
+	Volumes      map[string]struct{} `json:"Volumes"`
+}
+
+const acceptManifests = "application/vnd.oci.image.index.v1+json," +
+	"application/vnd.docker.distribution.manifest.list.v2+json," +
+	"application/vnd.oci.image.manifest.v1+json," +
+	"application/vnd.docker.distribution.manifest.v2+json"
+
+type manifest struct {
+	Config struct {
+		Digest string `json:"digest"`
+	} `json:"config"`
+	Manifests []struct {
+		Digest   string `json:"digest"`
+		Platform struct {
+			OS           string `json:"os"`
+			Architecture string `json:"architecture"`
+		} `json:"platform"`
+	} `json:"manifests"`
+}
+
+// a multi platform tag answers an index, and one platform config carries ports and volumes
+func (h Hub) configDigest(ctx context.Context, client *http.Client, base, token, path, tag string) (string, error) {
+	var m manifest
+	if err := h.get(ctx, client, base+"/v2/"+path+"/manifests/"+tag, token, acceptManifests, &m); err != nil {
+		return "", err
+	}
+	if m.Config.Digest != "" {
+		return m.Config.Digest, nil
+	}
+	pick := ""
+	for _, entry := range m.Manifests {
+		if entry.Platform.OS != "linux" || entry.Digest == "" {
+			continue
+		}
+		if entry.Platform.Architecture == "amd64" {
+			pick = entry.Digest
+			break
+		}
+		if pick == "" {
+			pick = entry.Digest
+		}
+	}
+	if pick == "" {
+		return "", &UnreachableError{Detail: "no linux image in the manifest"}
+	}
+	var inner manifest
+	if err := h.get(ctx, client, base+"/v2/"+path+"/manifests/"+pick, token, acceptManifests, &inner); err != nil {
+		return "", err
+	}
+	if inner.Config.Digest == "" {
+		return "", &UnreachableError{Detail: "the manifest carries no config"}
+	}
+	return inner.Config.Digest, nil
+}
+
+func (h Hub) token(ctx context.Context, client *http.Client, path string) (string, error) {
+	auth := h.Auth
+	if auth == "" {
+		auth = defaultAuth
+	}
+	var body struct {
+		Token string `json:"token"`
+	}
+	url := fmt.Sprintf("%s?service=registry.docker.io&scope=repository:%s:pull", auth, path)
+	if err := h.get(ctx, client, url, "", "", &body); err != nil {
+		return "", err
+	}
+	return body.Token, nil
+}
+
+func (h Hub) get(ctx context.Context, client *http.Client, url, token, accept string, into any) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	if accept != "" {
+		req.Header.Set("Accept", accept)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return &UnreachableError{Detail: unwrapURL(err)}
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return &UnreachableError{Detail: fmt.Sprintf("HTTP %d", resp.StatusCode)}
+	}
+	return json.NewDecoder(resp.Body).Decode(into)
 }

@@ -137,3 +137,85 @@ func TestHubTagsWithoutALatestToOffer(t *testing.T) {
 		t.Fatalf("tags = %v", tags)
 	}
 }
+
+// the four requests of an anonymous pull: token, index, manifest of one platform and config blob
+func TestHubImageConfigWalksTheManifest(t *testing.T) {
+	var asked []string
+	var accept []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		asked = append(asked, r.URL.Path)
+		accept = append(accept, r.Header.Get("Accept"))
+		switch {
+		case strings.HasPrefix(r.URL.Path, "/token"):
+			_, _ = w.Write([]byte(`{"token":"abc"}`))
+		case strings.HasSuffix(r.URL.Path, "/manifests/10.9"):
+			if r.Header.Get("Authorization") != "Bearer abc" {
+				t.Errorf("the manifest was asked without the token")
+			}
+			_, _ = w.Write([]byte(`{"manifests":[
+				{"digest":"sha256:arm","platform":{"os":"linux","architecture":"arm64"}},
+				{"digest":"sha256:amd","platform":{"os":"linux","architecture":"amd64"}},
+				{"digest":"sha256:win","platform":{"os":"windows","architecture":"amd64"}}]}`))
+		case strings.HasSuffix(r.URL.Path, "/manifests/sha256:amd"):
+			_, _ = w.Write([]byte(`{"config":{"digest":"sha256:cfg"}}`))
+		case strings.HasSuffix(r.URL.Path, "/blobs/sha256:cfg"):
+			_, _ = w.Write([]byte(`{"config":{
+				"ExposedPorts":{"8096/tcp":{}},
+				"Volumes":{"/config":{},"/cache":{}}}}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer srv.Close()
+
+	hub := registry.Hub{Registry: srv.URL, Auth: srv.URL + "/token", Client: srv.Client()}
+	cfg, err := hub.ImageConfig(t.Context(), "jellyfin/jellyfin:10.9")
+	if err != nil {
+		t.Fatalf("ImageConfig: %v", err)
+	}
+	if _, ok := cfg.ExposedPorts["8096/tcp"]; !ok {
+		t.Errorf("ports = %v", cfg.ExposedPorts)
+	}
+	if len(cfg.Volumes) != 2 {
+		t.Errorf("volumes = %v", cfg.Volumes)
+	}
+	if len(asked) != 4 {
+		t.Fatalf("asked = %v", asked)
+	}
+	// amd64 wins over the arm entry that came first
+	if asked[2] != "/v2/jellyfin/jellyfin/manifests/sha256:amd" {
+		t.Errorf("picked the wrong platform: %v", asked)
+	}
+	if !strings.Contains(accept[1], "manifest.list.v2+json") {
+		t.Errorf("the index was asked without accepting an index: %q", accept[1])
+	}
+}
+
+func TestHubImageConfigOfAnImageWithNoTag(t *testing.T) {
+	var asked []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		asked = append(asked, r.URL.Path)
+		switch {
+		case strings.HasPrefix(r.URL.Path, "/token"):
+			_, _ = w.Write([]byte(`{"token":"abc"}`))
+		case strings.HasSuffix(r.URL.Path, "/manifests/latest"):
+			_, _ = w.Write([]byte(`{"config":{"digest":"sha256:cfg"}}`))
+		default:
+			_, _ = w.Write([]byte(`{"config":{"ExposedPorts":{"80/tcp":{}}}}`))
+		}
+	}))
+	defer srv.Close()
+
+	hub := registry.Hub{Registry: srv.URL, Auth: srv.URL + "/token", Client: srv.Client()}
+	cfg, err := hub.ImageConfig(t.Context(), "nginx")
+	if err != nil {
+		t.Fatalf("ImageConfig: %v", err)
+	}
+	if _, ok := cfg.ExposedPorts["80/tcp"]; !ok {
+		t.Errorf("ports = %v", cfg.ExposedPorts)
+	}
+	// a bare name is a library image, and no tag means latest
+	if asked[1] != "/v2/library/nginx/manifests/latest" {
+		t.Fatalf("asked = %v", asked)
+	}
+}

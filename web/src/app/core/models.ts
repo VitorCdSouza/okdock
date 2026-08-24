@@ -65,6 +65,12 @@ export interface ImageHit {
   official?: boolean;
 }
 
+// what the panel could read out of the image, which never says what its entrypoint reads
+export interface ImageSuggestion {
+  ports: TemplatePort[];
+  volumes: TemplateVolume[];
+}
+
 export interface TemplatesResponse {
   templates: Template[];
   categories: Category[];
