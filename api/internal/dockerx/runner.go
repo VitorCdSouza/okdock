@@ -45,10 +45,10 @@ type Stats struct {
 }
 
 type Runner interface {
-	Up(ctx context.Context, dir string) error
+	Up(ctx context.Context, dir string, services ...string) error
 	Down(ctx context.Context, dir string) error
 	Restart(ctx context.Context, dir string) error
-	Pull(ctx context.Context, dir string, progress func(line string)) error
+	Pull(ctx context.Context, dir string, progress func(line string), services ...string) error
 	PS(ctx context.Context, dir string) ([]Container, error)
 	PSAll(ctx context.Context) ([]HostContainer, error)
 	ContainerAction(ctx context.Context, name, verb string) error

@@ -112,6 +112,10 @@ type Instance struct {
 	External bool   `json:"external,omitempty"`
 	Project  string `json:"project,omitempty"`
 	Service  string `json:"service,omitempty"`
+
+	// whether the panel can write this instance back, true for what it created and for a whole read
+	Editable    bool   `json:"editable,omitempty"`
+	ComposeFile string `json:"composeFile,omitempty"`
 }
 
 type Operation struct {

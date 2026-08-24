@@ -63,8 +63,16 @@ func (e *Error) Error() string {
 
 func (e *Error) Unwrap() error { return e.Err }
 
-func (c CLI) Up(ctx context.Context, dir string) error {
-	_, err := c.run(ctx, upTimeout, c.args(dir, "up", "-d", "--remove-orphans")...)
+// no service means the whole project and a swept orphan, one service touches only that one
+func (c CLI) Up(ctx context.Context, dir string, services ...string) error {
+	args := []string{"up", "-d"}
+	if len(services) == 0 {
+		args = append(args, "--remove-orphans")
+	} else {
+		args = append(args, "--no-deps")
+		args = append(args, services...)
+	}
+	_, err := c.run(ctx, upTimeout, c.args(dir, args...)...)
 	return err
 }
 
@@ -78,11 +86,11 @@ func (c CLI) Restart(ctx context.Context, dir string) error {
 	return err
 }
 
-func (c CLI) Pull(ctx context.Context, dir string, progress func(line string)) error {
+func (c CLI) Pull(ctx context.Context, dir string, progress func(line string), services ...string) error {
 	ctx, cancel := context.WithTimeout(ctx, upTimeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, c.bin(), c.args(dir, "pull")...)
+	cmd := exec.CommandContext(ctx, c.bin(), c.args(dir, append([]string{"pull"}, services...)...)...)
 	pipe, err := cmd.StderrPipe()
 	if err != nil {
 		return err

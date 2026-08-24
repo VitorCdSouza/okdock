@@ -179,7 +179,7 @@ func (s *Server) previewCompose(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) getCompose(w http.ResponseWriter, r *http.Request) {
-	raw, err := s.mgr.Compose(r.PathValue("name"))
+	raw, err := s.mgr.Compose(r.Context(), r.PathValue("name"))
 	if err != nil {
 		writeError(w, err)
 		return

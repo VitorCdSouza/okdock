@@ -167,6 +167,13 @@ func (m *Manager) listExternal(managed []instance.Instance, containers []dockerx
 				Host: p.Host, Container: p.Container, Protocol: p.Protocol,
 			})
 		}
+		readExternalCompose(&inst, c)
+		if inst.TemplateID == "" {
+			if tmpl, ok := m.templates.TemplateForImage(inst.Image); ok {
+				inst.TemplateID = tmpl.ID
+				inst.Category = string(tmpl.Category)
+			}
+		}
 		inst.Operation = m.operation(c.Name)
 		inst.State = externalState(c)
 		if inst.State == instance.StateError && c.ExitCode != 0 {
@@ -189,6 +196,59 @@ func (m *Manager) listExternal(managed []instance.Instance, containers []dockerx
 
 	sort.Slice(list, func(i, j int) bool { return list[i].Name < list[j].Name })
 	return list, running
+}
+
+// the compose file of an outside container is the whole config, and what it cannot express locks it
+func readExternalCompose(inst *instance.Instance, c dockerx.HostContainer) {
+	file := composeFileOf(c)
+	if file == "" || c.Service == "" {
+		return
+	}
+	raw, err := os.ReadFile(file)
+	if err != nil {
+		slog.Debug("could not read the compose file of an outside container",
+			"container", c.Name, "file", file, "err", err)
+		return
+	}
+	project, err := compose.Parse(raw)
+	if err != nil {
+		slog.Debug("could not parse the compose file of an outside container",
+			"container", c.Name, "file", file, "err", err)
+		return
+	}
+	svc, ok := project.Service(c.Service)
+	if !ok {
+		return
+	}
+
+	spec := svc.Spec()
+	spec.Name = c.Name
+	spec.CreatedAt, spec.UpdatedAt = inst.CreatedAt, inst.UpdatedAt
+	if spec.Category == "" {
+		spec.Category = inst.Category
+	}
+	if len(spec.Ports) == 0 {
+		spec.Ports = inst.Ports
+	}
+	inst.Spec = spec
+	inst.ComposeFile = file
+	inst.Editable = len(project.Unsupported) == 0
+}
+
+// docker records the files it read, and more than one means the panel reads none of them
+func composeFileOf(c dockerx.HostContainer) string {
+	files := strings.Split(c.Labels["com.docker.compose.project.config_files"], ",")
+	if len(files) != 1 {
+		return ""
+	}
+	file := strings.TrimSpace(files[0])
+	if file == "" {
+		return ""
+	}
+	if !filepath.IsAbs(file) {
+		file = filepath.Join(c.WorkDir, file)
+	}
+	return file
 }
 
 func externalState(c dockerx.HostContainer) instance.State {
@@ -259,7 +319,8 @@ func (m *Manager) Get(ctx context.Context, name string) (instance.Instance, erro
 }
 
 func (m *Manager) hydrate(ctx context.Context, spec instance.Spec) instance.Instance {
-	inst := instance.Instance{Spec: spec, Dir: m.store.Dir(spec.Name)}
+	inst := instance.Instance{Spec: spec, Dir: m.store.Dir(spec.Name), Editable: true}
+	inst.ComposeFile = m.store.ComposePath(spec.Name)
 	inst.Operation = m.operation(spec.Name)
 	inst.DNS = m.dnsFor(spec.Name)
 
@@ -795,11 +856,21 @@ func (m *Manager) notManaged(ctx context.Context, name string, err error) error 
 func (m *Manager) Update(ctx context.Context, name string, req SpecRequest) (instance.Spec, error) {
 	old, err := m.store.Get(name)
 	if err != nil {
-		return instance.Spec{}, m.notManaged(ctx, name, err)
+		if inst, ok := m.external(ctx, name); ok {
+			return m.updateExternal(ctx, inst, req)
+		}
+		return instance.Spec{}, err
 	}
 	req.Name = name
 	if req.TemplateID == "" {
 		req.TemplateID = old.TemplateID
+	}
+	// what the request leaves out keeps the value saved, the template would drop a volume or a secret
+	if req.Mounts == nil {
+		req.Mounts = old.Mounts
+	}
+	if req.SecretKeys == nil {
+		req.SecretKeys = old.SecretKeys
 	}
 	spec, err := m.BuildSpec(req)
 	if err != nil {
@@ -971,7 +1042,18 @@ func (m *Manager) externalAction(name, verb, kind, code string) error {
 func (m *Manager) UpdateImage(ctx context.Context, name string) error {
 	spec, err := m.store.Get(name)
 	if err != nil {
-		return m.notManaged(ctx, name, err)
+		inst, ok := m.external(ctx, name)
+		if !ok {
+			return err
+		}
+		if inst.ComposeFile == "" {
+			return &ExternalError{Name: name}
+		}
+		if err := m.beginOp(name, OpUpdate, "checking_update"); err != nil {
+			return err
+		}
+		go m.pullExternal(inst)
+		return nil
 	}
 	if spec.Archived {
 		return fmt.Errorf("%q is archived, restore it before updating", name)
@@ -1111,8 +1193,15 @@ type readCloser = interface {
 	Close() error
 }
 
-func (m *Manager) Compose(name string) ([]byte, error) {
-	return m.store.ReadCompose(name)
+func (m *Manager) Compose(ctx context.Context, name string) ([]byte, error) {
+	raw, err := m.store.ReadCompose(name)
+	if err == nil {
+		return raw, nil
+	}
+	if inst, ok := m.external(ctx, name); ok && inst.ComposeFile != "" {
+		return os.ReadFile(inst.ComposeFile)
+	}
+	return nil, err
 }
 
 func (m *Manager) Store() *store.Store { return m.store }

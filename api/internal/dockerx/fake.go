@@ -41,14 +41,21 @@ func NewFake() *Fake {
 	}
 }
 
+func suffix(services []string) string {
+	if len(services) == 0 {
+		return ""
+	}
+	return "#" + strings.Join(services, ",")
+}
+
 func (f *Fake) record(op, dir string) {
 	f.Calls = append(f.Calls, op+":"+dir)
 }
 
-func (f *Fake) Up(_ context.Context, dir string) error {
+func (f *Fake) Up(_ context.Context, dir string, services ...string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.record("up", dir)
+	f.record("up", dir+suffix(services))
 	if err := f.FailUp[dir]; err != nil {
 		return err
 	}
@@ -77,10 +84,10 @@ func (f *Fake) Restart(_ context.Context, dir string) error {
 	return nil
 }
 
-func (f *Fake) Pull(_ context.Context, dir string, progress func(string)) error {
+func (f *Fake) Pull(_ context.Context, dir string, progress func(string), services ...string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.record("pull", dir)
+	f.record("pull", dir+suffix(services))
 	if progress != nil {
 		progress("Pulling " + nameFromDir(dir))
 	}

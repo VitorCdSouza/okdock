@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -854,5 +856,169 @@ func TestAnExternalContainerUsesLabelAndPortWhenTheNameSaysNothing(t *testing.T)
 	}
 	if byName["server"] != "games" {
 		t.Errorf("port 25565 should win: category = %q", byName["server"])
+	}
+}
+
+// a stack the panel did not write, with a second service that must survive
+const outsideCompose = `name: nextcloud
+services:
+  app:
+    image: nextcloud:apache
+    container_name: nextcloud
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      MYSQL_HOST: nextcloud-mysql
+      TRUSTED_PROXIES: 10.0.0.0/8
+    volumes:
+      - /srv/nextcloud/html:/var/www/html
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+  cron:
+    image: nextcloud:apache
+    container_name: nextcloud-cron
+    entrypoint: /cron.sh
+`
+
+func outsideStack(t *testing.T) (dir string, container dockerx.HostContainer) {
+	t.Helper()
+	dir = t.TempDir()
+	file := filepath.Join(dir, "docker-compose.yml")
+	if err := os.WriteFile(file, []byte(outsideCompose), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return dir, dockerx.HostContainer{
+		Name:    "nextcloud",
+		Image:   "nextcloud:apache",
+		State:   "running",
+		Status:  "Up 22 hours",
+		Project: "nextcloud",
+		Service: "app",
+		WorkDir: dir,
+		Labels:  map[string]string{"com.docker.compose.project.config_files": file},
+		Ports:   []dockerx.HostPort{{Host: 8080, Container: 80, Protocol: "tcp"}},
+	}
+}
+
+func TestListReadsTheComposeOfAnOutsideContainer(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	_, c := outsideStack(t)
+	fake.HostList = []dockerx.HostContainer{c}
+
+	list, err := m.List(t.Context())
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	got := list[0]
+	if !got.External || !got.Editable {
+		t.Fatalf("the container is not editable: %+v", got)
+	}
+	// none of this is in docker ps, it only comes from the file
+	if got.MemoryLimit != "2G" || got.Restart != "unless-stopped" {
+		t.Errorf("limits = %q %q", got.MemoryLimit, got.Restart)
+	}
+	if got.Env["MYSQL_HOST"] != "nextcloud-mysql" {
+		t.Errorf("env = %v", got.Env)
+	}
+	if len(got.Mounts) != 1 || got.Mounts[0].Container != "/var/www/html" {
+		t.Errorf("mounts = %+v", got.Mounts)
+	}
+}
+
+func TestListWillNotEditAComposeItCannotWriteBack(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	dir, c := outsideStack(t)
+	file := filepath.Join(dir, "docker-compose.yml")
+	if err := os.WriteFile(file, []byte("include:\n  - other.yml\n"+outsideCompose), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	fake.HostList = []dockerx.HostContainer{c}
+
+	list, err := m.List(t.Context())
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if list[0].Editable {
+		t.Error("a file with an include cannot be written back")
+	}
+}
+
+func TestUpdateEditsOneServiceOfAnOutsideStack(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	dir, c := outsideStack(t)
+	fake.HostList = []dockerx.HostContainer{c}
+	file := filepath.Join(dir, "docker-compose.yml")
+
+	spec, err := m.Update(t.Context(), "nextcloud", SpecRequest{
+		Image:       "nextcloud:30-apache",
+		Values:      map[string]string{"MYSQL_HOST": "db"},
+		Ports:       []instance.PortBinding{{Host: 8081, Container: 80, Protocol: "tcp"}},
+		MemoryLimit: "3g",
+	})
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if spec.Image != "nextcloud:30-apache" {
+		t.Errorf("spec = %+v", spec)
+	}
+
+	raw, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(raw)
+	for _, want := range []string{
+		"image: nextcloud:30-apache",
+		`"8081:80/tcp"`,
+		"MYSQL_HOST: db",
+		"container_name: nextcloud-cron",
+		"entrypoint: /cron.sh",
+	} {
+		if !strings.Contains(text, want) {
+			t.Errorf("%q is not in the file:\n%s", want, text)
+		}
+	}
+	// a variable the form never showed keeps the value the owner wrote
+	if !strings.Contains(text, "TRUSTED_PROXIES: 10.0.0.0/8") {
+		t.Errorf("an unknown variable was dropped:\n%s", text)
+	}
+
+	waitFor(t, "the operation to finish", func() bool { return m.operation("nextcloud") == nil })
+	if !slices.Contains(fake.Calls, "up:"+dir+"#app") {
+		t.Errorf("only the edited service goes back up, calls = %v", fake.Calls)
+	}
+}
+
+func TestUpdateImageOfAnOutsideContainer(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	dir, c := outsideStack(t)
+	fake.HostList = []dockerx.HostContainer{c}
+	fake.ImageIDs["nextcloud:apache"] = "sha256:old"
+	fake.PulledImageIDs = map[string]string{"nextcloud:apache": "sha256:new"}
+
+	if err := m.UpdateImage(t.Context(), "nextcloud"); err != nil {
+		t.Fatalf("UpdateImage: %v", err)
+	}
+	waitFor(t, "the operation to finish", func() bool { return m.operation("nextcloud") == nil })
+
+	for _, want := range []string{"pull:" + dir + "#app", "up:" + dir + "#app"} {
+		if !slices.Contains(fake.Calls, want) {
+			t.Errorf("%q is not among the calls: %v", want, fake.Calls)
+		}
+	}
+}
+
+func TestUpdateRefusesAContainerWithNoComposeFile(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	fake.HostList = []dockerx.HostContainer{hostContainer("jellyfin", "media")}
+
+	if _, err := m.Update(t.Context(), "jellyfin", SpecRequest{Image: "jellyfin:next"}); !errors.Is(err, ErrExternal) {
+		t.Fatalf("err = %v, want the external error", err)
+	}
+	if err := m.UpdateImage(t.Context(), "jellyfin"); !errors.Is(err, ErrExternal) {
+		t.Fatalf("err = %v, want the external error", err)
 	}
 }
