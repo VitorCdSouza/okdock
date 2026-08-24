@@ -31,9 +31,9 @@ describe('ImageSearch', () => {
 
   it('waits for the typing to settle before asking the daemon', fakeAsync(() => {
     const c = field();
-    c.type('jel');
-    c.type('jelly');
-    c.type('jellyfin');
+    c.typeRepo('jel');
+    c.typeRepo('jelly');
+    c.typeRepo('jellyfin');
     tick(300);
 
     const req = http.expectOne('/api/v1/images?q=jellyfin');
@@ -42,38 +42,36 @@ describe('ImageSearch', () => {
     expect(c.hits().length).toBe(1);
   }));
 
-  it('a colon turns the search into the tag list of that repository', fakeAsync(() => {
-    const c = field();
-    c.type('jellyfin/jellyfin:10');
-    tick(300);
-
-    http.expectOne('/api/v1/images/tags?image=jellyfin%2Fjellyfin').flush({
-      tags: ['10.9.11', '10.8.13', 'latest'],
-    });
-
-    // what was typed after the colon filters the list, with no second request
-    expect(c.tags()).toEqual(['10.9.11', '10.8.13']);
-  }));
-
-  it('does not ask the Hub for tags of an image the Hub does not host', fakeAsync(() => {
-    const c = field();
-    c.type('lscr.io/linuxserver/jellyfin:');
-    tick(300);
-
-    http.expectNone(() => true);
-    expect(c.notHub()).toBeTrue();
-  }));
-
   it('asks nothing for a term too short to mean anything', fakeAsync(() => {
-    field().type('j');
+    field().typeRepo('j');
     tick(300);
 
     http.expectNone(() => true);
   }));
 
-  it('picking a repository leaves a valid reference and offers its tags', fakeAsync(() => {
+  it('a whole reference pasted in the image box splits itself', fakeAsync(() => {
     const c = field();
-    c.type('jellyfin');
+    c.typeRepo('jellyfin/jellyfin:10.9.11');
+    tick(300);
+
+    expect(c.repo()).toBe('jellyfin/jellyfin');
+    expect(c.tag()).toBe('10.9.11');
+    // the search is by repository, the tag is not part of the term
+    http.expectOne('/api/v1/images?q=jellyfin%2Fjellyfin').flush({ images: [] });
+  }));
+
+  it('the version box has nothing to offer before the image is filled', fakeAsync(() => {
+    const c = field();
+    c.openTags();
+    tick(300);
+
+    http.expectNone(() => true);
+    expect(c.open()).toBeNull();
+  }));
+
+  it('picking a repository moves on to the version, filtered by what is typed', fakeAsync(() => {
+    const c = field();
+    c.typeRepo('jellyfin');
     tick(300);
     http.expectOne('/api/v1/images?q=jellyfin').flush({
       images: [{ name: 'linuxserver/jellyfin', description: '', stars: 800 }],
@@ -81,36 +79,49 @@ describe('ImageSearch', () => {
 
     c.pick({ name: 'linuxserver/jellyfin', description: '', stars: 800 });
     expect(c.image()).toBe('linuxserver/jellyfin');
-    expect(c.hits().length).toBe(0);
+    expect(c.open()).toBe('tag');
 
     tick(300);
     http.expectOne('/api/v1/images/tags?image=linuxserver%2Fjellyfin').flush({
-      tags: ['latest', '10.9.11'],
+      tags: ['latest', '10.9.11', '10.8.13'],
     });
-    expect(c.tags()).toEqual(['latest', '10.9.11']);
+    expect(c.tags()).toEqual(['latest', '10.9.11', '10.8.13']);
 
-    expect(c.open()).toBeTrue();
+    // typing in the version box filters what is already loaded, no new request
+    c.typeTag('10.9');
+    tick(300);
+    expect(c.tags()).toEqual(['10.9.11']);
+    expect(c.image()).toBe('linuxserver/jellyfin:10.9');
 
     c.pickTag('10.9.11');
     expect(c.image()).toBe('linuxserver/jellyfin:10.9.11');
-    expect(c.open()).toBeFalse();
+    expect(c.open()).toBeNull();
+  }));
+
+  it('does not ask the Hub for tags of an image the Hub does not host', fakeAsync(() => {
+    const c = field('lscr.io/linuxserver/jellyfin');
+    c.openTags();
+    tick(300);
+
+    http.expectNone(() => true);
+    expect(c.notHub()).toBeTrue();
   }));
 
   it('closing stays closed even when the reply lands after it', fakeAsync(() => {
     const c = field();
-    c.type('jellyfin');
+    c.typeRepo('jellyfin');
     tick(300);
     const req = http.expectOne('/api/v1/images?q=jellyfin');
 
     c.close();
     req.flush({ images: [{ name: 'jellyfin/jellyfin', description: '', stars: 10 }] });
 
-    expect(c.open()).toBeFalse();
+    expect(c.open()).toBeNull();
   }));
 
   it('a registry that did not answer says so and keeps searching', fakeAsync(() => {
     const c = field();
-    c.type('jellyfin');
+    c.typeRepo('jellyfin');
     tick(300);
     http.expectOne('/api/v1/images?q=jellyfin').flush('boom', { status: 409, statusText: 'Conflict' });
 
@@ -119,7 +130,7 @@ describe('ImageSearch', () => {
     expect(c.image()).toBe('jellyfin');
 
     // the failure cannot kill the stream, or the field never searches again
-    c.type('nextcloud');
+    c.typeRepo('nextcloud');
     tick(300);
     http.expectOne('/api/v1/images?q=nextcloud').flush({
       images: [{ name: 'nextcloud', description: '', stars: 4000 }],

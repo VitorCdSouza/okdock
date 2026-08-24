@@ -92,6 +92,7 @@ export const en: Record<MessageKey, string> = {
     'Tears down the container and takes the instance off the board, keeping the volumes. The world stays in',
   'kanban.doArchive': 'Archive',
 
+  'images.version': 'version',
   'images.searching': 'searching...',
   'images.none': 'nothing on Docker Hub',
   'images.failed': 'search failed',

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -115,7 +116,39 @@ func (h Hub) Tags(ctx context.Context, repo string) ([]string, error) {
 			tags = append(tags, r.Name)
 		}
 	}
-	return tags, nil
+	return h.withLatest(ctx, client, endpoint, path, tags), nil
+}
+
+const latest = "latest"
+
+// a nightly buries latest past the newest page, so it is asked by name and always comes first
+func (h Hub) withLatest(ctx context.Context, client *http.Client, endpoint, path string, tags []string) []string {
+	for i, tag := range tags {
+		if tag != latest {
+			continue
+		}
+		tags = append(tags[:i], tags[i+1:]...)
+		return append([]string{latest}, tags...)
+	}
+	if !h.hasLatest(ctx, client, endpoint, path) {
+		return tags
+	}
+	return append([]string{latest}, tags...)
+}
+
+func (h Hub) hasLatest(ctx context.Context, client *http.Client, endpoint, path string) bool {
+	target := fmt.Sprintf("%s/%s/tags/%s", strings.TrimSuffix(endpoint, "/"), path, latest)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
+	if err != nil {
+		return false
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, resp.Body)
+	return resp.StatusCode == http.StatusOK
 }
 
 func unwrapURL(err error) string {

@@ -36,7 +36,7 @@ export function splitImage(ref: string): { repo: string; tag: string } {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (free()) {
-      <ok-image-search [(image)]="image" placeholder="repositorio/imagem:tag" />
+      <ok-image-search [(image)]="image" placeholder="repositorio/imagem" />
     } @else {
       <div class="ref">
         <span class="repo mono" [title]="repo()">{{ repo() }}:</span>

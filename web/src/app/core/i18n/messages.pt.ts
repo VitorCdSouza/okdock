@@ -89,6 +89,7 @@ export const pt = {
     'Derruba o container e tira a instância do quadro, mantendo os volumes. O mundo continua em',
   'kanban.doArchive': 'Arquivar',
 
+  'images.version': 'versão',
   'images.searching': 'buscando...',
   'images.none': 'nada no Docker Hub',
   'images.failed': 'busca falhou',

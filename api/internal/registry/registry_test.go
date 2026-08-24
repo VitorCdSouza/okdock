@@ -54,7 +54,8 @@ func TestHubTags(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Tags: %v", err)
 	}
-	if len(tags) != 2 || tags[0] != "10.9.11" || tags[1] != "latest" {
+	// latest is the tag docker assumes, so it leads the list
+	if len(tags) != 2 || tags[0] != "latest" || tags[1] != "10.9.11" {
 		t.Fatalf("tags = %v", tags)
 	}
 	if !strings.HasPrefix(asked, "/jellyfin/jellyfin/tags?") {
@@ -89,5 +90,50 @@ func TestHubTagsWhenTheRegistryIsDown(t *testing.T) {
 	_, err := registry.Hub{Endpoint: srv.URL, Client: srv.Client()}.Tags(t.Context(), "nginx")
 	if !errors.Is(err, registry.ErrUnreachable) {
 		t.Fatalf("err = %v, want ErrUnreachable", err)
+	}
+}
+
+func TestHubTagsAsksForLatestWhenThePageBuriedIt(t *testing.T) {
+	var paths []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		if strings.HasSuffix(r.URL.Path, "/tags/latest") {
+			_, _ = w.Write([]byte(`{"name":"latest"}`))
+			return
+		}
+		// a nightly a day pushes latest out of the newest page
+		_, _ = w.Write([]byte(`{"results":[{"name":"2026081705"},{"name":"unstable"}]}`))
+	}))
+	defer srv.Close()
+
+	tags, err := registry.Hub{Endpoint: srv.URL, Client: srv.Client()}.Tags(t.Context(), "jellyfin/jellyfin")
+	if err != nil {
+		t.Fatalf("Tags: %v", err)
+	}
+	if len(tags) != 3 || tags[0] != "latest" {
+		t.Fatalf("tags = %v", tags)
+	}
+	if len(paths) != 2 || !strings.HasSuffix(paths[1], "/tags/latest") {
+		t.Fatalf("paths = %v, the second call asks for latest by name", paths)
+	}
+}
+
+func TestHubTagsWithoutALatestToOffer(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/tags/latest") {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		_, _ = w.Write([]byte(`{"results":[{"name":"1.2.3"}]}`))
+	}))
+	defer srv.Close()
+
+	tags, err := registry.Hub{Endpoint: srv.URL, Client: srv.Client()}.Tags(t.Context(), "somebody/app")
+	if err != nil {
+		t.Fatalf("Tags: %v", err)
+	}
+	// a tag that does not exist is not invented
+	if len(tags) != 1 || tags[0] != "1.2.3" {
+		t.Fatalf("tags = %v", tags)
 	}
 }

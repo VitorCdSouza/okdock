@@ -33,7 +33,9 @@ type Result =
 
 const IDLE: Result = { kind: 'idle', failed: false };
 
-// docker search knows only the Hub and answers repositories, so the tag stays typed
+type Open = 'repo' | 'tag' | null;
+
+// docker search answers repositories and the Hub answers tags, so the image comes first
 @Component({
   selector: 'ok-image-search',
   imports: [FormsModule],
@@ -44,18 +46,36 @@ const IDLE: Result = { kind: 'idle', failed: false };
   },
   template: `
     <div class="wrap" (click)="$event.stopPropagation()">
-      <input class="mono" spellcheck="false" [attr.id]="fieldId() || null"
-             [placeholder]="placeholder()" [ngModel]="image()"
-             (ngModelChange)="type($event)">
-      @if (open()) {
-        @if (busy()) { <span class="state mono">{{ t('images.searching') }}</span> }
-        @else if (failed()) { <span class="state mono bad">{{ t('images.failed') }}</span> }
-        @else if (notHub()) { <span class="state mono">{{ t('images.tagsOnlyHub') }}</span> }
-        @else if (empty()) { <span class="state mono">{{ t('images.none') }}</span> }
-      }
+      <div class="fields">
+        <span class="box grow">
+          <input class="mono" spellcheck="false" [attr.id]="fieldId() || null"
+                 [placeholder]="placeholder()" [ngModel]="repo()"
+                 (ngModelChange)="typeRepo($event)">
+          @if (open() === 'repo') {
+            @if (busy()) { <span class="state mono">{{ t('images.searching') }}</span> }
+            @else if (failed()) { <span class="state mono bad">{{ t('images.failed') }}</span> }
+            @else if (empty()) { <span class="state mono">{{ t('images.none') }}</span> }
+          }
+        </span>
 
-      @if (open() && tags().length) {
-        <ul class="hits" role="listbox">
+        <span class="box version">
+          <label class="cap mono" [attr.for]="fieldId() ? fieldId() + '-version' : null">
+            {{ t('images.version') }}
+          </label>
+          <input class="mono" spellcheck="false" placeholder="latest"
+                 [attr.id]="fieldId() ? fieldId() + '-version' : null"
+                 [disabled]="!repo()" [ngModel]="tag()"
+                 (ngModelChange)="typeTag($event)" (focus)="openTags()">
+          @if (open() === 'tag') {
+            @if (busy()) { <span class="state mono">{{ t('images.searching') }}</span> }
+            @else if (failed()) { <span class="state mono bad">{{ t('images.failed') }}</span> }
+            @else if (notHub()) { <span class="state mono">{{ t('images.tagsOnlyHub') }}</span> }
+          }
+        </span>
+      </div>
+
+      @if (open() === 'tag' && tags().length) {
+        <ul class="hits tags" role="listbox">
           @for (tag of tags(); track tag) {
             <li>
               <button type="button" role="option" (click)="pickTag(tag)">
@@ -64,7 +84,7 @@ const IDLE: Result = { kind: 'idle', failed: false };
             </li>
           }
         </ul>
-      } @else if (open() && hits().length) {
+      } @else if (open() === 'repo' && hits().length) {
         <ul class="hits" role="listbox">
           @for (hit of hits(); track hit.name) {
             <li>
@@ -82,7 +102,22 @@ const IDLE: Result = { kind: 'idle', failed: false };
   `,
   styles: `
     .wrap { position: relative; }
-    input { width: 100%; }
+    .fields { display: flex; gap: 6px; align-items: stretch; }
+    .box { position: relative; display: block; }
+    .grow { flex: 1; min-width: 0; }
+    .version { flex: none; width: 168px; }
+    .box input { width: 100%; }
+    .box input:disabled { opacity: .5; cursor: not-allowed; }
+    .cap {
+      position: absolute;
+      top: 50%;
+      left: 9px;
+      transform: translateY(-50%);
+      font-size: var(--fs-2xs);
+      color: var(--fg-faint);
+      pointer-events: none;
+    }
+    .version input { padding-left: 58px; }
     .state {
       position: absolute;
       right: 8px;
@@ -109,6 +144,7 @@ const IDLE: Result = { kind: 'idle', failed: false };
       border-radius: var(--r-sm);
       box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
     }
+    .hits.tags { left: auto; width: 168px; }
     .hits button {
       display: grid;
       grid-template-columns: 1fr auto auto;
@@ -148,29 +184,25 @@ export class ImageSearch {
   readonly fieldId = input('');
 
   // an explicit open, or a reply that lands late reopens what the user just closed
-  readonly open = signal(false);
+  readonly open = signal<Open>(null);
   readonly hits = signal<ImageHit[]>([]);
   readonly busy = signal(false);
   readonly failed = signal(false);
   readonly notHub = signal(false);
 
+  readonly repo = computed(() => splitImage(this.image()).repo);
+  readonly tag = computed(() => splitImage(this.image()).tag);
+
   private readonly searched = signal('');
-  private readonly mode = signal<'repo' | 'tag'>('repo');
-  private readonly tagPrefix = signal('');
   private readonly allTags = signal<string[]>([]);
 
   readonly empty = computed(
-    () =>
-      this.mode() === 'repo' &&
-      this.searched() !== '' &&
-      !this.failed() &&
-      this.hits().length === 0,
+    () => this.searched() !== '' && !this.failed() && this.hits().length === 0,
   );
 
-  // the tag list is fetched once per repository and filtered here, so typing costs nothing
+  // the tag list is fetched once per repository and filtered here, so the version box is free
   readonly tags = computed(() => {
-    if (this.mode() !== 'tag') return [];
-    const prefix = this.tagPrefix().toLowerCase();
+    const prefix = this.tag().toLowerCase();
     return this.allTags()
       .filter((tag) => tag.toLowerCase().includes(prefix))
       .slice(0, 40);
@@ -200,7 +232,8 @@ export class ImageSearch {
 
   // the catch belongs inside the switchMap, an error escaping it kills the stream for good
   private load(key: string): Observable<Result> {
-    const [kind, term] = [key.slice(0, key.indexOf(':')), key.slice(key.indexOf(':') + 1)];
+    const cut = key.indexOf(':');
+    const [kind, term] = [key.slice(0, cut), key.slice(cut + 1)];
     if (kind === 'tag') {
       if (!isHubRepo(term)) {
         this.notHub.set(true);
@@ -225,42 +258,47 @@ export class ImageSearch {
     );
   }
 
-  type(raw: string): void {
-    this.image.set(raw);
-    this.open.set(true);
-    const trimmed = raw.trim();
-    const { repo, tag } = splitImage(trimmed);
-    // a colon after the last slash means the repository is settled and the tag is being typed
-    if (trimmed.lastIndexOf(':') > trimmed.lastIndexOf('/')) {
-      this.mode.set('tag');
-      this.tagPrefix.set(tag);
-      this.hits.set([]);
-      this.typed.next(`tag:${repo}`);
-      return;
-    }
-    this.mode.set('repo');
-    this.notHub.set(false);
+  // a whole reference pasted into the image box splits itself
+  typeRepo(raw: string): void {
+    const { repo, tag } = splitImage(raw.trim());
+    this.setRef(repo, tag || this.tag());
+    this.open.set('repo');
     this.allTags.set([]);
+    this.notHub.set(false);
     this.typed.next(`repo:${repo}`);
   }
 
-  // picking the repository is half of the reference, so the tags of it come next
-  pick(hit: ImageHit): void {
-    this.image.set(hit.name);
-    this.open.set(true);
+  typeTag(raw: string): void {
+    this.setRef(this.repo(), raw.trim());
+    this.openTags();
+  }
+
+  openTags(): void {
+    const repo = this.repo();
+    if (!repo) return;
+    this.open.set('tag');
     this.hits.set([]);
-    this.mode.set('tag');
-    this.tagPrefix.set('');
-    this.typed.next(`tag:${hit.name}`);
+    this.typed.next(`tag:${repo}`);
+  }
+
+  // picking the repository is half of the reference, so the version box is offered next
+  pick(hit: ImageHit): void {
+    this.setRef(hit.name, this.tag());
+    this.hits.set([]);
+    this.openTags();
   }
 
   pickTag(tag: string): void {
-    this.image.set(`${splitImage(this.image().trim()).repo}:${tag}`);
-    this.open.set(false);
+    this.setRef(this.repo(), tag);
+    this.open.set(null);
   }
 
   close(): void {
-    this.open.set(false);
+    this.open.set(null);
+  }
+
+  private setRef(repo: string, tag: string): void {
+    this.image.set(tag && repo ? `${repo}:${tag}` : repo);
   }
 
   private reset(): void {

@@ -210,7 +210,10 @@ without asking docker anything. `limit` defaults to 25 and is capped at 100.
 {"tags": ["10.9.11", "10.9.10", "latest"]}
 ```
 
-Newest first. This one does not go through the daemon: it is the Docker Hub
+Newest first, except `latest`, which always leads when it exists: an image
+that pushes a nightly every day buries it past the newest page, so it is asked
+for by name when the page does not carry it. This one does not go through the
+daemon: it is the Docker Hub
 API, called by the panel itself, which is its only outbound request besides
 duckdns. An image hosted anywhere else answers `409 tags_not_hub`, a Hub that
 did not answer is `409 registry_unreachable`, and a repository that does not
