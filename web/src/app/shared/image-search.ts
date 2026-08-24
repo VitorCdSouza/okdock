@@ -10,12 +10,28 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Subject, catchError, debounceTime, distinctUntilChanged, map, of, switchMap } from 'rxjs';
+import {
+  Observable,
+  Subject,
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  map,
+  of,
+  switchMap,
+} from 'rxjs';
 
 import { Api } from '../core/api';
 import { ImageHit } from '../core/models';
 import { I18n } from '../core/i18n/i18n';
-import { splitImage } from './image-ref';
+import { isHubRepo, splitImage } from './image-ref';
+
+type Result =
+  | { kind: 'repo'; term: string; hits: ImageHit[]; failed: boolean }
+  | { kind: 'tag'; tags: string[]; failed: boolean }
+  | { kind: 'idle'; failed: boolean };
+
+const IDLE: Result = { kind: 'idle', failed: false };
 
 // docker search knows only the Hub and answers repositories, so the tag stays typed
 @Component({
@@ -23,8 +39,8 @@ import { splitImage } from './image-ref';
   imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '(document:click)': 'hits.set([])',
-    '(document:keydown.escape)': 'hits.set([])',
+    '(document:click)': 'close()',
+    '(document:keydown.escape)': 'close()',
   },
   template: `
     <div class="wrap" (click)="$event.stopPropagation()">
@@ -33,9 +49,20 @@ import { splitImage } from './image-ref';
              (ngModelChange)="type($event)" (focus)="type(image())">
       @if (busy()) { <span class="state mono">{{ t('images.searching') }}</span> }
       @else if (failed()) { <span class="state mono bad">{{ t('images.failed') }}</span> }
+      @else if (notHub()) { <span class="state mono">{{ t('images.tagsOnlyHub') }}</span> }
       @else if (empty()) { <span class="state mono">{{ t('images.none') }}</span> }
 
-      @if (hits().length) {
+      @if (tags().length) {
+        <ul class="hits" role="listbox">
+          @for (tag of tags(); track tag) {
+            <li>
+              <button type="button" role="option" (click)="pickTag(tag)">
+                <span class="name mono">{{ tag }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      } @else if (hits().length) {
         <ul class="hits" role="listbox">
           @for (hit of hits(); track hit.name) {
             <li>
@@ -121,11 +148,29 @@ export class ImageSearch {
   readonly hits = signal<ImageHit[]>([]);
   readonly busy = signal(false);
   readonly failed = signal(false);
+  readonly notHub = signal(false);
+
   private readonly searched = signal('');
+  private readonly mode = signal<'repo' | 'tag'>('repo');
+  private readonly tagPrefix = signal('');
+  private readonly allTags = signal<string[]>([]);
 
   readonly empty = computed(
-    () => this.searched() !== '' && !this.failed() && this.hits().length === 0,
+    () =>
+      this.mode() === 'repo' &&
+      this.searched() !== '' &&
+      !this.failed() &&
+      this.hits().length === 0,
   );
+
+  // the tag list is fetched once per repository and filtered here, so typing costs nothing
+  readonly tags = computed(() => {
+    if (this.mode() !== 'tag') return [];
+    const prefix = this.tagPrefix().toLowerCase();
+    return this.allTags()
+      .filter((tag) => tag.toLowerCase().includes(prefix))
+      .slice(0, 40);
+  });
 
   private readonly typed = new Subject<string>();
 
@@ -134,46 +179,92 @@ export class ImageSearch {
       .pipe(
         debounceTime(300),
         distinctUntilChanged(),
-        switchMap((term) => {
-          if (term.length < 2) {
-            this.reset();
-            return of({ term: '', hits: [] as ImageHit[], failed: false });
-          }
-          this.busy.set(true);
-          // the catch belongs inside, an error escaping here would kill the stream for good
-          return this.api.searchImages(term).pipe(
-            map((hits) => ({ term, hits, failed: false })),
-            catchError(() => of({ term, hits: [] as ImageHit[], failed: true })),
-          );
-        }),
+        switchMap((key) => this.load(key)),
         takeUntilDestroyed(inject(DestroyRef)),
       )
-      .subscribe({
-        next: ({ term, hits, failed }) => {
-          this.busy.set(false);
-          this.searched.set(term);
-          this.failed.set(failed);
-          this.hits.set(hits);
-        },
+      .subscribe((res) => {
+        this.busy.set(false);
+        this.failed.set(res.failed);
+        if (res.kind === 'repo') {
+          this.searched.set(res.term);
+          this.hits.set(res.hits);
+        } else if (res.kind === 'tag') {
+          this.allTags.set(res.tags);
+        }
       });
+  }
+
+  // the catch belongs inside the switchMap, an error escaping it kills the stream for good
+  private load(key: string): Observable<Result> {
+    const [kind, term] = [key.slice(0, key.indexOf(':')), key.slice(key.indexOf(':') + 1)];
+    if (kind === 'tag') {
+      if (!isHubRepo(term)) {
+        this.notHub.set(true);
+        this.allTags.set([]);
+        return of(IDLE);
+      }
+      this.notHub.set(false);
+      this.busy.set(true);
+      return this.api.imageTags(term).pipe(
+        map((tags) => ({ kind: 'tag', tags, failed: false }) as Result),
+        catchError(() => of({ kind: 'tag', tags: [], failed: true } as Result)),
+      );
+    }
+    if (term.length < 2) {
+      this.reset();
+      return of(IDLE);
+    }
+    this.busy.set(true);
+    return this.api.searchImages(term).pipe(
+      map((hits) => ({ kind: 'repo', term, hits, failed: false }) as Result),
+      catchError(() => of({ kind: 'repo', term, hits: [], failed: true } as Result)),
+    );
   }
 
   type(raw: string): void {
     this.image.set(raw);
-    // the registry searches a repository, so a tag already typed is not part of the term
-    this.typed.next(splitImage(raw.trim()).repo);
+    const trimmed = raw.trim();
+    const { repo, tag } = splitImage(trimmed);
+    // a colon after the last slash means the repository is settled and the tag is being typed
+    if (trimmed.lastIndexOf(':') > trimmed.lastIndexOf('/')) {
+      this.mode.set('tag');
+      this.tagPrefix.set(tag);
+      this.hits.set([]);
+      this.typed.next(`tag:${repo}`);
+      return;
+    }
+    this.mode.set('repo');
+    this.notHub.set(false);
+    this.allTags.set([]);
+    this.typed.next(`repo:${repo}`);
   }
 
+  // picking the repository is half of the reference, so the tags of it come next
   pick(hit: ImageHit): void {
-    const tag = splitImage(this.image().trim()).tag;
-    this.image.set(tag ? `${hit.name}:${tag}` : hit.name);
-    this.reset();
+    this.image.set(hit.name);
+    this.hits.set([]);
+    this.mode.set('tag');
+    this.tagPrefix.set('');
+    this.typed.next(`tag:${hit.name}`);
+  }
+
+  pickTag(tag: string): void {
+    this.image.set(`${splitImage(this.image().trim()).repo}:${tag}`);
+    this.close();
+  }
+
+  close(): void {
+    this.hits.set([]);
+    this.allTags.set([]);
+    this.notHub.set(false);
   }
 
   private reset(): void {
     this.busy.set(false);
     this.failed.set(false);
+    this.notHub.set(false);
     this.hits.set([]);
+    this.allTags.set([]);
     this.searched.set('');
   }
 }

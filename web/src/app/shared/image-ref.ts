@@ -1,7 +1,27 @@
-import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  input,
+  model,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
+import { Api } from '../core/api';
 import { ImageSearch } from './image-search';
+
+// the tag list comes from the Hub API, and a first element that looks like a host is not it
+export function isHubRepo(repo: string): boolean {
+  const parts = repo.trim().split('/');
+  if (parts.length === 1) return parts[0] !== '';
+  if (parts.length > 2) return false;
+  return parts[0] !== 'localhost' && !/[.:]/.test(parts[0]);
+}
 
 export function splitImage(ref: string): { repo: string; tag: string } {
   const slash = ref.lastIndexOf('/');
@@ -22,9 +42,9 @@ export function splitImage(ref: string): { repo: string; tag: string } {
         <span class="repo mono" [title]="repo()">{{ repo() }}:</span>
         <input class="mono tag" [attr.list]="listId()" [ngModel]="tag()"
                (ngModelChange)="setTag($event)" placeholder="latest" spellcheck="false">
-        @if (tags().length) {
+        @if (options().length) {
           <datalist [id]="listId()">
-            @for (t of tags(); track t) { <option [value]="t"></option> }
+            @for (t of options(); track t) { <option [value]="t"></option> }
           </datalist>
         }
       </div>
@@ -65,6 +85,9 @@ export function splitImage(ref: string): { repo: string; tag: string } {
   `,
 })
 export class ImageRef {
+  private readonly api = inject(Api);
+  private readonly destroyRef = inject(DestroyRef);
+
   readonly image = model.required<string>();
   readonly tags = input<string[]>([]);
   readonly free = input(false);
@@ -72,6 +95,26 @@ export class ImageRef {
 
   readonly repo = computed(() => splitImage(this.image()).repo);
   readonly tag = computed(() => splitImage(this.image()).tag);
+
+  private readonly fetched = signal<string[]>([]);
+  private asked = '';
+
+  // the template says which tags it was written for, and the Hub answers when it says nothing
+  readonly options = computed(() => (this.tags().length ? this.tags() : this.fetched()));
+
+  constructor() {
+    effect(() => {
+      const repo = this.repo();
+      if (this.free() || this.tags().length || repo === this.asked) return;
+      this.asked = repo;
+      this.fetched.set([]);
+      if (!isHubRepo(repo)) return;
+      this.api
+        .imageTags(repo)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({ next: (tags) => this.fetched.set(tags), error: () => {} });
+    });
+  }
 
   setTag(raw: string): void {
     const tag = raw.trim();

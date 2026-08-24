@@ -19,6 +19,7 @@ import (
 	"github.com/VitorCdSouza/okdock/api/internal/httpapi"
 	"github.com/VitorCdSouza/okdock/api/internal/instance"
 	"github.com/VitorCdSouza/okdock/api/internal/manager"
+	"github.com/VitorCdSouza/okdock/api/internal/registry"
 	"github.com/VitorCdSouza/okdock/api/internal/store"
 	"github.com/VitorCdSouza/okdock/api/internal/system"
 	"github.com/VitorCdSouza/okdock/api/internal/template"
@@ -72,6 +73,7 @@ func run() error {
 		Docker:        docker,
 		System:        &system.ProcReader{},
 		DNS:           duckdns.HTTP{},
+		Registry:      registry.Hub{},
 		MemoryReserve: reserve,
 	})
 

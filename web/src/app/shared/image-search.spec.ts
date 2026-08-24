@@ -42,11 +42,26 @@ describe('ImageSearch', () => {
     expect(c.hits().length).toBe(1);
   }));
 
-  it('searches the repository, not the tag already typed', fakeAsync(() => {
-    field().type('jellyfin/jellyfin:10.9');
+  it('a colon turns the search into the tag list of that repository', fakeAsync(() => {
+    const c = field();
+    c.type('jellyfin/jellyfin:10');
     tick(300);
 
-    http.expectOne('/api/v1/images?q=jellyfin%2Fjellyfin').flush({ images: [] });
+    http.expectOne('/api/v1/images/tags?image=jellyfin%2Fjellyfin').flush({
+      tags: ['10.9.11', '10.8.13', 'latest'],
+    });
+
+    // what was typed after the colon filters the list, with no second request
+    expect(c.tags()).toEqual(['10.9.11', '10.8.13']);
+  }));
+
+  it('does not ask the Hub for tags of an image the Hub does not host', fakeAsync(() => {
+    const c = field();
+    c.type('lscr.io/linuxserver/jellyfin:');
+    tick(300);
+
+    http.expectNone(() => true);
+    expect(c.notHub()).toBeTrue();
   }));
 
   it('asks nothing for a term too short to mean anything', fakeAsync(() => {
@@ -56,18 +71,27 @@ describe('ImageSearch', () => {
     http.expectNone(() => true);
   }));
 
-  it('picking a repository keeps the tag the user had typed', fakeAsync(() => {
+  it('picking a repository leaves a valid reference and offers its tags', fakeAsync(() => {
     const c = field();
-    c.type('jellyfin:10.9');
+    c.type('jellyfin');
     tick(300);
     http.expectOne('/api/v1/images?q=jellyfin').flush({
       images: [{ name: 'linuxserver/jellyfin', description: '', stars: 800 }],
     });
 
     c.pick({ name: 'linuxserver/jellyfin', description: '', stars: 800 });
-
-    expect(c.image()).toBe('linuxserver/jellyfin:10.9');
+    expect(c.image()).toBe('linuxserver/jellyfin');
     expect(c.hits().length).toBe(0);
+
+    tick(300);
+    http.expectOne('/api/v1/images/tags?image=linuxserver%2Fjellyfin').flush({
+      tags: ['latest', '10.9.11'],
+    });
+    expect(c.tags()).toEqual(['latest', '10.9.11']);
+
+    c.pickTag('10.9.11');
+    expect(c.image()).toBe('linuxserver/jellyfin:10.9.11');
+    expect(c.tags().length).toBe(0);
   }));
 
   it('a registry that did not answer says so and keeps searching', fakeAsync(() => {

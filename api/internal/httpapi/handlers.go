@@ -194,6 +194,19 @@ func (s *Server) searchImages(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, imageSearchResponse{Images: hits})
 }
 
+type imageTagsResponse struct {
+	Tags []string `json:"tags"`
+}
+
+func (s *Server) imageTags(w http.ResponseWriter, r *http.Request) {
+	tags, err := s.mgr.ImageTags(r.Context(), r.URL.Query().Get("image"))
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, imageTagsResponse{Tags: tags})
+}
+
 func (s *Server) getCompose(w http.ResponseWriter, r *http.Request) {
 	raw, err := s.mgr.Compose(r.Context(), r.PathValue("name"))
 	if err != nil {

@@ -95,6 +95,7 @@ export const en: Record<MessageKey, string> = {
   'images.searching': 'searching...',
   'images.none': 'nothing on Docker Hub',
   'images.failed': 'search failed',
+  'images.tagsOnlyHub': 'tags only from Docker Hub',
   'images.official': 'official',
 
   'card.external': 'external',

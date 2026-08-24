@@ -15,6 +15,7 @@ import (
 	"github.com/VitorCdSouza/okdock/api/internal/dockerx"
 	"github.com/VitorCdSouza/okdock/api/internal/instance"
 	"github.com/VitorCdSouza/okdock/api/internal/manager"
+	"github.com/VitorCdSouza/okdock/api/internal/registry"
 	"github.com/VitorCdSouza/okdock/api/internal/store"
 	"github.com/VitorCdSouza/okdock/api/internal/system"
 	"github.com/VitorCdSouza/okdock/api/internal/template"
@@ -33,6 +34,26 @@ func newServer(t *testing.T) *Server {
 	t.Helper()
 	s, _ := newServerWithDocker(t)
 	return s
+}
+
+func newServerWithRegistry(t *testing.T) (*Server, *registry.Fake) {
+	t.Helper()
+	st, err := store.New(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	cat := templates(t)
+	reg := registry.NewFake()
+	mgr := manager.New(manager.Options{
+		Store:     st,
+		Templates: cat,
+		Docker:    dockerx.NewFake(),
+		Registry:  reg,
+		System: system.StaticReader{Info: system.Info{
+			MemoryTotal: 16 << 30, MemoryAvailable: 12 << 30, CPUCount: 8,
+		}},
+	})
+	return New(Options{Manager: mgr, Templates: cat}), reg
 }
 
 func newServerWithDocker(t *testing.T) (*Server, *dockerx.Fake) {
@@ -458,5 +479,30 @@ func TestSearchImagesWithNoTermAsksTheDaemonNothing(t *testing.T) {
 	}
 	if !strings.Contains(w.Body.String(), `"images":[]`) {
 		t.Errorf("body = %s, want an empty list", w.Body)
+	}
+}
+
+func TestImageTags(t *testing.T) {
+	s, reg := newServerWithRegistry(t)
+	reg.TagsByRepo["jellyfin/jellyfin"] = []string{"10.9.11", "latest"}
+
+	w := do(t, s, "GET", "/api/v1/images/tags?image=jellyfin%2Fjellyfin", nil)
+	if w.Code != 200 {
+		t.Fatalf("status = %d: %s", w.Code, w.Body)
+	}
+	if !strings.Contains(w.Body.String(), `"10.9.11"`) {
+		t.Fatalf("body = %s", w.Body)
+	}
+}
+
+func TestImageTagsOutsideTheHub(t *testing.T) {
+	s, _ := newServerWithRegistry(t)
+
+	w := do(t, s, "GET", "/api/v1/images/tags?image=ghcr.io%2Fsomebody%2Fapp", nil)
+	if w.Code != 409 {
+		t.Fatalf("status = %d, want 409: %s", w.Code, w.Body)
+	}
+	if !strings.Contains(w.Body.String(), "tags_not_hub") {
+		t.Fatalf("body = %s", w.Body)
 	}
 }

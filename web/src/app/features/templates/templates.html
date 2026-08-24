@@ -4,7 +4,6 @@
   <header>
     <h2>{{ t('templates.title') }}</h2>
     <div class="actions">
-      <button class="btn btn-sm btn-primary" (click)="create()">{{ t('templates.new') }}</button>
       <button class="btn btn-sm" (click)="close.emit()" [attr.aria-label]="t('common.close')">✕</button>
     </div>
   </header>
@@ -51,6 +50,10 @@
       } @empty {
         <p class="none">{{ t('templates.emptyCategory') }}</p>
       }
+
+      <button class="add" [class.on]="!!draft() && isNew()" (click)="create()">
+        {{ t('templates.new') }}
+      </button>
     </aside>
 
     <section class="editor">
@@ -282,7 +285,6 @@
       } @else {
         <div class="empty">
           <p>{{ t('templates.pick') }}</p>
-          <button class="btn btn-primary" (click)="create()">{{ t('templates.new') }}</button>
         </div>
       }
     </section>

@@ -53,6 +53,7 @@ func (s *Server) routes() {
 	m.HandleFunc("DELETE /api/v1/templates/{id}", s.deleteTemplate)
 
 	m.HandleFunc("GET /api/v1/images", s.searchImages)
+	m.HandleFunc("GET /api/v1/images/tags", s.imageTags)
 
 	m.HandleFunc("GET /api/v1/dns", s.getDNS)
 	m.HandleFunc("PUT /api/v1/dns", s.setDNSToken)

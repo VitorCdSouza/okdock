@@ -204,6 +204,19 @@ searches **Docker Hub**, so nothing from `ghcr.io` or `lscr.io` shows up, and it
 answers with repositories, never with tags. An empty `q` answers an empty list
 without asking docker anything. `limit` defaults to 25 and is capped at 100.
 
+### `GET /images/tags?image=jellyfin/jellyfin`
+
+```json
+{"tags": ["10.9.11", "10.9.10", "latest"]}
+```
+
+Newest first. This one does not go through the daemon: it is the Docker Hub
+API, called by the panel itself, which is its only outbound request besides
+duckdns. An image hosted anywhere else answers `409 tags_not_hub`, a Hub that
+did not answer is `409 registry_unreachable`, and a repository that does not
+exist is an empty list, not an error. A tag in `image` is ignored, only the
+repository part is used.
+
 ## Instances
 
 ### `GET /instances`

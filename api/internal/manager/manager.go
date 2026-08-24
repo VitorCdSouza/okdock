@@ -16,6 +16,7 @@ import (
 	"github.com/VitorCdSouza/okdock/api/internal/dockerx"
 	"github.com/VitorCdSouza/okdock/api/internal/duckdns"
 	"github.com/VitorCdSouza/okdock/api/internal/instance"
+	"github.com/VitorCdSouza/okdock/api/internal/registry"
 	"github.com/VitorCdSouza/okdock/api/internal/store"
 	"github.com/VitorCdSouza/okdock/api/internal/system"
 	"github.com/VitorCdSouza/okdock/api/internal/template"
@@ -27,6 +28,7 @@ type Options struct {
 	Docker        dockerx.Runner
 	System        system.Reader
 	DNS           duckdns.Client
+	Registry      registry.Client
 	MemoryReserve int64
 	Now           func() time.Time
 }
@@ -44,7 +46,9 @@ type Manager struct {
 	mu  sync.Mutex
 	ops map[string]*instance.Operation
 
-	dns    duckdns.Client
+	dns      duckdns.Client
+	registry registry.Client
+
 	dnsMu  sync.Mutex
 	dnsCfg store.DNSConfig
 	dnsBg  sync.WaitGroup
@@ -75,6 +79,7 @@ func New(o Options) *Manager {
 		now:       now,
 		ops:       map[string]*instance.Operation{},
 		dns:       o.DNS,
+		registry:  o.Registry,
 		dnsCfg:    dnsCfg,
 		hub:       NewHub(),
 	}
@@ -1231,6 +1236,18 @@ func (m *Manager) SearchImages(ctx context.Context, term string, limit int) ([]d
 		hits = []dockerx.ImageHit{}
 	}
 	return hits, nil
+}
+
+// ImageTags asks the Hub, the daemon search reports no tags, so the panel reaches the network
+func (m *Manager) ImageTags(ctx context.Context, repo string) ([]string, error) {
+	if m.registry == nil {
+		return nil, registry.ErrNotHub
+	}
+	repo = strings.TrimSpace(repo)
+	if repo == "" {
+		return []string{}, nil
+	}
+	return m.registry.Tags(ctx, repo)
 }
 
 func (m *Manager) Store() *store.Store { return m.store }

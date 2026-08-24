@@ -51,6 +51,14 @@ export class Api {
       .pipe(map((r) => r.images));
   }
 
+  // same reason as searchImages: a lookup, and no tag list outside the Hub is no banner
+  imageTags(repo: string): Observable<string[]> {
+    const image = encodeURIComponent(repo);
+    return this.http
+      .get<{ tags: string[] }>(`${BASE}/images/tags?image=${image}`)
+      .pipe(map((r) => r.tags));
+  }
+
   templates(): Observable<TemplatesResponse> {
     return this.get<TemplatesResponse>(`${BASE}/templates`);
   }

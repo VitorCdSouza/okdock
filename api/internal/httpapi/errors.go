@@ -10,6 +10,7 @@ import (
 	"github.com/VitorCdSouza/okdock/api/internal/duckdns"
 	"github.com/VitorCdSouza/okdock/api/internal/instance"
 	"github.com/VitorCdSouza/okdock/api/internal/manager"
+	"github.com/VitorCdSouza/okdock/api/internal/registry"
 	"github.com/VitorCdSouza/okdock/api/internal/store"
 	"github.com/VitorCdSouza/okdock/api/internal/template"
 )
@@ -129,6 +130,10 @@ func writeError(w http.ResponseWriter, err error) {
 			Message: err.Error(),
 			Params:  map[string]any{"suffix": duckdns.Suffix},
 		})
+	case errors.Is(err, registry.ErrNotHub):
+		writeJSON(w, http.StatusConflict, apiError{Error: "tags_not_hub", Message: err.Error()})
+	case errors.Is(err, registry.ErrUnreachable):
+		writeJSON(w, http.StatusConflict, apiError{Error: "registry_unreachable", Message: err.Error()})
 	case errors.Is(err, duckdns.ErrRejected):
 		writeJSON(w, http.StatusUnprocessableEntity, apiError{Error: "dns_rejected", Message: err.Error()})
 	case errors.As(err, &unreachable):

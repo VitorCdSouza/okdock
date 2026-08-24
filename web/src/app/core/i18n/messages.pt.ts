@@ -92,6 +92,7 @@ export const pt = {
   'images.searching': 'buscando...',
   'images.none': 'nada no Docker Hub',
   'images.failed': 'busca falhou',
+  'images.tagsOnlyHub': 'tag só do Docker Hub',
   'images.official': 'oficial',
 
   'card.external': 'externo',
