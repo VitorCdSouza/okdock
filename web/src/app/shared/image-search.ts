@@ -46,13 +46,15 @@ const IDLE: Result = { kind: 'idle', failed: false };
     <div class="wrap" (click)="$event.stopPropagation()">
       <input class="mono" spellcheck="false" [attr.id]="fieldId() || null"
              [placeholder]="placeholder()" [ngModel]="image()"
-             (ngModelChange)="type($event)" (focus)="type(image())">
-      @if (busy()) { <span class="state mono">{{ t('images.searching') }}</span> }
-      @else if (failed()) { <span class="state mono bad">{{ t('images.failed') }}</span> }
-      @else if (notHub()) { <span class="state mono">{{ t('images.tagsOnlyHub') }}</span> }
-      @else if (empty()) { <span class="state mono">{{ t('images.none') }}</span> }
+             (ngModelChange)="type($event)">
+      @if (open()) {
+        @if (busy()) { <span class="state mono">{{ t('images.searching') }}</span> }
+        @else if (failed()) { <span class="state mono bad">{{ t('images.failed') }}</span> }
+        @else if (notHub()) { <span class="state mono">{{ t('images.tagsOnlyHub') }}</span> }
+        @else if (empty()) { <span class="state mono">{{ t('images.none') }}</span> }
+      }
 
-      @if (tags().length) {
+      @if (open() && tags().length) {
         <ul class="hits" role="listbox">
           @for (tag of tags(); track tag) {
             <li>
@@ -62,7 +64,7 @@ const IDLE: Result = { kind: 'idle', failed: false };
             </li>
           }
         </ul>
-      } @else if (hits().length) {
+      } @else if (open() && hits().length) {
         <ul class="hits" role="listbox">
           @for (hit of hits(); track hit.name) {
             <li>
@@ -145,6 +147,8 @@ export class ImageSearch {
   readonly placeholder = input('');
   readonly fieldId = input('');
 
+  // an explicit open, or a reply that lands late reopens what the user just closed
+  readonly open = signal(false);
   readonly hits = signal<ImageHit[]>([]);
   readonly busy = signal(false);
   readonly failed = signal(false);
@@ -223,6 +227,7 @@ export class ImageSearch {
 
   type(raw: string): void {
     this.image.set(raw);
+    this.open.set(true);
     const trimmed = raw.trim();
     const { repo, tag } = splitImage(trimmed);
     // a colon after the last slash means the repository is settled and the tag is being typed
@@ -242,6 +247,7 @@ export class ImageSearch {
   // picking the repository is half of the reference, so the tags of it come next
   pick(hit: ImageHit): void {
     this.image.set(hit.name);
+    this.open.set(true);
     this.hits.set([]);
     this.mode.set('tag');
     this.tagPrefix.set('');
@@ -250,21 +256,19 @@ export class ImageSearch {
 
   pickTag(tag: string): void {
     this.image.set(`${splitImage(this.image().trim()).repo}:${tag}`);
-    this.close();
+    this.open.set(false);
   }
 
   close(): void {
-    this.hits.set([]);
-    this.allTags.set([]);
-    this.notHub.set(false);
+    this.open.set(false);
   }
 
   private reset(): void {
     this.busy.set(false);
+    this.searched.set('');
     this.failed.set(false);
     this.notHub.set(false);
     this.hits.set([]);
     this.allTags.set([]);
-    this.searched.set('');
   }
 }

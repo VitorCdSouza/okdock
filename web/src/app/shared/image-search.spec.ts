@@ -89,9 +89,23 @@ describe('ImageSearch', () => {
     });
     expect(c.tags()).toEqual(['latest', '10.9.11']);
 
+    expect(c.open()).toBeTrue();
+
     c.pickTag('10.9.11');
     expect(c.image()).toBe('linuxserver/jellyfin:10.9.11');
-    expect(c.tags().length).toBe(0);
+    expect(c.open()).toBeFalse();
+  }));
+
+  it('closing stays closed even when the reply lands after it', fakeAsync(() => {
+    const c = field();
+    c.type('jellyfin');
+    tick(300);
+    const req = http.expectOne('/api/v1/images?q=jellyfin');
+
+    c.close();
+    req.flush({ images: [{ name: 'jellyfin/jellyfin', description: '', stars: 10 }] });
+
+    expect(c.open()).toBeFalse();
   }));
 
   it('a registry that did not answer says so and keeps searching', fakeAsync(() => {

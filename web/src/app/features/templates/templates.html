@@ -51,7 +51,7 @@
         <p class="none">{{ t('templates.emptyCategory') }}</p>
       }
 
-      <button class="add" [class.on]="!!draft() && isNew()" (click)="create()">
+      <button class="add-template" [class.on]="!!draft() && isNew()" (click)="create()">
         {{ t('templates.new') }}
       </button>
     </aside>

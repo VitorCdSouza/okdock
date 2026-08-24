@@ -69,7 +69,8 @@
   flex-direction: column;
   gap: 4px;
 }
-.add {
+/* not .add: the category tab is a .tab.add and this would swallow it */
+.add-template {
   margin-top: 4px;
   padding: 10px;
   width: 100%;
@@ -78,8 +79,8 @@
   font: 500 var(--fs-sm) var(--sans);
   color: var(--fg-dim);
 }
-.add:hover { border-color: var(--accent-line); color: var(--accent); }
-.add.on { border-style: solid; border-color: var(--accent-line); color: var(--accent); }
+.add-template:hover { border-color: var(--accent-line); color: var(--accent); }
+.add-template.on { border-style: solid; border-color: var(--accent-line); color: var(--accent); }
 
 .row {
   display: flex;
