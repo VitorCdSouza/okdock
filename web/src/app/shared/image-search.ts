@@ -66,7 +66,11 @@ type Open = 'repo' | 'tag' | null;
               <span class="state mono">{{ t('images.none') }}</span>
             }
             <button type="button" class="caret" tabindex="-1"
-                    [attr.aria-label]="t('images.openList')" (click)="openRepos()">▾</button>
+                    [attr.aria-label]="t('images.openList')" (click)="openRepos()">
+              <svg viewBox="0 0 10 6" aria-hidden="true">
+                <path d="M1 1l4 4 4-4" />
+              </svg>
+            </button>
           </span>
         </span>
 
@@ -84,7 +88,11 @@ type Open = 'repo' | 'tag' | null;
               <span class="state mono">{{ t('images.tagsOnlyHub') }}</span>
             }
             <button type="button" class="caret" tabindex="-1" [disabled]="!repo()"
-                    [attr.aria-label]="t('images.openList')" (click)="openTags()">▾</button>
+                    [attr.aria-label]="t('images.openList')" (click)="openTags()">
+              <svg viewBox="0 0 10 6" aria-hidden="true">
+                <path d="M1 1l4 4 4-4" />
+              </svg>
+            </button>
           </span>
         </span>
       </div>
@@ -146,6 +154,15 @@ type Open = 'repo' | 'tag' | null;
       border-radius: var(--r-xs);
       font-size: var(--fs-xs);
       color: var(--fg-faint);
+    }
+    .caret svg {
+      width: 10px;
+      height: 6px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
     .caret:hover:not(:disabled) { color: var(--fg); background: var(--bg-chip); }
     .caret:disabled { opacity: .4; cursor: not-allowed; }

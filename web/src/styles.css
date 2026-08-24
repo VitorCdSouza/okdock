@@ -96,7 +96,17 @@ input:focus, select:focus, textarea:focus {
   border-color: var(--accent-line);
 }
 input[type='checkbox'] { width: auto; }
-select { cursor: pointer; }
+/* the same caret the image and version boxes draw, so a select does not look
+   like a different kind of field. #4e535d is --fg-faint, which a data uri
+   cannot read from a variable */
+select {
+  cursor: pointer;
+  appearance: none;
+  padding-right: 30px;
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%234e535d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+}
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
