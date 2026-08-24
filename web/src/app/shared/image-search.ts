@@ -25,6 +25,7 @@ import { Api } from '../core/api';
 import { ImageHit } from '../core/models';
 import { I18n } from '../core/i18n/i18n';
 import { isHubRepo, splitImage } from './image-ref';
+import { InfoDot } from './info-dot';
 
 type Result =
   | { kind: 'repo'; term: string; hits: ImageHit[]; failed: boolean }
@@ -38,7 +39,7 @@ type Open = 'repo' | 'tag' | null;
 // docker search answers repositories and the Hub answers tags, so the image comes first
 @Component({
   selector: 'ok-image-search',
-  imports: [FormsModule],
+  imports: [FormsModule, InfoDot],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:click)': 'close()',
@@ -48,29 +49,43 @@ type Open = 'repo' | 'tag' | null;
     <div class="wrap" (click)="$event.stopPropagation()">
       <div class="fields">
         <span class="box grow">
-          <input class="mono" spellcheck="false" [attr.id]="fieldId() || null"
-                 [placeholder]="placeholder()" [ngModel]="repo()"
-                 (ngModelChange)="typeRepo($event)">
-          @if (open() === 'repo') {
-            @if (busy()) { <span class="state mono">{{ t('images.searching') }}</span> }
-            @else if (failed()) { <span class="state mono bad">{{ t('images.failed') }}</span> }
-            @else if (empty()) { <span class="state mono">{{ t('images.none') }}</span> }
-          }
+          <label [attr.for]="fieldId() || null">
+            {{ label() || t('images.image') }}
+            @if (required()) { <span class="req">*</span> }
+            @if (tip()) { <ok-info [text]="tip()" /> }
+          </label>
+          <span class="entry">
+            <input class="mono" spellcheck="false" [attr.id]="fieldId() || null"
+                   [placeholder]="placeholder()" [ngModel]="repo()"
+                   (ngModelChange)="typeRepo($event)">
+            @if (open() === 'repo' && busy()) {
+              <span class="state mono">{{ t('images.searching') }}</span>
+            } @else if (open() === 'repo' && failed()) {
+              <span class="state mono bad">{{ t('images.failed') }}</span>
+            } @else if (open() === 'repo' && empty()) {
+              <span class="state mono">{{ t('images.none') }}</span>
+            }
+            <button type="button" class="caret" tabindex="-1"
+                    [attr.aria-label]="t('images.openList')" (click)="openRepos()">▾</button>
+          </span>
         </span>
 
         <span class="box version">
-          <label class="cap mono" [attr.for]="fieldId() ? fieldId() + '-version' : null">
-            {{ t('images.version') }}
-          </label>
-          <input class="mono" spellcheck="false" placeholder="latest"
-                 [attr.id]="fieldId() ? fieldId() + '-version' : null"
-                 [disabled]="!repo()" [ngModel]="tag()"
-                 (ngModelChange)="typeTag($event)" (focus)="openTags()">
-          @if (open() === 'tag') {
-            @if (busy()) { <span class="state mono">{{ t('images.searching') }}</span> }
-            @else if (failed()) { <span class="state mono bad">{{ t('images.failed') }}</span> }
-            @else if (notHub()) { <span class="state mono">{{ t('images.tagsOnlyHub') }}</span> }
-          }
+          <label [attr.for]="versionId()">{{ t('images.version') }}</label>
+          <span class="entry">
+            <input class="mono" spellcheck="false" placeholder="latest"
+                   [attr.id]="versionId()" [disabled]="!repo()" [ngModel]="tag()"
+                   (ngModelChange)="typeTag($event)" (focus)="openTags()">
+            @if (open() === 'tag' && busy()) {
+              <span class="state mono">{{ t('images.searching') }}</span>
+            } @else if (open() === 'tag' && failed()) {
+              <span class="state mono bad">{{ t('images.failed') }}</span>
+            } @else if (open() === 'tag' && notHub()) {
+              <span class="state mono">{{ t('images.tagsOnlyHub') }}</span>
+            }
+            <button type="button" class="caret" tabindex="-1" [disabled]="!repo()"
+                    [attr.aria-label]="t('images.openList')" (click)="openTags()">▾</button>
+          </span>
         </span>
       </div>
 
@@ -102,25 +117,42 @@ type Open = 'repo' | 'tag' | null;
   `,
   styles: `
     .wrap { position: relative; }
-    .fields { display: flex; gap: 6px; align-items: stretch; }
-    .box { position: relative; display: block; }
-    .grow { flex: 1; min-width: 0; }
+    .fields { display: flex; gap: 8px; align-items: flex-end; }
+    .box { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .grow { flex: 1; }
     .version { flex: none; width: 168px; }
-    .box input { width: 100%; }
-    .box input:disabled { opacity: .5; cursor: not-allowed; }
-    .cap {
-      position: absolute;
-      top: 50%;
-      left: 9px;
-      transform: translateY(-50%);
-      font-size: var(--fs-2xs);
-      color: var(--fg-faint);
-      pointer-events: none;
+    label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: var(--fs-xs);
+      color: var(--fg-muted);
     }
-    .version input { padding-left: 58px; }
+    .req { color: var(--bad); }
+
+    .entry { position: relative; display: block; }
+    .entry input { width: 100%; padding-right: 30px; }
+    .entry input:disabled { opacity: .5; cursor: not-allowed; }
+
+    .caret {
+      position: absolute;
+      right: 2px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: var(--r-xs);
+      font-size: var(--fs-xs);
+      color: var(--fg-faint);
+    }
+    .caret:hover:not(:disabled) { color: var(--fg); background: var(--bg-chip); }
+    .caret:disabled { opacity: .4; cursor: not-allowed; }
+
     .state {
       position: absolute;
-      right: 8px;
+      right: 28px;
       top: 50%;
       transform: translateY(-50%);
       font-size: var(--fs-2xs);
@@ -128,6 +160,7 @@ type Open = 'repo' | 'tag' | null;
       pointer-events: none;
     }
     .state.bad { color: var(--bad); }
+
     .hits {
       position: absolute;
       z-index: 20;
@@ -182,6 +215,11 @@ export class ImageSearch {
   readonly image = model.required<string>();
   readonly placeholder = input('');
   readonly fieldId = input('');
+  readonly label = input('');
+  readonly tip = input('');
+  readonly required = input(false);
+
+  readonly versionId = computed(() => (this.fieldId() ? `${this.fieldId()}-version` : null));
 
   // an explicit open, or a reply that lands late reopens what the user just closed
   readonly open = signal<Open>(null);
@@ -271,6 +309,13 @@ export class ImageSearch {
   typeTag(raw: string): void {
     this.setRef(this.repo(), raw.trim());
     this.openTags();
+  }
+
+  // the caret is the affordance for a list that is not a datalist, and opens what typing opens
+  openRepos(): void {
+    this.open.set('repo');
+    this.allTags.set([]);
+    this.typed.next(`repo:${this.repo()}`);
   }
 
   openTags(): void {

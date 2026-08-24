@@ -64,11 +64,14 @@
               </div>
 
               <div class="field">
-                <label>
-                  {{ t('new.image') }}
-                  <ok-info [text]="t('new.imageTip')" />
-                </label>
+                @if (p.id !== 'custom') {
+                  <label>
+                    {{ t('new.image') }}
+                    <ok-info [text]="t('new.imageTip')" />
+                  </label>
+                }
                 <ok-image-ref [(image)]="image" [tags]="p.tags ?? []" [free]="p.id === 'custom'"
+                              [label]="t('new.image')" [tip]="t('new.imageTip')"
                               listId="inst-image-tags" />
               </div>
 

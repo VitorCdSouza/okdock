@@ -106,10 +106,10 @@
           </div>
 
           <div class="field wide">
-            <label for="tpl-image">{{ t('templates.image') }} <span class="req">*</span></label>
             <ok-image-search fieldId="tpl-image" [image]="d.image"
                              (imageChange)="patch({ image: $event })"
-                             placeholder="jellyfin/jellyfin:10.9" />
+                             [label]="t('templates.image')" [required]="true"
+                             placeholder="jellyfin/jellyfin" />
           </div>
 
           <div class="field">

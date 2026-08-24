@@ -90,6 +90,8 @@ export const pt = {
   'kanban.doArchive': 'Arquivar',
 
   'images.version': 'versão',
+  'images.image': 'imagem',
+  'images.openList': 'abrir lista',
   'images.searching': 'buscando...',
   'images.none': 'nada no Docker Hub',
   'images.failed': 'busca falhou',

@@ -29,6 +29,32 @@ describe('ImageSearch', () => {
     localStorage.removeItem('okdock.locale');
   });
 
+  // NgModel applies a disabled binding in a microtask, hence the ticks
+  it('shows two labelled boxes, and the version only wakes up with an image', fakeAsync(() => {
+    const fixture = TestBed.createComponent(ImageSearch);
+    fixture.componentRef.setInput('image', '');
+    fixture.componentRef.setInput('label', 'Imagem');
+    fixture.componentRef.setInput('required', true);
+    fixture.detectChanges();
+    tick();
+
+    const labels: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('label'));
+    expect(labels.map((l) => l.textContent!.trim().replace(/\s+/g, ' '))).toEqual([
+      'Imagem *',
+      'versão',
+    ]);
+
+    const inputs: HTMLInputElement[] = Array.from(fixture.nativeElement.querySelectorAll('input'));
+    expect(inputs.length).toBe(2);
+    expect(inputs[1].disabled).toBeTrue();
+    expect(fixture.nativeElement.querySelectorAll('.caret').length).toBe(2);
+
+    fixture.componentRef.setInput('image', 'jellyfin/jellyfin');
+    fixture.detectChanges();
+    tick();
+    expect(inputs[1].disabled).toBeFalse();
+  }));
+
   it('waits for the typing to settle before asking the daemon', fakeAsync(() => {
     const c = field();
     c.typeRepo('jel');
@@ -67,6 +93,18 @@ describe('ImageSearch', () => {
 
     http.expectNone(() => true);
     expect(c.open()).toBeNull();
+  }));
+
+  it('the caret opens the repository list without waiting for a keystroke', fakeAsync(() => {
+    const c = field('jellyfin');
+    c.openRepos();
+    tick(300);
+
+    http.expectOne('/api/v1/images?q=jellyfin').flush({
+      images: [{ name: 'jellyfin/jellyfin', description: '', stars: 10 }],
+    });
+    expect(c.open()).toBe('repo');
+    expect(c.hits().length).toBe(1);
   }));
 
   it('picking a repository moves on to the version, filtered by what is typed', fakeAsync(() => {

@@ -93,6 +93,8 @@ export const en: Record<MessageKey, string> = {
   'kanban.doArchive': 'Archive',
 
   'images.version': 'version',
+  'images.image': 'image',
+  'images.openList': 'open the list',
   'images.searching': 'searching...',
   'images.none': 'nothing on Docker Hub',
   'images.failed': 'search failed',
