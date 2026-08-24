@@ -38,9 +38,34 @@ The panel does not create containers through the SDK. It writes a
 process per operation, and in exchange the server stays manageable from the
 terminal if the panel dies, which is the likely scenario on a home server.
 
+And it is read back, not only written. `store.Get` parses the file and lets it
+answer for image, ports, volumes, environment, limits, restart and stop grace,
+so editing the YAML by hand is a supported way to change an instance. When the
+parse fails, the sidecar answers instead, which is how an instance written
+before this existed, or one whose file the owner broke, is still read.
+
 `.okdock.json` keeps only what the compose cannot say: which template it came
-from, and which keys are secret. If the file disappears, the instance still
-comes up from the terminal, it just stops being editable through the form.
+from, which keys are secret, which mount holds the data, what each port is
+called, whether the instance is archived and when it was created. The password
+is not there, it is only in the `.env`, because the sidecar is `0644`.
+
+### A container from outside is edited in its own file
+
+`docker ps` reports almost nothing: no environment, no volumes, no memory
+limit. But docker also records which compose file each container came from, so
+the panel reads that file and gets the whole configuration, the same way it
+reads its own.
+
+Saving writes back only that one service, through `compose.Apply`, which edits
+the YAML node in place: the other services of the stack, the comments and the
+anchors survive. Then only that service comes back up, with `--no-deps`. The
+panel refuses to write whenever the parse found something it cannot express, an
+`include` or a port range, since rewriting the file would drop it.
+
+The form of an outside container only knows the fields of the template guessed
+from the image, so what it sends is merged into the environment instead of
+replacing it. Deleting stays out: removing a service from a compose file the
+panel does not own is not the panel's call.
 
 ### The name is one name
 
