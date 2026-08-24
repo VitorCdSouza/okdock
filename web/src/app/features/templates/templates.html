@@ -89,11 +89,8 @@
 
           <div class="field">
             <label for="tpl-cat">{{ t('templates.category') }}</label>
-            <select id="tpl-cat" [ngModel]="d.category" (ngModelChange)="patch({ category: $event })">
-              @for (c of categories(); track c) {
-                <option [value]="c">{{ categoryName(c) }}</option>
-              }
-            </select>
+            <ok-select fieldId="tpl-cat" [value]="d.category" [options]="categoryOptions()"
+                       (valueChange)="patch({ category: $event })" />
           </div>
 
           <div class="field">
@@ -182,10 +179,9 @@
             <input class="mono" type="number" [ngModel]="port.container"
                    (ngModelChange)="patchPort($index, { container: +$event })"
                    [attr.aria-label]="t('templates.portContainer')">
-            <select [ngModel]="port.protocol" (ngModelChange)="patchPort($index, { protocol: $event })">
-              <option value="tcp">tcp</option>
-              <option value="udp">udp</option>
-            </select>
+            <ok-select class="proto" [value]="port.protocol" [options]="protocolOptions"
+                       [ariaLabel]="t('templates.portProtocol')"
+                       (valueChange)="patchPort($index, { protocol: $any($event) })" />
             <input class="mono" type="number" [ngModel]="port.defaultHost"
                    (ngModelChange)="patchPort($index, { defaultHost: +$event })"
                    [attr.aria-label]="t('templates.portHost')">
@@ -229,11 +225,9 @@
                      [attr.aria-label]="t('templates.fieldKey')" placeholder="TZ">
               <input [ngModel]="field.label" (ngModelChange)="patchField($index, { label: $event })"
                      [attr.aria-label]="t('templates.fieldLabel')" [placeholder]="t('templates.fieldLabelExample')">
-              <select [ngModel]="field.type" (ngModelChange)="patchField($index, { type: $event })">
-                @for (type of fieldTypes; track type) {
-                  <option [value]="type">{{ type }}</option>
-                }
-              </select>
+              <ok-select [value]="field.type" [options]="fieldTypeOptions"
+                         [ariaLabel]="t('templates.fieldType')"
+                         (valueChange)="patchField($index, { type: $any($event) })" />
               <input class="mono" [ngModel]="field.default ?? ''"
                      (ngModelChange)="patchField($index, { default: $event })"
                      [attr.aria-label]="t('templates.fieldDefault')" placeholder="America/Sao_Paulo">

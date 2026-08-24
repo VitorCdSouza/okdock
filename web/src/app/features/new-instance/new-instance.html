@@ -90,13 +90,8 @@
                   <ok-info [text]="t('new.dnsTip')" />
                 </label>
                 @if (dnsOptions().length) {
-                  <select id="inst-dns" class="mono" [ngModel]="dnsDomain()"
-                          (ngModelChange)="dnsDomain.set($event)">
-                    <option value="">{{ t('new.dnsNone') }}</option>
-                    @for (d of dnsOptions(); track d.domain) {
-                      <option [value]="d.domain">{{ d.hostname }}</option>
-                    }
-                  </select>
+                  <ok-select fieldId="inst-dns" [value]="dnsDomain()" [options]="dnsChoices()"
+                             (valueChange)="dnsDomain.set($event)" />
                 } @else if (hasDnsToken()) {
                   <span class="note">{{ t('new.dnsAllTaken') }}</span>
                 } @else {

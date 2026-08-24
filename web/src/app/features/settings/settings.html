@@ -113,11 +113,9 @@
     <section>
       <div class="section-title">{{ t('settings.languageTitle') }}</div>
       <div class="row">
-        <select [ngModel]="i18n.pref()" (ngModelChange)="i18n.setPref($event)">
-          <option value="auto">{{ t('settings.languageAuto') }}</option>
-          <option value="pt">Português</option>
-          <option value="en">English</option>
-        </select>
+        <ok-select [value]="i18n.pref()" [options]="languageOptions()"
+                   [ariaLabel]="t('settings.languageTitle')"
+                   (valueChange)="i18n.setPref($any($event))" />
         <ok-info [text]="t('settings.languageTip')" />
       </div>
     </section>

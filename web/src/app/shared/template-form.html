@@ -17,12 +17,8 @@
           </label>
         }
         @case ('enum') {
-          <select [id]="'f-' + f.key" [value]="value(f)"
-                  (change)="set(f, $any($event.target).value)">
-            @for (o of f.options ?? []; track o.value) {
-              <option [value]="o.value">{{ o.label }}</option>
-            }
-          </select>
+          <ok-select [fieldId]="'f-' + f.key" [value]="value(f)" [options]="f.options ?? []"
+                     [invalid]="!!error(f)" (valueChange)="set(f, $event)" />
         }
         @case ('password') {
           <input type="password" [id]="'f-' + f.key" autocomplete="new-password"
@@ -75,12 +71,8 @@
               </label>
             }
             @case ('enum') {
-              <select [id]="'a-' + f.key" [value]="value(f)"
-                      (change)="set(f, $any($event.target).value)">
-                @for (o of f.options ?? []; track o.value) {
-                  <option [value]="o.value">{{ o.label }}</option>
-                }
-              </select>
+              <ok-select [fieldId]="'a-' + f.key" [value]="value(f)" [options]="f.options ?? []"
+                         [invalid]="!!error(f)" (valueChange)="set(f, $event)" />
             }
             @default {
               <input type="text" [id]="'a-' + f.key" class="mono"

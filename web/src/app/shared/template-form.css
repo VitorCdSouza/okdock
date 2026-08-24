@@ -18,7 +18,7 @@
 }
 .check input { accent-color: var(--accent); }
 
-.has-error input, .has-error select { border-color: var(--bad-line); }
+.has-error input { border-color: var(--bad-line); }
 .err { font: 400 var(--fs-xs)/1.45 var(--sans); color: var(--bad); }
 
 .toggle {

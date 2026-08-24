@@ -5,12 +5,13 @@ import { Api, OkDockError } from '../../core/api';
 import { Store } from '../../core/state';
 import { MetricPrefs, Prefs } from '../../core/prefs';
 import { I18n } from '../../core/i18n/i18n';
+import { Select } from '../../shared/select';
 import { MessageKey } from '../../core/i18n/messages.pt';
 import { InfoDot } from '../../shared/info-dot';
 
 @Component({
   selector: 'ok-settings',
-  imports: [FormsModule, InfoDot],
+  imports: [FormsModule, InfoDot, Select],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -23,6 +24,12 @@ export class Settings {
   readonly i18n = inject(I18n);
 
   readonly t = this.i18n.t;
+
+  readonly languageOptions = computed(() => [
+    { value: 'auto', label: this.t('settings.languageAuto') },
+    { value: 'pt', label: 'Português' },
+    { value: 'en', label: 'English' },
+  ]);
 
   readonly close = output<void>();
 

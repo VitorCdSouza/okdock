@@ -9,12 +9,13 @@ import { TemplateForm } from '../../shared/template-form';
 import { GameIcon } from '../../shared/game-icon';
 import { InfoDot } from '../../shared/info-dot';
 import { ImageRef } from '../../shared/image-ref';
+import { Select } from '../../shared/select';
 
 type Step = 1 | 2;
 
 @Component({
   selector: 'ok-new-instance',
-  imports: [FormsModule, TemplateForm, GameIcon, InfoDot, ImageRef],
+  imports: [FormsModule, TemplateForm, GameIcon, InfoDot, ImageRef, Select],
   templateUrl: './new-instance.html',
   styleUrl: './new-instance.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,6 +55,11 @@ export class NewInstance {
     const taken = new Set(dns.links.map((l) => l.domain));
     return dns.domains.filter((d) => !taken.has(d.domain));
   });
+
+  readonly dnsChoices = computed(() => [
+    { value: '', label: this.t('new.dnsNone') },
+    ...this.dnsOptions().map((d) => ({ value: d.domain, label: d.hostname })),
+  ]);
 
   readonly ports = computed(() => {
     const p = this.template();

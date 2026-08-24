@@ -4,10 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { ApiProblem, Template, TemplateField } from '../core/models';
 import { I18n } from '../core/i18n/i18n';
 import { InfoDot } from './info-dot';
+import { Select } from './select';
 
 @Component({
   selector: 'ok-template-form',
-  imports: [FormsModule, InfoDot],
+  imports: [FormsModule, InfoDot, Select],
   templateUrl: './template-form.html',
   styleUrl: './template-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

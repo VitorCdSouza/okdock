@@ -15,6 +15,7 @@ import { I18n } from '../../core/i18n/i18n';
 import { GameIcon } from '../../shared/game-icon';
 import { InfoDot } from '../../shared/info-dot';
 import { ImageSearch } from '../../shared/image-search';
+import { Select } from '../../shared/select';
 
 const FIELD_TYPES: FieldType[] = ['text', 'password', 'int', 'float', 'bool', 'enum'];
 
@@ -51,7 +52,7 @@ function blank(): Template {
 
 @Component({
   selector: 'ok-templates',
-  imports: [FormsModule, GameIcon, InfoDot, ImageSearch],
+  imports: [FormsModule, GameIcon, InfoDot, ImageSearch, Select],
   templateUrl: './templates.html',
   styleUrl: './templates.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -68,6 +69,11 @@ export class Templates {
   readonly close = output<void>();
 
   readonly fieldTypes = FIELD_TYPES;
+  readonly fieldTypeOptions = FIELD_TYPES.map((type) => ({ value: type, label: type }));
+  readonly protocolOptions = [
+    { value: 'tcp', label: 'tcp' },
+    { value: 'udp', label: 'udp' },
+  ];
 
   // a category typed here only reaches the API with the first template saved in it
   private readonly invented = signal<Category[]>([]);
@@ -77,6 +83,10 @@ export class Templates {
     const known = this.store.categories();
     return [...known, ...this.invented().filter((c) => !known.includes(c))];
   });
+
+  readonly categoryOptions = computed(() =>
+    this.categories().map((c) => ({ value: c, label: this.categoryName(c) })),
+  );
 
   readonly active = computed<Category>(() => this.picked() ?? this.categories()[0] ?? 'games');
 
