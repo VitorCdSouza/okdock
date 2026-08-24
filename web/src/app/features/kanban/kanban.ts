@@ -96,14 +96,14 @@ export class Kanban {
       .filter((state) => COLUMN_OF[state] === state)
       .map((state) => {
         const cards = this.store.byColumn(state);
-        const items = this.pack(state, cards, opened);
         return {
           state,
           dot: STATE_DOT[state],
           title: this.t(STATE_KEY[state]),
           cards,
-          items,
-          grow: Math.min(3, Math.max(1, Math.ceil(this.slots(items) / 4))),
+          items: this.pack(state, cards, opened),
+          // width comes from what the column holds, not from what is open: opening a group cannot resize it
+          grow: Math.min(2, Math.max(1, cards.length)),
         };
       });
   });
@@ -116,19 +116,20 @@ export class Kanban {
       stacks.set(card.project, [...(stacks.get(card.project) ?? []), card]);
     }
 
-    const items: Item[] = [];
+    const groups: GroupItem[] = [];
+    const loose: CardItem[] = [];
     const done = new Set<string>();
     for (const card of cards) {
       const project = card.project;
       const members = project ? stacks.get(project) ?? [] : [];
       if (!project || members.length < 2) {
-        items.push({ kind: 'card', key: card.name, instance: card });
+        loose.push({ kind: 'card', key: card.name, instance: card });
         continue;
       }
       if (done.has(project)) continue;
       done.add(project);
       const key = `${state}:${project}`;
-      items.push({
+      groups.push({
         kind: 'group',
         key,
         name: project,
@@ -137,17 +138,13 @@ export class Kanban {
         open: opened === key,
       });
     }
-    return items;
+    // the tiles go on top, so an open group never pushes the loose cards around
+    return [...groups, ...loose];
   }
 
   private icon(instance: Instance): MiniIcon {
     const { bg, fg } = templateColors(instance.templateId, instance.category);
     return { name: instance.name, templateId: instance.templateId, short: this.short(instance), bg, fg };
-  }
-
-  // an open group takes the room of its cards, so the column grows with what is on screen
-  private slots(items: Item[]): number {
-    return items.reduce((n, item) => n + (item.kind === 'group' && item.open ? item.members.length : 1), 0);
   }
 
   private readonly board = viewChild<ElementRef<HTMLElement>>('board');

@@ -203,15 +203,17 @@ describe('Kanban: dragging a card into a column', () => {
   it('containers of the same stack collapse into one tile, and single ones stay as cards', () => {
     store.states.set(['running']);
     store.instances.set([
-      instance({ name: 'nextcloud', external: true, project: 'nextcloud' }),
-      instance({ name: 'nextcloud-db', external: true, project: 'nextcloud' }),
-      instance({ name: 'jellyfin', external: true, project: 'media' }),
       instance({ name: 'smp' }),
+      instance({ name: 'nextcloud', external: true, project: 'nextcloud' }),
+      instance({ name: 'jellyfin', external: true, project: 'media' }),
+      instance({ name: 'nextcloud-db', external: true, project: 'nextcloud' }),
     ]);
 
     const items = kanban.columns()[0].items;
 
-    expect(items.map((i) => i.key)).toEqual(['running:nextcloud', 'jellyfin', 'smp']);
+    expect(items.map((i) => i.key))
+      .withContext('the tiles come first, the loose cards after')
+      .toEqual(['running:nextcloud', 'smp', 'jellyfin']);
     const group = items[0];
     expect(group.kind).toBe('group');
     if (group.kind !== 'group') return;
@@ -257,7 +259,7 @@ describe('Kanban: dragging a card into a column', () => {
     expect(open.get('stopped')).withContext('the stopped half stays closed').toEqual([false]);
   });
 
-  it('a closed group does not widen the column', () => {
+  it('opening a group does not resize the column', () => {
     store.states.set(['running', 'stopped']);
     store.instances.set(
       Array.from({ length: 12 }, (_, i) =>
@@ -265,11 +267,12 @@ describe('Kanban: dragging a card into a column', () => {
       ),
     );
 
-    const grow = new Map(kanban.columns().map((c) => [c.state, c.grow]));
-    expect(grow.get('running')).withContext('twelve containers behind one tile take one tile of room').toBe(1);
-
+    const closed = kanban.columns().find((c) => c.state === 'running')!.grow;
     kanban.toggleGroup('running:media');
-    expect(kanban.columns().find((c) => c.state === 'running')!.grow).toBe(3);
+    const open = kanban.columns().find((c) => c.state === 'running')!.grow;
+
+    expect(closed).toBe(2);
+    expect(open).withContext('the width comes from the containers, not from what is open').toBe(closed);
   });
 
   it('the full column ends up wider than the empty one', () => {
@@ -280,7 +283,7 @@ describe('Kanban: dragging a card into a column', () => {
 
     const grow = new Map(kanban.columns().map((c) => [c.state, c.grow]));
 
-    expect(grow.get('running')).toBe(3);
+    expect(grow.get('running')).withContext('more than one container takes two card columns').toBe(2);
     expect(grow.get('stopped')).toBe(1);
   });
 
