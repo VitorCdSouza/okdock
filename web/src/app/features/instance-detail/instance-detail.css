@@ -68,11 +68,20 @@
 .tabs button:hover { color: var(--fg-soft); }
 .tabs button.on { border-bottom-color: var(--accent); color: var(--fg); font-weight: 600; }
 
-.body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr; background: #0d0f14; }
+.body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  background: #0d0f14;
+  --scroll-bg: #0d0f14;
+  scrollbar-color: var(--line-strong) #0d0f14;
+}
 
 .main {
   padding: 20px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: 16px;

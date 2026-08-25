@@ -35,6 +35,22 @@ describe('Select', () => {
     expect(options[1].classList).toContain('on');
   });
 
+  // it is drawn over the overflow of a dialog, not inside it
+  it('the list opens in the top layer, anchored to the field', () => {
+    const fixture = make();
+    fixture.componentInstance.toggle();
+    fixture.detectChanges();
+
+    const trigger: HTMLElement = fixture.nativeElement.querySelector('.trigger');
+    const list: HTMLElement = fixture.nativeElement.querySelector('.list');
+    const rect = trigger.getBoundingClientRect();
+
+    expect(list.matches(':popover-open')).toBeTrue();
+    expect(list.style.left).toBe(`${rect.left}px`);
+    expect(list.style.width).toBe(`${rect.width}px`);
+    expect(list.style.top).toBe(`${rect.bottom + 4}px`);
+  });
+
   it('picking closes it and reports the value', () => {
     const fixture = make();
     const c = fixture.componentInstance;

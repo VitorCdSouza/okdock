@@ -33,7 +33,14 @@
 }
 h2 { margin: 0; font: 600 var(--fs-2xl) var(--sans); }
 
-.body { padding: 20px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+.body {
+  padding: 20px 22px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
 section { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 section > .grid3, section > .alert, section > .checks, section > .row { align-self: stretch; }
 section + section { border-top: 1px solid var(--line); padding-top: 20px; }

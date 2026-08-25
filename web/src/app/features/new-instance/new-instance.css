@@ -43,7 +43,14 @@ h2 { margin: 0; font: 600 var(--fs-2xl) var(--sans); }
 .steps span.on { background: var(--accent-bg); color: var(--accent); }
 .steps .arrow { background: none; color: #3a3f49; padding: 0; }
 
-.body { padding: 20px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+.body {
+  padding: 20px 22px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
 
 .templates {
   display: grid;

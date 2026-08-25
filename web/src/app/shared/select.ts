@@ -1,15 +1,27 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   computed,
+  effect,
   input,
   model,
   signal,
+  viewChild,
 } from '@angular/core';
 
 export interface SelectOption {
   value: string;
   label: string;
+}
+
+// where the list is drawn, in viewport coordinates
+interface Box {
+  left: number;
+  width: number;
+  maxHeight: number;
+  top?: number;
+  bottom?: number;
 }
 
 // the native option list cannot be styled, and a select would look like another kind of field
@@ -22,7 +34,7 @@ export interface SelectOption {
   },
   template: `
     <div class="wrap" (click)="$event.stopPropagation()">
-      <button type="button" class="trigger mono" role="combobox"
+      <button #trigger type="button" class="trigger mono" role="combobox"
               [attr.id]="fieldId() || null" [attr.aria-expanded]="open()"
               [attr.aria-label]="ariaLabel() || null" [disabled]="disabled()"
               [class.invalid]="invalid()" (click)="toggle()" (keydown)="onKey($event)">
@@ -33,7 +45,10 @@ export interface SelectOption {
       </button>
 
       @if (open()) {
-        <ul class="list" role="listbox">
+        <ul #list class="list" role="listbox" popover="manual"
+            [style.left.px]="box().left" [style.width.px]="box().width"
+            [style.top.px]="box().top" [style.bottom.px]="box().bottom"
+            [style.max-height.px]="box().maxHeight">
           @for (option of options(); track option.value; let i = $index) {
             <li>
               <button type="button" role="option" class="mono"
@@ -89,21 +104,24 @@ export interface SelectOption {
       stroke-linejoin: round;
     }
 
+    /* the top layer is what keeps the list out of the overflow of a dialog */
     .list {
-      position: absolute;
-      z-index: 20;
-      top: calc(100% + 4px);
-      left: 0;
-      right: 0;
-      max-height: 260px;
+      position: fixed;
+      inset: auto;
+      z-index: 60;
+      display: block;
       overflow-y: auto;
+      overscroll-behavior: contain;
       margin: 0;
       padding: 4px;
       list-style: none;
+      color: var(--fg-soft);
       background: var(--bg-header);
       border: 1px solid var(--line-strong);
       border-radius: var(--r-sm);
       box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+      --scroll-bg: var(--bg-header);
+      scrollbar-color: var(--line-strong) var(--bg-header);
     }
     .list button {
       width: 100%;
@@ -128,8 +146,29 @@ export class Select {
 
   readonly open = signal(false);
   readonly active = signal(0);
+  readonly box = signal<Box>({ left: 0, width: 0, maxHeight: 260 });
 
   readonly current = computed(() => this.options().find((o) => o.value === this.value()));
+
+  private readonly trigger = viewChild<ElementRef<HTMLElement>>('trigger');
+  private readonly list = viewChild<ElementRef<HTMLElement>>('list');
+
+  constructor() {
+    effect((onCleanup) => {
+      const list = this.list()?.nativeElement;
+      if (!list) return;
+      this.place();
+      if (!list.matches(':popover-open')) list.showPopover?.();
+      // the list no longer moves with the field, so a scroll has to move it
+      const follow = () => this.place();
+      window.addEventListener('scroll', follow, true);
+      window.addEventListener('resize', follow);
+      onCleanup(() => {
+        window.removeEventListener('scroll', follow, true);
+        window.removeEventListener('resize', follow);
+      });
+    });
+  }
 
   toggle(): void {
     if (this.open()) {
@@ -137,6 +176,7 @@ export class Select {
       return;
     }
     this.active.set(Math.max(0, this.options().findIndex((o) => o.value === this.value())));
+    this.place();
     this.open.set(true);
   }
 
@@ -171,5 +211,26 @@ export class Select {
       case 'Escape':
         this.open.set(false);
     }
+  }
+
+  // opens downwards, unless what is left under the field is the smaller half
+  private place(): void {
+    const trigger = this.trigger()?.nativeElement;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const gap = 4;
+    const edge = 12;
+    const below = window.innerHeight - rect.bottom - gap - edge;
+    const above = rect.top - gap - edge;
+    const up = below < Math.min(200, above);
+    const room = Math.max(120, up ? above : below);
+    const left = Math.max(0, Math.min(rect.left, window.innerWidth - rect.width - edge));
+    this.box.set({
+      left,
+      width: rect.width,
+      maxHeight: Math.min(260, room),
+      top: up ? undefined : rect.bottom + gap,
+      bottom: up ? window.innerHeight - rect.top + gap : undefined,
+    });
   }
 }

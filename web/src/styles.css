@@ -108,14 +108,20 @@ select {
   background-position: right 9px center;
 }
 
+/* the track takes the colour of the surface it is on, set by --scroll-bg */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-track { background: var(--scroll-bg, var(--bg)); }
 ::-webkit-scrollbar-thumb {
   background: var(--line-strong);
   border-radius: 5px;
-  border: 2px solid var(--bg);
+  border: 2px solid var(--scroll-bg, var(--bg));
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--line-hover); }
+
+.dialog {
+  --scroll-bg: var(--bg-raised);
+  scrollbar-color: var(--line-strong) var(--bg-raised);
+}
 
 .mono { font-family: var(--mono); }
 
