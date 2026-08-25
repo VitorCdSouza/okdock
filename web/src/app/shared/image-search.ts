@@ -64,7 +64,7 @@ const TAG_LIST_MIN = 260;
   template: `
     <div class="wrap" (click)="$event.stopPropagation()">
       <div class="fields">
-        <span class="box" [class.grow]="!lockRepo()" [class.fixed]="lockRepo()">
+        <span class="box">
           <label [attr.for]="lockRepo() ? null : fieldId() || null">
             {{ label() || t('images.image') }}
             @if (required()) { <span class="req">*</span> }
@@ -112,7 +112,7 @@ const TAG_LIST_MIN = 260;
           }
         </span>
 
-        <span class="box version">
+        <span class="box">
           <label [attr.for]="versionId()">{{ t('images.version') }}</label>
           <span class="entry" #tagEntry>
             <input class="mono" spellcheck="false" placeholder="latest"
@@ -153,12 +153,14 @@ const TAG_LIST_MIN = 260;
   `,
   styles: `
     .wrap { position: relative; }
-    .fields { display: flex; gap: 8px; align-items: flex-end; }
+    /* three of image to two of version, whatever the width of the dialog */
+    .fields {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(140px, 2fr);
+      gap: 8px;
+      align-items: end;
+    }
     .box { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-    .grow { flex: 1; }
-    /* an image the template already decided is text, and takes what the row has left */
-    .fixed { flex: 1 1 auto; }
-    .version { flex: 0 1 360px; min-width: 140px; }
     label {
       display: flex;
       align-items: center;
