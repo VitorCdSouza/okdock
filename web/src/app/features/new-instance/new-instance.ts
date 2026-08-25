@@ -54,9 +54,6 @@ export class NewInstance {
     }));
   });
 
-  // the name keeps two of the line and every port takes one
-  readonly nameColumns = computed(() => ['2fr', ...this.ports().map(() => '1fr')].join(' '));
-
   readonly nameError = computed(() => {
     const n = this.name();
     if (!n) return '';

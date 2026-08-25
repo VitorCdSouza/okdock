@@ -65,8 +65,8 @@
               </div>
             </div>
 
-            <div class="name-row" [style.grid-template-columns]="nameColumns()">
-              <div class="field" [class.has-error]="!!nameError()">
+            <div class="name-row">
+              <div class="field name" [class.has-error]="!!nameError()">
                 <label for="inst-name">
                   {{ t('new.name') }} <span class="req">*</span>
                   <ok-info [text]="t('new.nameTip')" />
