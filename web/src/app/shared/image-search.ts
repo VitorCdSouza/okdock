@@ -156,9 +156,9 @@ const TAG_LIST_MIN = 260;
     .fields { display: flex; gap: 8px; align-items: flex-end; }
     .box { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
     .grow { flex: 1; }
-    /* an image the template already decided is text, and takes only the room it needs */
-    .fixed { flex: 0 1 auto; }
-    .version { flex: 0 1 320px; min-width: 140px; }
+    /* an image the template already decided is text, and takes what the row has left */
+    .fixed { flex: 1 1 auto; }
+    .version { flex: 0 1 360px; min-width: 140px; }
     label {
       display: flex;
       align-items: center;
