@@ -21,6 +21,8 @@ const FIELD_TYPES: FieldType[] = ['text', 'password', 'int', 'float', 'bool', 'e
 
 const CUSTOM_ID = 'custom';
 
+type SuggestPart = 'ports' | 'volumes' | 'both';
+
 // the API only takes a category matching ^[a-z0-9][a-z0-9-]{1,31}$
 function slugify(raw: string): string {
   return raw
@@ -152,6 +154,7 @@ export class Templates {
     this.picked.set(t.category);
     this.draft.set(structuredClone(t));
     this.editingId.set(t.id);
+    this.suggestedFor = t.image;
     this.error.set(null);
     this.saved.set(false);
   }
@@ -159,6 +162,7 @@ export class Templates {
   create(): void {
     this.draft.set({ ...blank(), category: this.active() });
     this.editingId.set('');
+    this.suggestedFor = '';
     this.error.set(null);
     this.saved.set(false);
   }
@@ -174,32 +178,47 @@ export class Templates {
     this.draft.set({ ...cur, ...change });
   }
 
-  readonly suggesting = signal(false);
+  // which section is waiting on the image, so only the pressed button says it is loading
+  readonly suggesting = signal<SuggestPart | null>(null);
+
+  // the reference the form was filled from, so opening the same list again does not ask twice
+  private suggestedFor = '';
 
   // the image knows its ports and volumes, a running container knows the rest, and the form is kept
-  suggest(): void {
+  suggest(part: SuggestPart = 'both'): void {
     const draft = this.draft();
     if (!draft?.image || this.suggesting()) return;
-    this.suggesting.set(true);
+    this.suggesting.set(part);
+    this.suggestedFor = draft.image;
     this.api.suggestFromImage(draft.image).subscribe({
       next: (found) => {
-        this.suggesting.set(false);
+        this.suggesting.set(null);
         const cur = this.draft();
         if (!cur) return;
         const ports = [...(cur.ports ?? [])];
-        for (const p of found.ports) {
-          if (ports.some((o) => o.container === p.container && o.protocol === p.protocol)) continue;
-          ports.push(p);
+        if (part !== 'volumes') {
+          for (const p of found.ports) {
+            if (ports.some((o) => o.container === p.container && o.protocol === p.protocol)) continue;
+            ports.push(p);
+          }
         }
         const volumes = [...(cur.volumes ?? [])];
-        for (const v of found.volumes) {
-          if (volumes.some((o) => o.container === v.container)) continue;
-          volumes.push(v);
+        if (part !== 'ports') {
+          for (const v of found.volumes) {
+            if (volumes.some((o) => o.container === v.container)) continue;
+            volumes.push(v);
+          }
         }
         this.patch({ ports, volumes });
       },
-      error: () => this.suggesting.set(false),
+      error: () => this.suggesting.set(null),
     });
+  }
+
+  // an image chosen from the list exists, so it fills the form and the buttons are a second look
+  imagePicked(image: string): void {
+    if (image === this.suggestedFor) return;
+    this.suggest();
   }
 
   addPort(): void {

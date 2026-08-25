@@ -74,7 +74,7 @@ describe('Templates: registering a template', () => {
     expect(draft.ports![1].container).toBe(1900);
     expect(draft.volumes.length).toBe(2);
     expect(draft.volumes[1].container).toBe('/cache');
-    expect(screen.suggesting()).toBeFalse();
+    expect(screen.suggesting()).toBeNull();
   });
 
   it('a suggestion that failed leaves the form alone', () => {
@@ -85,8 +85,40 @@ describe('Templates: registering a template', () => {
     http.expectOne('/api/v1/images/suggest?image=somebody%2Fnothing')
       .flush('boom', { status: 409, statusText: 'Conflict' });
 
-    expect(screen.suggesting()).toBeFalse();
+    expect(screen.suggesting()).toBeNull();
     expect(screen.draft()!.ports).toEqual([]);
+  });
+
+  it('a button only fills its own section', () => {
+    screen.create();
+    screen.patch({ image: 'jellyfin/jellyfin:10.9', ports: [], volumes: [] });
+
+    screen.suggest('volumes');
+    http.expectOne('/api/v1/images/suggest?image=jellyfin%2Fjellyfin%3A10.9').flush({
+      ports: [{ container: 8096, protocol: 'tcp', defaultHost: 8096, label: '' }],
+      volumes: [{ host: './config', container: '/config' }],
+    });
+
+    // the ports came in the answer and stayed out of the form
+    expect(screen.draft()!.ports).toEqual([]);
+    expect(screen.draft()!.volumes.length).toBe(1);
+  });
+
+  it('picking an image fills both sections, and picking it again asks nothing', () => {
+    screen.create();
+    screen.patch({ image: 'jellyfin/jellyfin:10.9', ports: [], volumes: [] });
+
+    screen.imagePicked('jellyfin/jellyfin:10.9');
+    http.expectOne('/api/v1/images/suggest?image=jellyfin%2Fjellyfin%3A10.9').flush({
+      ports: [{ container: 8096, protocol: 'tcp', defaultHost: 8096, label: '' }],
+      volumes: [{ host: './config', container: '/config' }],
+    });
+
+    expect(screen.draft()!.ports!.length).toBe(1);
+    expect(screen.draft()!.volumes.length).toBe(1);
+
+    screen.imagePicked('jellyfin/jellyfin:10.9');
+    http.expectNone('/api/v1/images/suggest?image=jellyfin%2Fjellyfin%3A10.9');
   });
 
   it('a new template goes by POST and reloads the catalog', () => {

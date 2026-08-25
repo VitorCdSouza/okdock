@@ -241,7 +241,10 @@ export const en: Record<MessageKey, string> = {
   'templates.stopGraceTip':
     'How long docker waits before SIGKILL. A game that saves the world on shutdown needs room here, or the save corrupts.',
   'templates.suggest': 'suggest from the image',
-  'templates.suggestTip': 'Reads what the image declares: ports always, volumes when it declares them. When it does not, it looks at a container already running that image on the server. It leaves what you filled in alone and only adds what is missing. Configuration variables do not come from here, an image does not declare the ones its entrypoint reads.',
+  'templates.suggestPortsTip':
+    'Reads the ports the image exposes. Picking the image from the list already fills these in; the button is for a reference typed whole, or for a second look after changing the version. It leaves what you filled in alone and only adds what is missing.',
+  'templates.suggestVolumesTip':
+    'Reads the volumes the image declares and, when it declares none, the paths mounted by a container already running that image on the server. It leaves what you filled in alone and only adds what is missing. Configuration variables do not come from here, an image does not declare the ones its entrypoint reads.',
   'templates.ports': 'PORTS',
   'templates.portContainer': 'container port',
   'templates.portHost': 'suggested host port',

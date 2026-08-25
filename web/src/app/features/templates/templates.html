@@ -105,6 +105,7 @@
           <div class="field wide">
             <ok-image-search fieldId="tpl-image" [image]="d.image"
                              (imageChange)="patch({ image: $event })"
+                             (picked)="imagePicked($event)"
                              [label]="t('templates.image')" [required]="true"
                              placeholder="jellyfin/jellyfin" />
           </div>
@@ -143,10 +144,10 @@
         <div class="section-title">
           {{ t('templates.ports') }}
           <button class="btn btn-sm" (click)="addPort()">{{ t('templates.add') }}</button>
-          <button class="btn btn-sm" (click)="suggest()" [disabled]="!d.image || suggesting()">
-            {{ suggesting() ? t('common.loading') : t('templates.suggest') }}
+          <button class="btn btn-sm" (click)="suggest('ports')" [disabled]="!d.image || !!suggesting()">
+            {{ suggesting() === 'ports' ? t('common.loading') : t('templates.suggest') }}
           </button>
-          <ok-info [text]="t('templates.suggestTip')" />
+          <ok-info [text]="t('templates.suggestPortsTip')" />
         </div>
         @for (port of d.ports ?? []; track $index) {
           <div class="line">
@@ -169,6 +170,10 @@
         <div class="section-title">
           {{ t('templates.volumes') }}
           <button class="btn btn-sm" (click)="addVolume()">{{ t('templates.add') }}</button>
+          <button class="btn btn-sm" (click)="suggest('volumes')" [disabled]="!d.image || !!suggesting()">
+            {{ suggesting() === 'volumes' ? t('common.loading') : t('templates.suggest') }}
+          </button>
+          <ok-info [text]="t('templates.suggestVolumesTip')" />
         </div>
         @for (vol of d.volumes; track $index) {
           <div class="line">

@@ -235,7 +235,10 @@ export const pt = {
   'templates.stopGraceTip':
     'Quanto o docker espera antes do SIGKILL. Jogo que grava mundo ao desligar precisa de folga aqui, senão o save corrompe.',
   'templates.suggest': 'sugerir da imagem',
-  'templates.suggestTip': 'Lê o que a imagem declara: portas sempre, volumes quando ela declara. Quando não declara, olha um container que já roda essa imagem no servidor. Não mexe no que você já preencheu, só acrescenta o que falta. Variável de configuração não sai daqui, a imagem não declara as que o entrypoint lê.',
+  'templates.suggestPortsTip':
+    'Lê as portas que a imagem expõe. Escolher a imagem na lista já preenche isto; o botão serve para uma imagem digitada inteira, ou para olhar de novo depois de trocar a versão. Não mexe no que você já preencheu, só acrescenta o que falta.',
+  'templates.suggestVolumesTip':
+    'Lê os volumes que a imagem declara e, quando ela não declara nenhum, os caminhos montados por um container que já roda essa imagem no servidor. Não mexe no que você já preencheu, só acrescenta o que falta. Variável de configuração não sai daqui, a imagem não declara as que o entrypoint lê.',
   'templates.ports': 'PORTAS',
   'templates.portContainer': 'porta no container',
   'templates.portHost': 'porta sugerida no host',

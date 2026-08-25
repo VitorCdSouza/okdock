@@ -6,6 +6,7 @@ import {
   inject,
   input,
   model,
+  output,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -237,6 +238,9 @@ export class ImageSearch {
   readonly tip = input('');
   readonly required = input(false);
 
+  // a reference that exists, which is the moment a form can be filled from it
+  readonly picked = output<string>();
+
   readonly versionId = computed(() => (this.fieldId() ? `${this.fieldId()}-version` : null));
 
   // an explicit open, or a reply that lands late reopens what the user just closed
@@ -293,6 +297,7 @@ export class ImageSearch {
           this.hits.set(res.hits);
           if (res.hits.some((hit) => hit.name === res.term)) {
             this.confirmed.set(res.term);
+            this.picked.emit(this.image());
           }
         } else if (res.kind === 'tag') {
           this.allTags.set(res.tags);
@@ -365,12 +370,14 @@ export class ImageSearch {
     this.confirmed.set(hit.name);
     this.typedByHand.set(false);
     this.hits.set([]);
+    this.picked.emit(this.image());
     this.openTags();
   }
 
   pickTag(tag: string): void {
     this.setRef(this.repo(), tag);
     this.open.set(null);
+    this.picked.emit(this.image());
   }
 
   close(): void {
