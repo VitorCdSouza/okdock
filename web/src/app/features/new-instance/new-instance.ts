@@ -8,14 +8,14 @@ import { I18n } from '../../core/i18n/i18n';
 import { TemplateForm } from '../../shared/template-form';
 import { GameIcon } from '../../shared/game-icon';
 import { InfoDot } from '../../shared/info-dot';
-import { ImageRef } from '../../shared/image-ref';
+import { ImageSearch } from '../../shared/image-search';
 import { Select } from '../../shared/select';
 
 type Step = 1 | 2;
 
 @Component({
   selector: 'ok-new-instance',
-  imports: [FormsModule, TemplateForm, GameIcon, InfoDot, ImageRef, Select],
+  imports: [FormsModule, TemplateForm, GameIcon, InfoDot, ImageSearch, Select],
   templateUrl: './new-instance.html',
   styleUrl: './new-instance.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

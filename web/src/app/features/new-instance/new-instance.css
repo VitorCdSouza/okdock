@@ -75,6 +75,7 @@ h2 { margin: 0; font: 600 var(--fs-2xl) var(--sans); }
 
 section { display: flex; flex-direction: column; gap: 12px; }
 .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.field.wide { grid-column: 1 / -1; }
 .alias { font-size: var(--fs-xs); color: var(--fg-faint); }
 .has-error input { border-color: var(--bad-line); }
 .err { font: 400 var(--fs-xs)/1.4 var(--sans); color: var(--bad); }

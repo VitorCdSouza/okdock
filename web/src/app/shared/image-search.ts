@@ -57,6 +57,7 @@ type Open = 'repo' | 'tag' | null;
           </label>
           <span class="entry">
             <input class="mono" spellcheck="false" [attr.id]="fieldId() || null"
+                   [class.locked]="lockRepo()" [readonly]="lockRepo()"
                    [placeholder]="placeholder()" [ngModel]="repo()"
                    (ngModelChange)="typeRepo($event)">
             @if (open() === 'repo' && busy()) {
@@ -66,12 +67,14 @@ type Open = 'repo' | 'tag' | null;
             } @else if (open() === 'repo' && empty()) {
               <span class="state mono">{{ t('images.none') }}</span>
             }
-            <button type="button" class="caret" tabindex="-1"
-                    [attr.aria-label]="t('images.openList')" (click)="openRepos()">
-              <svg viewBox="0 0 10 6" aria-hidden="true">
-                <path d="M1 1l4 4 4-4" />
-              </svg>
-            </button>
+            @if (!lockRepo()) {
+              <button type="button" class="caret" tabindex="-1"
+                      [attr.aria-label]="t('images.openList')" (click)="openRepos()">
+                <svg viewBox="0 0 10 6" aria-hidden="true">
+                  <path d="M1 1l4 4 4-4" />
+                </svg>
+              </button>
+            }
           </span>
 
           @if (open() === 'repo' && hits().length) {
@@ -144,6 +147,7 @@ type Open = 'repo' | 'tag' | null;
     .entry { position: relative; display: block; }
     .entry input { width: 100%; padding-right: 30px; }
     .entry input:disabled { opacity: .5; cursor: not-allowed; }
+    .entry input.locked { color: var(--fg-dim); padding-right: 9px; }
 
     .caret {
       position: absolute;
@@ -237,6 +241,8 @@ export class ImageSearch {
   readonly label = input('');
   readonly tip = input('');
   readonly required = input(false);
+  // a template already says the image, so only the version stays open
+  readonly lockRepo = input(false);
 
   // a reference that exists, which is the moment a form can be filled from it
   readonly picked = output<string>();
@@ -263,6 +269,7 @@ export class ImageSearch {
   readonly validImage = computed(() => {
     const repo = this.repo();
     if (!repo) return false;
+    if (this.lockRepo()) return true;
     if (!this.typedByHand() || !isHubRepo(repo)) return true;
     return this.confirmed() === repo;
   });
@@ -335,6 +342,7 @@ export class ImageSearch {
 
   // a whole reference pasted into the image box splits itself, tag of the old repository included
   typeRepo(raw: string): void {
+    if (this.lockRepo()) return;
     const { repo, tag } = splitImage(raw.trim());
     this.setRef(repo, tag);
     this.typedByHand.set(true);

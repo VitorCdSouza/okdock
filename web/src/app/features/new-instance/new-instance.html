@@ -62,16 +62,11 @@
                 }
               </div>
 
-              <div class="field">
-                @if (p.id !== 'custom') {
-                  <label>
-                    {{ t('new.image') }}
-                    <ok-info [text]="t('new.imageTip')" />
-                  </label>
-                }
-                <ok-image-ref [(image)]="image" [free]="p.id === 'custom'"
-                              [label]="t('new.image')" [tip]="t('new.imageTip')"
-                              listId="inst-image-tags" />
+              <div class="field wide">
+                <ok-image-search fieldId="inst-image" [(image)]="image"
+                                 [lockRepo]="p.id !== 'custom'"
+                                 [label]="t('new.image')" [tip]="t('new.imageTip')"
+                                 placeholder="repositorio/imagem" />
               </div>
 
               <div class="field">
