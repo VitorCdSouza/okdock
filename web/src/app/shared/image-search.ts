@@ -2,12 +2,15 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   computed,
+  effect,
   inject,
   input,
   model,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -37,6 +40,18 @@ const IDLE: Result = { kind: 'idle', failed: false };
 
 type Open = 'repo' | 'tag' | null;
 
+// where the list is drawn, in viewport coordinates
+interface Box {
+  left: number;
+  width: number;
+  maxHeight: number;
+  top?: number;
+  bottom?: number;
+}
+
+// a tag is never wrapped over two lines, so the list is free to be wider than the box
+const TAG_LIST_MIN = 260;
+
 // docker search answers repositories and the Hub answers tags, so the image comes first
 @Component({
   selector: 'ok-image-search',
@@ -55,7 +70,7 @@ type Open = 'repo' | 'tag' | null;
             @if (required()) { <span class="req">*</span> }
             @if (tip()) { <ok-info [text]="tip()" /> }
           </label>
-          <span class="entry">
+          <span class="entry" #repoEntry>
             <input class="mono" spellcheck="false" [attr.id]="fieldId() || null"
                    [class.locked]="lockRepo()" [readonly]="lockRepo()"
                    [placeholder]="placeholder()" [ngModel]="repo()"
@@ -78,7 +93,10 @@ type Open = 'repo' | 'tag' | null;
           </span>
 
           @if (open() === 'repo' && hits().length) {
-            <ul class="hits" role="listbox">
+            <ul #list class="hits" role="listbox" popover="manual"
+                [style.left.px]="box().left" [style.width.px]="box().width"
+                [style.top.px]="box().top" [style.bottom.px]="box().bottom"
+                [style.max-height.px]="box().maxHeight">
               @for (hit of hits(); track hit.name) {
                 <li>
                   <button type="button" role="option" (click)="pick(hit)">
@@ -95,7 +113,7 @@ type Open = 'repo' | 'tag' | null;
 
         <span class="box version">
           <label [attr.for]="versionId()">{{ t('images.version') }}</label>
-          <span class="entry">
+          <span class="entry" #tagEntry>
             <input class="mono" spellcheck="false" placeholder="latest"
                    [attr.id]="versionId()" [disabled]="!validImage()" [ngModel]="tag()"
                    (ngModelChange)="typeTag($event)" (focus)="openTags()">
@@ -115,7 +133,10 @@ type Open = 'repo' | 'tag' | null;
           </span>
 
           @if (open() === 'tag' && tags().length) {
-            <ul class="hits" role="listbox">
+            <ul #list class="hits" role="listbox" popover="manual"
+                [style.left.px]="box().left" [style.width.px]="box().width"
+                [style.top.px]="box().top" [style.bottom.px]="box().bottom"
+                [style.max-height.px]="box().maxHeight">
               @for (tag of tags(); track tag) {
                 <li>
                   <button type="button" role="option" (click)="pickTag(tag)">
@@ -185,14 +206,14 @@ type Open = 'repo' | 'tag' | null;
     }
     .state.bad { color: var(--bad); }
 
+    /* the top layer is what keeps the list out of the overflow of a dialog */
     .hits {
-      position: absolute;
-      z-index: 20;
-      top: calc(100% + 4px);
-      left: 0;
-      right: 0;
-      max-height: 260px;
+      position: fixed;
+      inset: auto;
+      z-index: 60;
+      display: block;
       overflow-y: auto;
+      overscroll-behavior: contain;
       margin: 0;
       padding: 4px;
       list-style: none;
@@ -200,6 +221,8 @@ type Open = 'repo' | 'tag' | null;
       border: 1px solid var(--line-strong);
       border-radius: var(--r-sm);
       box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+      --scroll-bg: var(--bg-header);
+      scrollbar-color: var(--line-strong) var(--bg-header);
     }
     .hits button {
       display: grid;
@@ -211,7 +234,13 @@ type Open = 'repo' | 'tag' | null;
       border-radius: var(--r-xs);
     }
     .hits button:hover { background: var(--bg-chip); }
-    .name { font-size: var(--fs-sm); color: var(--fg); overflow: hidden; text-overflow: ellipsis; }
+    .name {
+      font-size: var(--fs-sm);
+      color: var(--fg);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     .stars { font-size: var(--fs-2xs); color: var(--fg-faint); }
     .tag {
       font-size: var(--fs-2xs);
@@ -288,7 +317,28 @@ export class ImageSearch {
 
   private readonly typed = new Subject<string>();
 
+  readonly box = signal<Box>({ left: 0, width: 0, maxHeight: 260 });
+
+  private readonly repoEntry = viewChild<ElementRef<HTMLElement>>('repoEntry');
+  private readonly tagEntry = viewChild<ElementRef<HTMLElement>>('tagEntry');
+  private readonly list = viewChild<ElementRef<HTMLElement>>('list');
+
   constructor() {
+    effect((onCleanup) => {
+      const list = this.list()?.nativeElement;
+      if (!list) return;
+      this.place();
+      if (!list.matches(':popover-open')) list.showPopover?.();
+      // out of the flow, the list only follows the field if something moves it
+      const follow = () => this.place();
+      window.addEventListener('scroll', follow, true);
+      window.addEventListener('resize', follow);
+      onCleanup(() => {
+        window.removeEventListener('scroll', follow, true);
+        window.removeEventListener('resize', follow);
+      });
+    });
+
     this.typed
       .pipe(
         debounceTime(300),
@@ -390,6 +440,30 @@ export class ImageSearch {
 
   close(): void {
     this.open.set(null);
+  }
+
+  // opens downwards, unless what is left under the field is the smaller half
+  private place(): void {
+    const kind = this.open();
+    const anchor = (kind === 'tag' ? this.tagEntry() : this.repoEntry())?.nativeElement;
+    if (!anchor) return;
+    const rect = anchor.getBoundingClientRect();
+    const gap = 4;
+    const edge = 12;
+    const below = window.innerHeight - rect.bottom - gap - edge;
+    const above = rect.top - gap - edge;
+    const up = below < Math.min(200, above);
+    const room = Math.max(120, up ? above : below);
+    const wanted = kind === 'tag' ? Math.max(rect.width, TAG_LIST_MIN) : rect.width;
+    const width = Math.min(wanted, window.innerWidth - 2 * edge);
+    const left = Math.max(edge, Math.min(rect.left, window.innerWidth - width - edge));
+    this.box.set({
+      left,
+      width,
+      maxHeight: Math.min(260, room),
+      top: up ? undefined : rect.bottom + gap,
+      bottom: up ? window.innerHeight - rect.top + gap : undefined,
+    });
   }
 
   private setRef(repo: string, tag: string): void {
