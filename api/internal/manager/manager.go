@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -572,6 +573,30 @@ func (e *ErrPortTaken) Error() string {
 	return fmt.Sprintf("port %d/%s is already used by %s", e.Port, e.Proto, e.Owner)
 }
 
+// one folder per volume next to the compose, and a repeated last name carries the whole path
+func mountsFor(volumes []template.Volume) []instance.Mount {
+	mounts := make([]instance.Mount, 0, len(volumes))
+	taken := make(map[string]bool, len(volumes))
+	for _, v := range volumes {
+		host := hostDirFor(v.Container)
+		if taken[host] {
+			host = "./" + strings.ReplaceAll(strings.Trim(v.Container, "/"), "/", "-")
+		}
+		taken[host] = true
+		mounts = append(mounts, instance.Mount{Host: host, Container: v.Container})
+	}
+	return mounts
+}
+
+// the folder of a mount is named after the last piece of the path, next to the compose file
+func hostDirFor(dir string) string {
+	name := path.Base(strings.TrimSuffix(dir, "/"))
+	if name == "" || name == "." || name == "/" {
+		return "./data"
+	}
+	return "./" + name
+}
+
 func (m *Manager) checkBudget(ctx context.Context, spec instance.Spec) error {
 	want, err := instance.ParseMemory(spec.MemoryLimit)
 	if err != nil {
@@ -711,9 +736,7 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 
 	mounts := req.Mounts
 	if len(mounts) == 0 {
-		for _, v := range tmpl.Volumes {
-			mounts = append(mounts, instance.Mount{Host: v.Host, Container: v.Container})
-		}
+		mounts = mountsFor(tmpl.Volumes)
 	}
 
 	memLimit := strings.TrimSpace(req.MemoryLimit)

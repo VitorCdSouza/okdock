@@ -29,8 +29,8 @@ export interface TemplatePort {
   optional?: boolean;
 }
 
+// only the path inside the container, the host folder is decided when the instance is created
 export interface TemplateVolume {
-  host: string;
   container: string;
 }
 

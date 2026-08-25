@@ -244,7 +244,6 @@ export const pt = {
   'templates.portLabel': 'rótulo',
   'templates.portProtocol': 'protocolo',
   'templates.volumes': 'VOLUMES',
-  'templates.volumeHost': 'caminho na instância',
   'templates.volumeContainer': 'caminho no container',
   'templates.fields': 'CAMPOS DE CONFIGURAÇÃO',
   'templates.fieldsTip':

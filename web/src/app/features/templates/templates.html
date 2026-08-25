@@ -177,8 +177,6 @@
         </div>
         @for (vol of d.volumes; track $index) {
           <div class="line">
-            <input class="mono" [ngModel]="vol.host" (ngModelChange)="patchVolume($index, { host: $event })"
-                   [attr.aria-label]="t('templates.volumeHost')" placeholder="./data">
             <input class="mono" [ngModel]="vol.container"
                    (ngModelChange)="patchVolume($index, { container: $event })"
                    [attr.aria-label]="t('templates.volumeContainer')" placeholder="/config">

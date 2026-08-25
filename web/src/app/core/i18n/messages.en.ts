@@ -250,7 +250,6 @@ export const en: Record<MessageKey, string> = {
   'templates.portLabel': 'label',
   'templates.portProtocol': 'protocol',
   'templates.volumes': 'VOLUMES',
-  'templates.volumeHost': 'path in the instance',
   'templates.volumeContainer': 'path in the container',
   'templates.fields': 'CONFIGURATION FIELDS',
   'templates.fieldsTip':

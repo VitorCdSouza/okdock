@@ -3,7 +3,6 @@ package manager
 import (
 	"context"
 	"log/slog"
-	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -49,7 +48,7 @@ func (m *Manager) SuggestFromImage(ctx context.Context, ref string) (Suggestion,
 		})
 	}
 	for _, dir := range volumes {
-		out.Volumes = append(out.Volumes, template.Volume{Host: hostDirFor(dir), Container: dir})
+		out.Volumes = append(out.Volumes, template.Volume{Container: dir})
 	}
 	return out, nil
 }
@@ -81,13 +80,4 @@ func (m *Manager) fromRegistry(ctx context.Context, ref string) dockerx.ImageInf
 	sort.Slice(info.Ports, func(i, j int) bool { return info.Ports[i].Container < info.Ports[j].Container })
 	sort.Strings(info.Volumes)
 	return info
-}
-
-// a mount lives next to the compose, named after the last piece of the path in the container
-func hostDirFor(dir string) string {
-	name := path.Base(strings.TrimSuffix(dir, "/"))
-	if name == "" || name == "." || name == "/" {
-		return "./data"
-	}
-	return "./" + name
 }

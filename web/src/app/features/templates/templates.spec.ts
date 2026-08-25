@@ -14,7 +14,7 @@ function template(over: Partial<Template> = {}): Template {
     short: 'MC',
     image: 'itzg/minecraft-server:java21',
     ports: [],
-    volumes: [{ host: './data', container: '/data' }],
+    volumes: [{ container: '/data' }],
     defaultMemory: '4g',
     minMemory: '2g',
     defaultCpus: 2,
@@ -50,7 +50,7 @@ describe('Templates: registering a template', () => {
     screen.patch({
       image: 'jellyfin/jellyfin:10.9',
       ports: [{ container: 8096, protocol: 'tcp', defaultHost: 9000, label: 'web' }],
-      volumes: [{ host: './meus-dados', container: '/config' }],
+      volumes: [{ container: '/config' }],
     });
 
     screen.suggest();
@@ -60,16 +60,16 @@ describe('Templates: registering a template', () => {
         { container: 1900, protocol: 'udp', defaultHost: 1900, label: '' },
       ],
       volumes: [
-        { host: './config', container: '/config' },
-        { host: './cache', container: '/cache' },
+        { container: '/config' },
+        { container: '/cache' },
       ],
     });
 
     const draft = screen.draft()!;
-    // the port and the volume already there keep what the user chose
+    // the port already there keeps the host the user chose
     expect(draft.ports![0].defaultHost).toBe(9000);
-    expect(draft.volumes[0].host).toBe('./meus-dados');
-    // and only what was missing came in
+    // and only what was missing came in, the volume it already had stayed one
+    expect(draft.volumes[0].container).toBe('/config');
     expect(draft.ports!.length).toBe(2);
     expect(draft.ports![1].container).toBe(1900);
     expect(draft.volumes.length).toBe(2);
@@ -96,7 +96,7 @@ describe('Templates: registering a template', () => {
     screen.suggest('volumes');
     http.expectOne('/api/v1/images/suggest?image=jellyfin%2Fjellyfin%3A10.9').flush({
       ports: [{ container: 8096, protocol: 'tcp', defaultHost: 8096, label: '' }],
-      volumes: [{ host: './config', container: '/config' }],
+      volumes: [{ container: '/config' }],
     });
 
     // the ports came in the answer and stayed out of the form
@@ -111,7 +111,7 @@ describe('Templates: registering a template', () => {
     screen.imagePicked('jellyfin/jellyfin:10.9');
     http.expectOne('/api/v1/images/suggest?image=jellyfin%2Fjellyfin%3A10.9').flush({
       ports: [{ container: 8096, protocol: 'tcp', defaultHost: 8096, label: '' }],
-      volumes: [{ host: './config', container: '/config' }],
+      volumes: [{ container: '/config' }],
     });
 
     expect(screen.draft()!.ports!.length).toBe(1);

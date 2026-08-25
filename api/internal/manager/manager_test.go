@@ -1063,10 +1063,7 @@ func TestSuggestFromTheImageItself(t *testing.T) {
 	if len(got.Ports) != 1 || got.Ports[0].Container != 8096 || got.Ports[0].DefaultHost != 8096 {
 		t.Fatalf("ports = %+v", got.Ports)
 	}
-	want := []template.Volume{
-		{Host: "./cache", Container: "/cache"},
-		{Host: "./config", Container: "/config"},
-	}
+	want := []template.Volume{{Container: "/cache"}, {Container: "/config"}}
 	for i := range want {
 		if got.Volumes[i] != want[i] {
 			t.Fatalf("volumes = %+v, want %+v", got.Volumes, want)
@@ -1084,7 +1081,7 @@ func TestSuggestFallsBackToAContainerForTheVolumes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SuggestFromImage: %v", err)
 	}
-	if len(got.Volumes) != 3 || got.Volumes[0].Host != "./config" {
+	if len(got.Volumes) != 3 || got.Volumes[0].Container != "/config" {
 		t.Fatalf("volumes = %+v", got.Volumes)
 	}
 	if len(got.Ports) != 0 {
@@ -1120,5 +1117,30 @@ func TestSuggestForAnImageNobodyHasPulled(t *testing.T) {
 	// no image, no container and no registry: nothing to suggest is an empty answer, not a failure
 	if len(got.Ports) != 0 || len(got.Volumes) != 0 {
 		t.Fatalf("got = %+v", got)
+	}
+}
+
+func TestMountsForNamesAFolderAfterThePathInside(t *testing.T) {
+	got := mountsFor([]template.Volume{
+		{Container: "/config"},
+		{Container: "/media/tv"},
+		{Container: "/downloads/"},
+	})
+	want := []instance.Mount{
+		{Host: "./config", Container: "/config"},
+		{Host: "./tv", Container: "/media/tv"},
+		{Host: "./downloads", Container: "/downloads/"},
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("mounts = %+v, want %+v", got, want)
+		}
+	}
+}
+
+func TestMountsForKeepsTwoVolumesOutOfTheSameFolder(t *testing.T) {
+	got := mountsFor([]template.Volume{{Container: "/config"}, {Container: "/etc/config"}})
+	if got[0].Host != "./config" || got[1].Host != "./etc-config" {
+		t.Fatalf("mounts = %+v, the second one took the folder of the first", got)
 	}
 }

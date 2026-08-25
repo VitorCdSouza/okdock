@@ -14,7 +14,6 @@
   ],
   "volumes": [
     {
-      "host": "./data",
       "container": "/root/.local/share/Terraria/Worlds"
     },
     {

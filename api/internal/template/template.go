@@ -57,8 +57,8 @@ type Port struct {
 	Optional    bool   `json:"optional,omitempty"`
 }
 
+// a template says only where the image wants its directory, the host side is decided at creation
 type Volume struct {
-	Host      string `json:"host"`
 	Container string `json:"container"`
 }
 

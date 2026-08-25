@@ -42,7 +42,7 @@ function blank(): Template {
     short: '',
     image: '',
     ports: [],
-    volumes: [{ host: './data', container: '/data' }],
+    volumes: [{ container: '/data' }],
     defaultMemory: '2g',
     minMemory: '512m',
     defaultCpus: 2,
@@ -243,7 +243,7 @@ export class Templates {
   addVolume(): void {
     const cur = this.draft();
     if (!cur) return;
-    this.patch({ volumes: [...cur.volumes, { host: './data', container: '/data' }] });
+    this.patch({ volumes: [...cur.volumes, { container: '/data' }] });
   }
 
   patchVolume(index: number, change: Partial<TemplateVolume>): void {
