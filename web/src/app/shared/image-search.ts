@@ -155,7 +155,7 @@ const TAG_LIST_MIN = 260;
     .fields { display: flex; gap: 8px; align-items: flex-end; }
     .box { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
     .grow { flex: 1; }
-    .version { flex: none; width: 168px; }
+    .version { flex: 0 1 240px; min-width: 140px; }
     label {
       display: flex;
       align-items: center;
