@@ -186,8 +186,6 @@ export const pt = {
   'new.nameInvalid': 'minúsculas, dígitos, - e _; 2 a 39 caracteres, começando por letra ou dígito',
   'new.nameTaken': 'já existe uma instância com esse nome',
   'new.image': 'Imagem',
-  'new.imageTip':
-    'O repositório vem do template; só a etiqueta muda. Vale qualquer etiqueta que exista na imagem, latest inclusive: a lista é só sugestão.',
   'new.memoryLimit': 'Limite de RAM do container',
   'new.memoryTip': 'Teto do container, não o heap da JVM. Mínimo desta imagem: {memory}',
   'new.dns': 'Nome para convidar',

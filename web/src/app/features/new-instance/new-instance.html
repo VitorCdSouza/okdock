@@ -49,13 +49,13 @@
       @case (2) {
         @if (template(); as p) {
           <section>
-            <div class="head-row">
-              <ok-image-search fieldId="inst-image" [class.grow]="p.id === 'custom'"
-                               [(image)]="image" [lockRepo]="p.id !== 'custom'"
-                               [label]="t('new.image')" [tip]="t('new.imageTip')"
-                               placeholder="repositorio/imagem" />
+            <ok-image-search fieldId="inst-image" [(image)]="image"
+                             [lockRepo]="p.id !== 'custom'"
+                             [label]="t('new.image')"
+                             placeholder="repositorio/imagem" />
 
-              <div class="field name" [class.has-error]="!!nameError()">
+            <div class="name-row">
+              <div class="field" [class.has-error]="!!nameError()">
                 <label for="inst-name">
                   {{ t('new.name') }} <span class="req">*</span>
                   <ok-info [text]="t('new.nameTip')" />
@@ -66,9 +66,7 @@
                   <span class="err">{{ nameError() }}</span>
                 }
               </div>
-            </div>
 
-            <div class="grid-2">
               <div class="field">
                 <label for="inst-mem">
                   {{ t('new.memoryLimit') }}

@@ -192,8 +192,6 @@ export const en: Record<MessageKey, string> = {
     'lowercase, digits, - and _; 2 to 39 characters, starting with a letter or a digit',
   'new.nameTaken': 'an instance with this name already exists',
   'new.image': 'Image',
-  'new.imageTip':
-    'The repository comes from the template; only the tag changes. Any tag that exists on the image works, latest included: the list is only a suggestion.',
   'new.memoryLimit': 'Container RAM limit',
   'new.memoryTip': 'The container ceiling, not the JVM heap. Minimum for this image: {memory}',
   'new.dns': 'Name to invite people with',

@@ -81,13 +81,8 @@ h2 { margin: 0; font: 600 var(--fs-2xl) var(--sans); }
 .template .meta { font-size: var(--fs-xs); color: var(--fg-dim); }
 
 section { display: flex; flex-direction: column; gap: 12px; }
-.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
-.field.wide { grid-column: 1 / -1; }
-
-/* image, version and name on one line, the name taking only what a name needs */
-.head-row { display: flex; align-items: flex-end; gap: 14px; }
-.head-row ok-image-search { flex: 1 1 auto; min-width: 0; }
-.head-row .name { flex: 0 1 220px; min-width: 150px; }
+/* the name error grows its own row, so it does not move the image line */
+.name-row { display: grid; grid-template-columns: 3fr 1fr; gap: 14px; align-items: start; }
 .alias { font-size: var(--fs-xs); color: var(--fg-faint); }
 .has-error input { border-color: var(--bad-line); }
 .err { font: 400 var(--fs-xs)/1.4 var(--sans); color: var(--bad); }
