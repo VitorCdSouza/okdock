@@ -153,11 +153,11 @@ const TAG_LIST_MIN = 260;
   `,
   styles: `
     .wrap { position: relative; }
-    /* three of image to two of version, whatever the width of the dialog */
+    /* half and half, and the gap of the form, so the two look like two columns of it */
     .fields {
       display: grid;
-      grid-template-columns: minmax(0, 3fr) minmax(140px, 2fr);
-      gap: 8px;
+      grid-template-columns: minmax(0, 1fr) minmax(140px, 1fr);
+      gap: 14px;
       align-items: end;
     }
     .box { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; }

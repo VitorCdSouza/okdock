@@ -81,8 +81,12 @@ h2 { margin: 0; font: 600 var(--fs-2xl) var(--sans); }
 .template .meta { font-size: var(--fs-xs); color: var(--fg-dim); }
 
 section { display: flex; flex-direction: column; gap: 12px; }
-/* the name error grows its own row, so it does not move the image line */
-.name-row { display: grid; grid-template-columns: 3fr 1fr; gap: 14px; align-items: start; }
+/* image, version and RAM limit in three of the same, the search taking two of them */
+.image-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: end; }
+.image-row ok-image-search { grid-column: span 2; }
+
+/* the name error grows its own row, so it does not move the line above */
+.name-row { display: grid; gap: 14px; align-items: start; }
 .alias { font-size: var(--fs-xs); color: var(--fg-faint); }
 .has-error input { border-color: var(--bad-line); }
 .err { font: 400 var(--fs-xs)/1.4 var(--sans); color: var(--bad); }

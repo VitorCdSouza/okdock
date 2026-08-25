@@ -37,12 +37,25 @@ export class NewInstance {
   readonly image = signal('');
   readonly memoryLimit = signal('');
   readonly values = signal<Record<string, string>>({});
+  readonly hostPorts = signal<Record<string, number>>({});
   readonly startAfterCreate = signal(true);
 
   readonly busy = signal(false);
   readonly error = signal<OkDockError | null>(null);
 
   readonly groups = computed(() => this.store.byCategory());
+
+  readonly ports = computed(() => {
+    const p = this.template();
+    if (!p) return [];
+    return (p.ports ?? []).map((port) => ({
+      ...port,
+      host: this.hostPorts()[this.portKey(port.container, port.protocol)] ?? port.defaultHost,
+    }));
+  });
+
+  // the name keeps two of the line and every port takes one
+  readonly nameColumns = computed(() => ['2fr', ...this.ports().map(() => '1fr')].join(' '));
 
   readonly nameError = computed(() => {
     const n = this.name();
@@ -81,6 +94,15 @@ export class NewInstance {
     return this.i18n.category(category);
   }
 
+  portLabel(label: string | undefined): string {
+    if (!label) return this.t('detail.portFallbackLabel');
+    return this.i18n.maybe(`port.${label}`) ?? label;
+  }
+
+  portKey(container: number, protocol: string): string {
+    return `${container}/${protocol}`;
+  }
+
   pick(p: Template): void {
     this.template.set(p);
     this.image.set(p.image);
@@ -90,7 +112,14 @@ export class NewInstance {
       if (f.default) defaults[f.key] = f.default;
     }
     this.values.set(defaults);
+    this.hostPorts.set({});
     this.error.set(null);
+  }
+
+  setPort(container: number, protocol: string, raw: string): void {
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return;
+    this.hostPorts.update((cur) => ({ ...cur, [this.portKey(container, protocol)]: n }));
   }
 
   next(): void {
@@ -128,9 +157,8 @@ export class NewInstance {
       templateId: p.id,
       image: this.image() || undefined,
       values: this.values(),
-      // no port field on the screen for now, so what goes up is what the template suggests
-      ports: (p.ports ?? []).map((port) => ({
-        host: port.defaultHost,
+      ports: this.ports().map((port) => ({
+        host: port.host,
         container: port.container,
         protocol: port.protocol,
         label: port.label,
