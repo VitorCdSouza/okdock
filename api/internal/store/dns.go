@@ -17,7 +17,13 @@ const (
 	templatesDir   = "templates"
 )
 
+// where the templates written in the panel live, the config folder when nothing is chosen
 func (s *Store) TemplatesDir() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.templates != "" {
+		return s.templates
+	}
 	return filepath.Join(s.ConfigRoot, panelDir, templatesDir)
 }
 
@@ -30,7 +36,8 @@ func (s *Store) readPanel(file string) ([]byte, error) {
 }
 
 type PanelConfig struct {
-	Root string `json:"root,omitempty"`
+	Root      string `json:"root,omitempty"`
+	Templates string `json:"templates,omitempty"`
 }
 
 func (s *Store) PanelPath() string {

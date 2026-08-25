@@ -430,6 +430,44 @@ func TestSetRoot(t *testing.T) {
 	}
 }
 
+func TestSetTemplatesDir(t *testing.T) {
+	s := newServer(t)
+	dir := filepath.Join(t.TempDir(), "templates")
+
+	w := do(t, s, "PUT", "/api/v1/system/templates", map[string]string{"templates": dir})
+	if w.Code != 200 {
+		t.Fatalf("status = %d: %s", w.Code, w.Body)
+	}
+	var info manager.SystemInfo
+	if err := json.Unmarshal(w.Body.Bytes(), &info); err != nil {
+		t.Fatal(err)
+	}
+	if info.TemplatesRoot != dir {
+		t.Errorf("templatesRoot = %q, wanted %q", info.TemplatesRoot, dir)
+	}
+
+	// a template written now lands on the folder just chosen
+	body := map[string]any{
+		"id": "jellyfin", "name": "Jellyfin", "category": "media", "short": "JF",
+		"image": "jellyfin/jellyfin:10.9", "defaultMemory": "2g", "minMemory": "512m",
+		"defaultCpus": 2, "stopGraceSeconds": 30,
+		"volumes": []map[string]any{{"container": "/config"}},
+	}
+	if w := do(t, s, "POST", "/api/v1/templates", body); w.Code != 201 {
+		t.Fatalf("status = %d: %s", w.Code, w.Body)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "jellyfin.json")); err != nil {
+		t.Errorf("the template did not land on the new folder: %v", err)
+	}
+}
+
+func TestSetTemplatesDirRelative(t *testing.T) {
+	w := do(t, newServer(t), "PUT", "/api/v1/system/templates", map[string]string{"templates": "templates"})
+	if w.Code != 422 {
+		t.Fatalf("status = %d, wanted 422", w.Code)
+	}
+}
+
 func TestSetRootRelativo(t *testing.T) {
 	w := do(t, newServer(t), "PUT", "/api/v1/system/root", map[string]string{"root": "jogos"})
 	if w.Code != 422 {

@@ -189,6 +189,7 @@ export interface SystemInfo {
   cpuCount: number;
   cpuPercent: number;
   root: string;
+  templatesRoot: string;
   dockerVersion?: string;
   dockerError?: string;
   memoryReserve: number;

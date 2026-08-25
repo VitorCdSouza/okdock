@@ -45,6 +45,21 @@ var ErrBuiltin = errors.New("builtin template")
 
 func (e *BuiltinError) Is(target error) bool { return target == ErrBuiltin }
 
+// the folder can be moved while the panel runs, so every read of it goes through here
+func (c *Catalog) Dir() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.dir
+}
+
+// the catalog answers from the new folder, and a template on the old one stays there
+func (c *Catalog) SetDir(dir string) error {
+	c.mu.Lock()
+	c.dir = dir
+	c.mu.Unlock()
+	return c.Reload()
+}
+
 func NewCatalog(dir string) (*Catalog, error) {
 	c := &Catalog{dir: dir, user: map[string]Template{}}
 	builtin, err := loadBuiltin()
@@ -80,7 +95,8 @@ func loadBuiltin() (map[string]Template, error) {
 
 func (c *Catalog) Reload() error {
 	user := map[string]Template{}
-	entries, err := os.ReadDir(c.dir)
+	dir := c.Dir()
+	entries, err := os.ReadDir(dir)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
@@ -89,7 +105,7 @@ func (c *Catalog) Reload() error {
 		if e.IsDir() || !strings.HasSuffix(e.Name(), ".json") {
 			continue
 		}
-		raw, err := os.ReadFile(filepath.Join(c.dir, e.Name()))
+		raw, err := os.ReadFile(filepath.Join(dir, e.Name()))
 		if err != nil {
 			bad = append(bad, e.Name())
 			continue
@@ -216,14 +232,15 @@ func (c *Catalog) Save(t Template) error {
 	}
 	t.Builtin = false
 
-	if err := os.MkdirAll(c.dir, 0o755); err != nil {
+	dir := c.Dir()
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 	raw, err := json.MarshalIndent(t, "", "  ")
 	if err != nil {
 		return err
 	}
-	if err := writeAtomic(filepath.Join(c.dir, t.ID+".json"), append(raw, '\n'), 0o644); err != nil {
+	if err := writeAtomic(filepath.Join(dir, t.ID+".json"), append(raw, '\n'), 0o644); err != nil {
 		return err
 	}
 
@@ -246,7 +263,7 @@ func (c *Catalog) Delete(id string) error {
 		return &NotFoundError{ID: id}
 	}
 
-	if err := os.Remove(filepath.Join(c.dir, id+".json")); err != nil && !errors.Is(err, os.ErrNotExist) {
+	if err := os.Remove(filepath.Join(c.Dir(), id+".json")); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
 	c.mu.Lock()

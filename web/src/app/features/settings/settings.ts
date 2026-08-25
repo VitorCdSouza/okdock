@@ -56,6 +56,16 @@ export class Settings {
     return !!draft && draft !== this.system()?.root;
   });
 
+  readonly templatesDraft = signal('');
+  readonly templatesBusy = signal(false);
+  readonly templatesError = signal<string | null>(null);
+  readonly templatesSaved = signal(false);
+
+  readonly templatesChanged = computed(() => {
+    const draft = this.templatesDraft().trim();
+    return !!draft && draft !== this.system()?.templatesRoot;
+  });
+
   readonly tokenDraft = signal('');
   readonly tokenHidden = signal(false);
   readonly tokenBusy = signal(false);
@@ -82,11 +92,35 @@ export class Settings {
       if (root && !this.rootDraft()) this.rootDraft.set(root);
     });
     effect(() => {
+      const dir = this.system()?.templatesRoot;
+      if (dir && !this.templatesDraft()) this.templatesDraft.set(dir);
+    });
+    effect(() => {
       const token = this.store.dns()?.token;
       if (token && !this.tokenDraft()) {
         this.tokenDraft.set(token);
         this.tokenHidden.set(true);
       }
+    });
+  }
+
+  saveTemplates(): void {
+    const dir = this.templatesDraft().trim();
+    if (!dir || this.templatesBusy()) return;
+    this.templatesBusy.set(true);
+    this.templatesError.set(null);
+    this.templatesSaved.set(false);
+    this.api.setTemplatesRoot(dir).subscribe({
+      next: (info) => {
+        this.store.system.set(info);
+        this.templatesBusy.set(false);
+        this.templatesSaved.set(true);
+        this.store.reload();
+      },
+      error: (err: OkDockError) => {
+        this.templatesError.set(err.message);
+        this.templatesBusy.set(false);
+      },
     });
   }
 

@@ -7,7 +7,9 @@ image.
 A template is JSON. The ones shipping with OkDock live in
 [`api/internal/template/builtin/`](../api/internal/template/builtin/), embedded
 in the binary through `go:embed`. The ones registered through the **New
-template** screen go to `<boot root>/.okdock/templates/<id>.json`, and a file
+template** screen go to the templates folder as `<id>.json`, which is
+`<boot root>/.okdock/templates/` until another one is chosen in the settings
+screen, and a file
 with the same id beats the builtin one: that is how a builtin template is edited
 without losing the original, which comes back when the edit is deleted.
 
@@ -117,9 +119,8 @@ template always accepts the image with the variables typed by hand.
 
 ## Adding a template
 
-Through the panel: **New template**, at the top. It is written to
-`.okdock/templates/` and shows up in the wizard right away, nothing has to be
-recompiled.
+Through the panel: **New template**, at the top. It is written to the templates
+folder and shows up in the wizard right away, nothing has to be recompiled.
 
 To add a template that ships with OkDock:
 

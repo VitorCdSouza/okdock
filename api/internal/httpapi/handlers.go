@@ -266,6 +266,20 @@ func (s *Server) setRoot(w http.ResponseWriter, r *http.Request) {
 	s.system(w, r)
 }
 
+func (s *Server) setTemplatesDir(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Templates string `json:"templates"`
+	}
+	if !decodeJSON(w, r, &req) {
+		return
+	}
+	if err := s.mgr.SetTemplatesDir(strings.TrimSpace(req.Templates)); err != nil {
+		writeError(w, err)
+		return
+	}
+	s.system(w, r)
+}
+
 func (s *Server) getDNS(w http.ResponseWriter, _ *http.Request) {
 	status := s.mgr.DNS()
 	if status.Links == nil {

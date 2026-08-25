@@ -442,3 +442,45 @@ func TestGetFallsBackWhenTheComposeIsBroken(t *testing.T) {
 		t.Errorf("env = %v", got.Env)
 	}
 }
+
+func TestSetTemplatesDirPersists(t *testing.T) {
+	boot := t.TempDir()
+	dir := filepath.Join(t.TempDir(), "templates")
+
+	s, err := New(boot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.TemplatesDir() != filepath.Join(boot, ".okdock", "templates") {
+		t.Fatalf("with nothing chosen TemplatesDir = %q", s.TemplatesDir())
+	}
+	if err := s.SetTemplatesDir(dir); err != nil {
+		t.Fatalf("SetTemplatesDir: %v", err)
+	}
+	if s.TemplatesDir() != dir {
+		t.Errorf("TemplatesDir = %q, wanted %q", s.TemplatesDir(), dir)
+	}
+
+	other, err := New(boot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if other.TemplatesDir() != dir {
+		t.Errorf("after the restart TemplatesDir = %q, wanted %q", other.TemplatesDir(), dir)
+	}
+	// the two folders travel apart, choosing one does not move the other
+	if other.Root() != other.ConfigRoot {
+		t.Errorf("Root = %q, wanted the boot root %q", other.Root(), other.ConfigRoot)
+	}
+}
+
+func TestSetTemplatesDirRefusesARelativePath(t *testing.T) {
+	s := newStore(t)
+	before := s.TemplatesDir()
+	if err := s.SetTemplatesDir("templates"); !errors.Is(err, ErrInvalidRoot) {
+		t.Fatalf("wanted ErrInvalidRoot, got %v", err)
+	}
+	if s.TemplatesDir() != before {
+		t.Errorf("the folder changed even with the error: %q", s.TemplatesDir())
+	}
+}

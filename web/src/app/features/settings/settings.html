@@ -24,6 +24,22 @@
     </section>
 
     <section>
+      <div class="section-title">{{ t('settings.templatesTitle') }}</div>
+      <div class="grid3">
+        <input class="mono" spellcheck="false" placeholder="/srv/okdock/templates"
+               [ngModel]="templatesDraft()" (ngModelChange)="templatesDraft.set($event)"
+               (keydown.enter)="saveTemplates()">
+        <button class="btn btn-sm btn-go" (click)="saveTemplates()"
+                [disabled]="templatesBusy() || !templatesChanged()">
+          {{ templatesBusy() ? t('common.saving') : t('common.save') }}
+        </button>
+        <ok-info [text]="t('settings.templatesTip')" />
+      </div>
+      @if (templatesError(); as e) { <div class="alert bad">{{ e }}</div> }
+      @if (templatesSaved()) { <div class="ok-note">{{ t('settings.templatesSaved') }}</div> }
+    </section>
+
+    <section>
       <div class="section-title">{{ t('settings.duckdnsTitle') }}</div>
       <div class="grid3">
         <input class="mono" [type]="tokenHidden() ? 'password' : 'text'"

@@ -148,6 +148,10 @@ export class Api {
     return this.wrap(this.http.put<SystemInfo>(`${BASE}/system/root`, { root }));
   }
 
+  setTemplatesRoot(templates: string): Observable<SystemInfo> {
+    return this.wrap(this.http.put<SystemInfo>(`${BASE}/system/templates`, { templates }));
+  }
+
   dns(): Observable<DnsStatus> {
     return this.get<DnsStatus>(`${BASE}/dns`);
   }

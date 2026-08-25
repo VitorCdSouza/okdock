@@ -44,6 +44,7 @@ func (s *Server) routes() {
 	m.HandleFunc("GET /api/v1/health", s.health)
 	m.HandleFunc("GET /api/v1/system", s.system)
 	m.HandleFunc("PUT /api/v1/system/root", s.setRoot)
+	m.HandleFunc("PUT /api/v1/system/templates", s.setTemplatesDir)
 	m.HandleFunc("GET /api/v1/events", s.events)
 
 	m.HandleFunc("GET /api/v1/templates", s.listTemplates)

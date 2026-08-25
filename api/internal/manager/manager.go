@@ -422,7 +422,12 @@ func (m *Manager) System(ctx context.Context) (SystemInfo, error) {
 	if err != nil {
 		return SystemInfo{}, err
 	}
-	out := SystemInfo{Info: info, MemoryReserve: m.reserve, Root: m.store.Root()}
+	out := SystemInfo{
+		Info:          info,
+		MemoryReserve: m.reserve,
+		Root:          m.store.Root(),
+		TemplatesRoot: m.store.TemplatesDir(),
+	}
 	out.MemoryBudget = info.MemoryTotal - m.reserve
 
 	if v, err := m.docker.Version(ctx); err == nil {
@@ -453,9 +458,22 @@ func (m *Manager) SetRoot(root string) error {
 	return nil
 }
 
+// moving the folder does not move what is in it, the catalog just answers from the new one
+func (m *Manager) SetTemplatesDir(dir string) error {
+	if err := m.store.SetTemplatesDir(dir); err != nil {
+		return err
+	}
+	if err := m.templates.SetDir(m.store.TemplatesDir()); err != nil {
+		return err
+	}
+	m.hub.Publish(Event{Type: "instance.changed"})
+	return nil
+}
+
 type SystemInfo struct {
 	system.Info
 	Root            string `json:"root"`
+	TemplatesRoot   string `json:"templatesRoot"`
 	DockerVersion   string `json:"dockerVersion,omitempty"`
 	DockerError     string `json:"dockerError,omitempty"`
 	MemoryReserve   int64  `json:"memoryReserve"`

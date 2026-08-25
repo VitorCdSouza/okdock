@@ -79,6 +79,7 @@ different from what the user asked for.
   "diskTotal": 987842478080, "diskFree": 646392975360, "diskUsed": 341449502720,
   "cpuCount": 8, "cpuPercent": 41.2,
   "root": "/srv/games",
+  "templatesRoot": "/srv/okdock/templates",
   "dockerVersion": "27.1.0",
   "memoryReserve": 2147483648,
   "memoryBudget": 13958643712,
@@ -88,8 +89,10 @@ different from what the user asked for.
 }
 ```
 
-`root` is the root of the instance directories: it starts at `OKDOCK_ROOT` and
-can be changed through `PUT /system/root`. `memoryBudget` is
+`root` is the folder of the container directories: it starts at `OKDOCK_ROOT`
+and can be changed through `PUT /system/root`. `templatesRoot` is where the
+templates written in the panel live, changed through `PUT /system/templates`.
+`memoryBudget` is
 `memoryTotal - memoryReserve`. `memoryCommitted` adds up the cap of the running
 instances; `memoryPlanned` adds the stopped ones too. With no daemon,
 `dockerError` comes instead of `dockerVersion`.
@@ -110,6 +113,19 @@ until the root comes back. The choice is saved in
 `<OKDOCK_ROOT>/.okdock/config.json`, on the boot root and not on the new one,
 otherwise the next process would look for the file in the wrong place.
 
+### `PUT /system/templates`
+
+```json
+{"templates": "/srv/okdock/templates"}
+```
+
+The same rules as the root, and saved in the same file: absolute, writable,
+`422 invalid_root` when it is not. With nothing chosen it is
+`<OKDOCK_ROOT>/.okdock/templates`, which is where the templates were before the
+folder could be chosen. Changing it moves no file: what was written on the old
+folder stays there and shows up again if it comes back. Builtin templates are
+in the binary and do not depend on this.
+
 ### `GET /health`
 
 `{"status":"ok"}`. Does not touch Docker, it is the container healthcheck.
@@ -118,8 +134,8 @@ otherwise the next process would look for the file in the wrong place.
 
 A template describes an image: category, ports, volumes, RAM and the fields the
 form shows. The ones shipping with OkDock are JSON embedded in the binary; the
-user ones live in `<boot root>/.okdock/templates/<id>.json`, and a file with the
-same id beats the builtin one, which is how a builtin template is edited without
+user ones live in the templates folder as `<id>.json`, and a file with the same
+id beats the builtin one, which is how a builtin template is edited without
 losing the original.
 
 ### `GET /templates`

@@ -270,10 +270,14 @@ export const pt = {
   'templates.editHint': 'editar um template de fábrica grava uma cópia; apagar a cópia devolve o original',
 
   'settings.title': 'Configurações',
-  'settings.rootTitle': 'RAIZ DAS INSTÂNCIAS',
+  'settings.rootTitle': 'PASTA DOS CONTAINERS',
   'settings.rootTip':
-    'Caminho absoluto onde cada instância vira um diretório. O painel cria a pasta se faltar. O que já existe não se move: as instâncias da raiz antiga continuam de pé onde estão e voltam à lista se a raiz voltar. Dentro do container, só vale caminho montado lá com o mesmo nome de fora.',
-  'settings.rootSaved': 'raiz nova em uso',
+    'Caminho absoluto onde cada container vira um diretório, com o compose dentro e uma pasta por volume da imagem. O painel cria a pasta se faltar. O que já existe não se move: os containers da pasta antiga continuam de pé onde estão e voltam à lista se ela voltar. Dentro do container do painel, só vale caminho montado lá com o mesmo nome de fora.',
+  'settings.rootSaved': 'pasta nova em uso',
+  'settings.templatesTitle': 'PASTA DOS TEMPLATES',
+  'settings.templatesTip':
+    'Caminho absoluto onde ficam os templates escritos no painel, um .json por template. Sem escolher nada, é a pasta de configuração do painel. Trocar não move arquivo: o que estava na pasta antiga fica lá e volta a aparecer se ela voltar. Template de fábrica vem no binário e aparece de qualquer jeito.',
+  'settings.templatesSaved': 'pasta nova em uso',
   'settings.duckdnsTitle': 'DUCKDNS',
   'settings.tokenPlaceholder': 'token da sua conta no duckdns.org',
   'settings.changeToken': 'Trocar',

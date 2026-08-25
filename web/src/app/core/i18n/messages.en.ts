@@ -276,10 +276,14 @@ export const en: Record<MessageKey, string> = {
   'templates.editHint': 'editing a built-in template saves a copy; deleting the copy restores the original',
 
   'settings.title': 'Settings',
-  'settings.rootTitle': 'INSTANCE ROOT',
+  'settings.rootTitle': 'CONTAINERS FOLDER',
   'settings.rootTip':
-    'Absolute path where each instance becomes a directory. The panel creates the folder if it is missing. What already exists is not moved: instances under the old root stay up where they are and come back to the list if the root goes back. Inside the container, only a path mounted there under the same name works.',
-  'settings.rootSaved': 'new root in use',
+    'Absolute path where each container becomes a directory, with the compose file inside it and one folder per volume of the image. The panel creates the folder if it is missing. What already exists is not moved: containers under the old folder stay up where they are and come back to the list if it comes back. Inside the panel container, only a path mounted there under the same name works.',
+  'settings.rootSaved': 'new folder in use',
+  'settings.templatesTitle': 'TEMPLATES FOLDER',
+  'settings.templatesTip':
+    'Absolute path where the templates written in the panel live, one .json each. With nothing chosen it is the panel config folder. Changing it moves no file: what was on the old folder stays there and shows up again if it comes back. A template that ships with the panel is in the binary and shows up either way.',
+  'settings.templatesSaved': 'new folder in use',
   'settings.duckdnsTitle': 'DUCKDNS',
   'settings.tokenPlaceholder': 'token from your duckdns.org account',
   'settings.changeToken': 'Change',

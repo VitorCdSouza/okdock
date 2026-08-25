@@ -17,3 +17,7 @@
 !/web/src/environments/*.ts
 
 *.log
+
+# the two folders the panel can be pointed at, when they land in the checkout
+/templates/
+/containers/

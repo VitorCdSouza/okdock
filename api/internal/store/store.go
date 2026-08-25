@@ -57,8 +57,9 @@ const (
 type Store struct {
 	ConfigRoot string
 
-	mu   sync.RWMutex
-	root string
+	mu        sync.RWMutex
+	root      string
+	templates string
 }
 
 func New(root string) (*Store, error) {
@@ -80,9 +81,17 @@ func New(root string) (*Store, error) {
 		if err := prepareRoot(cfg.Root); err != nil {
 			slog.Warn("the saved root could not be used, staying on the boot root",
 				"root", cfg.Root, "err", err)
-			return s, nil
+		} else {
+			s.root = cfg.Root
 		}
-		s.root = cfg.Root
+	}
+	if cfg.Templates != "" {
+		if err := prepareRoot(cfg.Templates); err != nil {
+			slog.Warn("the saved templates folder could not be used, staying on the panel one",
+				"templates", cfg.Templates, "err", err)
+		} else {
+			s.templates = cfg.Templates
+		}
 	}
 	return s, nil
 }
@@ -94,17 +103,10 @@ func (s *Store) Root() string {
 }
 
 func (s *Store) SetRoot(root string) error {
-	abs, err := filepath.Abs(root)
+	abs, err := usableDir(root)
 	if err != nil {
 		return err
 	}
-	if !filepath.IsAbs(root) {
-		return &InvalidRootError{Reason: "not_absolute", Path: root}
-	}
-	if err := prepareRoot(abs); err != nil {
-		return err
-	}
-
 	cfg, err := s.LoadPanel()
 	if err != nil {
 		cfg = PanelConfig{}
@@ -118,6 +120,38 @@ func (s *Store) SetRoot(root string) error {
 	s.root = abs
 	s.mu.Unlock()
 	return nil
+}
+
+// the templates folder travels like the instances one: on the boot root, never on itself
+func (s *Store) SetTemplatesDir(dir string) error {
+	abs, err := usableDir(dir)
+	if err != nil {
+		return err
+	}
+	cfg, err := s.LoadPanel()
+	if err != nil {
+		cfg = PanelConfig{}
+	}
+	cfg.Templates = abs
+	if err := s.SavePanel(cfg); err != nil {
+		return err
+	}
+
+	s.mu.Lock()
+	s.templates = abs
+	s.mu.Unlock()
+	return nil
+}
+
+func usableDir(dir string) (string, error) {
+	if !filepath.IsAbs(dir) {
+		return "", &InvalidRootError{Reason: "not_absolute", Path: dir}
+	}
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		return "", err
+	}
+	return abs, prepareRoot(abs)
 }
 
 func prepareRoot(root string) error {
