@@ -40,14 +40,21 @@ terminal if the panel dies, which is the likely scenario on a home server.
 
 And it is read back, not only written. `store.Get` parses the file and lets it
 answer for image, ports, volumes, environment, limits, restart and stop grace,
-so editing the YAML by hand is a supported way to change an instance. When the
-parse fails, the sidecar answers instead, which is how an instance written
-before this existed, or one whose file the owner broke, is still read.
+so editing the YAML by hand is a supported way to change an instance.
 
-`.okdock.json` keeps only what the compose cannot say: which template it came
-from, which keys are secret, what each port is called, whether the instance is
-archived and when it was created. The password
-is not there, it is only in the `.env`, because the sidecar is `0644`.
+What the compose schema has no field for goes into `okdock.*` labels of the
+service: which template it came from, its category, which keys are secret
+(`okdock.secrets`, the names, never the values, which live in the `.env`), what
+each port is called (`okdock.port.25565.tcp`), whether it is archived and when
+it was created. `updatedAt` is the mtime of the file itself. That is what makes
+a folder holding a compose file and nothing else a complete instance, and it is
+why moving one between servers is a copy of the folder.
+
+A file that does not parse is not a lost instance. An instance written before
+the labels existed has a `.okdock.json` beside it and that answers; with no
+sidecar, what comes back says why the file could not be read, and the panel
+shows the instance in error instead of hiding a container that may well be up.
+The panel does not write the sidecar anymore.
 
 ### A container from outside is edited in its own file
 

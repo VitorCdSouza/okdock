@@ -55,6 +55,38 @@ type limits struct {
 	CPUs   string `yaml:"cpus,omitempty"`
 }
 
+// what the panel knows and the compose schema has no field for, kept in the file as a label
+func labelsFor(spec instance.Spec) map[string]string {
+	labels := map[string]string{
+		Label + ".managed":  "true",
+		Label + ".template": spec.TemplateID,
+		Label + ".category": spec.Category,
+	}
+	if len(spec.SecretKeys) > 0 {
+		labels[Label+".secrets"] = strings.Join(spec.SecretKeys, ",")
+	}
+	if spec.Archived {
+		labels[Label+".archived"] = "true"
+	}
+	if !spec.CreatedAt.IsZero() {
+		labels[Label+".created"] = spec.CreatedAt.UTC().Format(time.RFC3339)
+	}
+	for _, p := range spec.Ports {
+		if p.Label != "" {
+			labels[PortLabel(p.Container, p.Protocol)] = p.Label
+		}
+	}
+	return labels
+}
+
+// the name of a port rides on the port itself, a parallel list would go quiet out of order
+func PortLabel(container int, protocol string) string {
+	if protocol == "" {
+		protocol = "tcp"
+	}
+	return fmt.Sprintf("%s.port.%d.%s", Label, container, protocol)
+}
+
 func Render(spec instance.Spec) ([]byte, error) {
 	if err := instance.ValidateName(spec.Name); err != nil {
 		return nil, err
@@ -101,13 +133,9 @@ func Render(spec instance.Spec) ([]byte, error) {
 		Ports:         ports,
 		Environment:   env,
 		Volumes:       volumes,
-		Labels: map[string]string{
-			Label + ".managed":  "true",
-			Label + ".template": spec.TemplateID,
-			Label + ".category": spec.Category,
-		},
-		StdinOpen: true,
-		Tty:       true,
+		Labels:        labelsFor(spec),
+		StdinOpen:     true,
+		Tty:           true,
 	}
 	if hasSecret {
 		svc.EnvFile = []string{".env"}

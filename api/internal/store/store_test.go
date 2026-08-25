@@ -1,6 +1,7 @@
 package store
 
 import (
+	"encoding/json"
 	"errors"
 	"io/fs"
 	"os"
@@ -37,15 +38,19 @@ func spec(name string) instance.Spec {
 	}
 }
 
-func TestCreateWritesTheThreeFiles(t *testing.T) {
+func TestCreateWritesTheTwoFiles(t *testing.T) {
 	s := newStore(t)
 	if err := s.Create(spec("smp")); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	for _, f := range []string{"docker-compose.yml", ".env", ".okdock.json"} {
+	for _, f := range []string{"docker-compose.yml", ".env"} {
 		if _, err := os.Stat(filepath.Join(s.Dir("smp"), f)); err != nil {
 			t.Errorf("faltou %s: %v", f, err)
 		}
+	}
+	// the compose file holds everything now, there is no sidecar beside it
+	if _, err := os.Stat(filepath.Join(s.Dir("smp"), ".okdock.json")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("the sidecar was written: %v", err)
 	}
 	if info, err := os.Stat(filepath.Join(s.Dir("smp"), "data")); err != nil || !info.IsDir() {
 		t.Errorf("the data directory was not created: %v", err)
@@ -281,49 +286,6 @@ func TestAnUnusableSavedRootFallsBackToTheBootOne(t *testing.T) {
 	}
 }
 
-func TestGetReadsASpecWithTheOldName(t *testing.T) {
-	s := newStore(t)
-	if err := s.Create(spec("smp")); err != nil {
-		t.Fatalf("Create: %v", err)
-	}
-	dir := s.Dir("smp")
-	if err := os.Rename(filepath.Join(dir, ".okdock.json"), filepath.Join(dir, ".gamedock.json")); err != nil {
-		t.Fatal(err)
-	}
-
-	got, err := s.Get("smp")
-	if err != nil {
-		t.Fatalf("Get com o arquivo antigo: %v", err)
-	}
-	if got.TemplateID != "minecraft-java" || len(got.SecretKeys) != 1 {
-		t.Errorf("spec veio incompleta: %+v", got)
-	}
-}
-
-func TestUpdateSwapsTheOldSpecForTheNewOne(t *testing.T) {
-	s := newStore(t)
-	if err := s.Create(spec("smp")); err != nil {
-		t.Fatalf("Create: %v", err)
-	}
-	dir := s.Dir("smp")
-	if err := os.Rename(filepath.Join(dir, ".okdock.json"), filepath.Join(dir, ".gamedock.json")); err != nil {
-		t.Fatal(err)
-	}
-
-	updated := spec("smp")
-	updated.MemoryLimit = "6g"
-	if err := s.Update(updated); err != nil {
-		t.Fatalf("Update: %v", err)
-	}
-
-	if _, err := os.Stat(filepath.Join(dir, ".gamedock.json")); !errors.Is(err, fs.ErrNotExist) {
-		t.Errorf("the old file should be out of the way: %v", err)
-	}
-	if _, err := os.Stat(filepath.Join(dir, ".okdock.json")); err != nil {
-		t.Errorf("faltou o arquivo fresh: %v", err)
-	}
-}
-
 func TestThePanelReadsConfigFromTheOldFolder(t *testing.T) {
 	boot := t.TempDir()
 	newRoot := filepath.Join(t.TempDir(), "jogos")
@@ -406,31 +368,40 @@ func TestGetReadsTheComposeFile(t *testing.T) {
 	}
 }
 
-func TestSidecarHasNoPassword(t *testing.T) {
+func TestTheComposeFileHasTheKeyAndNotThePassword(t *testing.T) {
 	s := newStore(t)
 	if err := s.Create(spec("smp")); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	raw, err := os.ReadFile(filepath.Join(s.Dir("smp"), ".okdock.json"))
+	raw, err := os.ReadFile(s.ComposePath("smp"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if strings.Contains(string(raw), "hunter2") {
-		t.Fatalf("the password is in the world readable sidecar:\n%s", raw)
+		t.Fatalf("the password is in the world readable compose file:\n%s", raw)
 	}
-	if !strings.Contains(string(raw), "SENHA") {
-		t.Fatal("the secret key list is not in the sidecar")
+	if !strings.Contains(string(raw), "okdock.secrets: SENHA") {
+		t.Fatalf("the secret key list is not in the labels:\n%s", raw)
 	}
 }
 
-func TestGetFallsBackWhenTheComposeIsBroken(t *testing.T) {
+func TestGetFallsBackToASidecarWrittenBeforeTheLabels(t *testing.T) {
 	s := newStore(t)
 	if err := s.Create(spec("smp")); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
+	// an instance created before the compose file answered for all of it
+	old, err := json.Marshal(spec("smp"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(s.Dir("smp"), ".okdock.json"), old, 0o644); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.WriteFile(s.ComposePath("smp"), []byte("services: [!!!"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+
 	got, err := s.Get("smp")
 	if err != nil {
 		t.Fatalf("Get: %v", err)
@@ -438,8 +409,36 @@ func TestGetFallsBackWhenTheComposeIsBroken(t *testing.T) {
 	if got.Image != "itzg/minecraft-server:java21" {
 		t.Errorf("image = %q, the sidecar did not answer", got.Image)
 	}
+	if got.Unreadable != "" {
+		t.Errorf("unreadable = %q, the sidecar answered for it", got.Unreadable)
+	}
 	if got.Env["EULA"] != "true" || got.Env["SENHA"] != "hunter2" {
 		t.Errorf("env = %v", got.Env)
+	}
+}
+
+func TestABrokenComposeWithNoSidecarIsStillAnInstance(t *testing.T) {
+	s := newStore(t)
+	if err := s.Create(spec("smp")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if err := os.WriteFile(s.ComposePath("smp"), []byte("services: [!!!"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := s.Get("smp")
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if got.Unreadable == "" {
+		t.Fatal("nothing says why the file could not be read")
+	}
+	list, err := s.List()
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(list) != 1 || list[0].Name != "smp" {
+		t.Fatalf("list = %+v, the instance fell off the listing", list)
 	}
 }
 

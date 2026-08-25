@@ -16,6 +16,9 @@ import (
 	"github.com/VitorCdSouza/okdock/api/internal/instance"
 )
 
+// a compose file that parsed and describes something else, which is every stack we did not write
+var errNoService = errors.New("no service with the name of the folder")
+
 var (
 	ErrNotFound    = errors.New("instance not found")
 	ErrExists      = errors.New("an instance with that name already exists")
@@ -48,10 +51,9 @@ func (e *InvalidRootError) Error() string {
 func (e *InvalidRootError) Is(target error) bool { return target == ErrInvalidRoot }
 
 const (
-	composeFile    = "docker-compose.yml"
-	envFile        = ".env"
-	metaFile       = ".okdock.json"
-	legacyMetaFile = ".gamedock.json"
+	composeFile = "docker-compose.yml"
+	envFile     = ".env"
+	metaFile    = ".okdock.json"
 )
 
 type Store struct {
@@ -206,28 +208,37 @@ func (s *Store) List() ([]instance.Spec, error) {
 	return out, nil
 }
 
-// Get reads the instance from the compose and the sidecar, which answers when the compose cannot
+// Get reads the instance from the compose file, and one that does not parse still says why
 func (s *Store) Get(name string) (instance.Spec, error) {
 	if err := instance.ValidateName(name); err != nil {
 		return instance.Spec{}, err
 	}
-	meta, err := s.meta(name)
-	if err != nil {
-		return instance.Spec{}, err
+	svc, composeErr := s.service(name)
+	meta, metaErr := s.meta(name)
+	if composeErr != nil && metaErr != nil {
+		// no file of ours, or a stack named after other things, and the running ones still reach docker ps
+		if errors.Is(composeErr, os.ErrNotExist) || errors.Is(composeErr, errNoService) {
+			return instance.Spec{}, &NotFoundError{Name: name}
+		}
+		return instance.Spec{Name: name, Unreadable: composeErr.Error()}, nil
 	}
-	spec := meta
-	spec.Name = name
 
-	if svc, err := s.service(name); err != nil {
+	var spec instance.Spec
+	switch {
+	case composeErr != nil:
 		slog.Warn("reading the compose file, falling back to the sidecar",
-			"instance", name, "err", err)
-	} else {
+			"instance", name, "err", composeErr)
+		spec = meta
+	case metaErr != nil:
+		spec = svc.Spec()
+	default:
 		spec = merge(meta, svc.Spec())
-		spec.Name = name
 	}
+	spec.Name = name
 	if spec.Env == nil {
 		spec.Env = map[string]string{}
 	}
+	s.stampTimes(name, &spec)
 
 	// the secret never goes to the compose file, it lives in the .env
 	raw, err := os.ReadFile(filepath.Join(s.Dir(name), envFile))
@@ -240,11 +251,20 @@ func (s *Store) Get(name string) (instance.Spec, error) {
 	return spec, nil
 }
 
+// the label says when the instance was born and the mtime says when it last changed
+func (s *Store) stampTimes(name string, spec *instance.Spec) {
+	info, err := os.Stat(s.ComposePath(name))
+	if err != nil {
+		return
+	}
+	spec.UpdatedAt = info.ModTime().UTC()
+	if spec.CreatedAt.IsZero() {
+		spec.CreatedAt = spec.UpdatedAt
+	}
+}
+
 func (s *Store) meta(name string) (instance.Spec, error) {
 	raw, err := os.ReadFile(filepath.Join(s.Dir(name), metaFile))
-	if errors.Is(err, os.ErrNotExist) {
-		raw, err = os.ReadFile(filepath.Join(s.Dir(name), legacyMetaFile))
-	}
 	if errors.Is(err, os.ErrNotExist) {
 		return instance.Spec{}, &NotFoundError{Name: name}
 	}
@@ -269,17 +289,27 @@ func (s *Store) service(name string) (compose.Service, error) {
 	}
 	svc, ok := project.Service(name)
 	if !ok {
-		return compose.Service{}, fmt.Errorf("%s has no service named %s", composeFile, name)
+		// one folder holds one instance, so a lone service is it, and the name follows the folder
+		if len(project.Services) != 1 {
+			return compose.Service{}, fmt.Errorf("%s: %w", name, errNoService)
+		}
+		svc = project.Services[0]
 	}
 	return svc, nil
 }
 
-// the compose answers for the config, the sidecar for what the format cannot say
+// the compose answers for the config, and the sidecar of an older instance for what it cannot
 func merge(meta, fromFile instance.Spec) instance.Spec {
 	out := fromFile
-	out.SecretKeys = meta.SecretKeys
-	out.Archived = meta.Archived
-	out.CreatedAt, out.UpdatedAt = meta.CreatedAt, meta.UpdatedAt
+	if len(out.SecretKeys) == 0 {
+		out.SecretKeys = meta.SecretKeys
+	}
+	if !out.Archived {
+		out.Archived = meta.Archived
+	}
+	if out.CreatedAt.IsZero() {
+		out.CreatedAt = meta.CreatedAt
+	}
 	if out.TemplateID == "" {
 		out.TemplateID = meta.TemplateID
 	}
@@ -295,7 +325,9 @@ func merge(meta, fromFile instance.Spec) instance.Spec {
 		labels[p.Container] = p.Label
 	}
 	for i, p := range out.Ports {
-		out.Ports[i].Label = labels[p.Container]
+		if p.Label == "" {
+			out.Ports[i].Label = labels[p.Container]
+		}
 	}
 
 	return out
@@ -358,17 +390,6 @@ func (s *Store) write(spec instance.Spec) error {
 		return err
 	}
 
-	meta, err := json.MarshalIndent(withoutSecrets(spec), "", "  ")
-	if err != nil {
-		return err
-	}
-	if err := writeAtomic(filepath.Join(dir, metaFile), append(meta, '\n'), 0o644); err != nil {
-		return err
-	}
-	if err := os.Remove(filepath.Join(dir, legacyMetaFile)); err != nil && !errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-
 	for _, m := range spec.Mounts {
 		if !strings.HasPrefix(m.Host, "./") {
 			continue
@@ -378,19 +399,6 @@ func (s *Store) write(spec instance.Spec) error {
 		}
 	}
 	return nil
-}
-
-// the sidecar is world readable, so it keeps the key list and the .env keeps the password
-func withoutSecrets(spec instance.Spec) instance.Spec {
-	env := make(map[string]string, len(spec.Env))
-	for k, v := range spec.Env {
-		env[k] = v
-	}
-	for _, k := range spec.SecretKeys {
-		delete(env, k)
-	}
-	spec.Env = env
-	return spec
 }
 
 func writeAtomic(path string, data []byte, perm os.FileMode) error {
@@ -425,7 +433,7 @@ func (s *Store) Delete(name string, keepData bool) error {
 		return os.RemoveAll(s.Dir(name))
 	}
 	dir := s.Dir(name)
-	for _, f := range []string{composeFile, envFile, metaFile, legacyMetaFile} {
+	for _, f := range []string{composeFile, envFile, metaFile} {
 		if err := os.Remove(filepath.Join(dir, f)); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return err
 		}

@@ -336,6 +336,15 @@ func (m *Manager) hydrate(ctx context.Context, spec instance.Spec) instance.Inst
 	inst.Operation = m.operation(spec.Name)
 	inst.DNS = m.dnsFor(spec.Name)
 
+	// a compose file nobody can parse still has a folder and containers, so it goes to the board
+	if spec.Unreadable != "" {
+		inst.State = instance.StateError
+		inst.Status = spec.Unreadable
+		inst.Editable = false
+		inst.ReadOnly = "unreadable"
+		return inst
+	}
+
 	containers, err := m.docker.PS(ctx, inst.Dir)
 	if err != nil {
 		inst.State = instance.StateError

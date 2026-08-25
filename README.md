@@ -153,9 +153,10 @@ A password never enters `docker-compose.yml`: fields marked as secret go to an
 
 ```
 /srv/games/smp-family/
-├── docker-compose.yml    generated, this is what Docker reads
+├── docker-compose.yml    generated, this is what Docker reads, and it is
+│                         the whole instance: the okdock.* labels carry the
+│                         template, the secret key names and the port names
 ├── .env                  secrets only, 0600, never versioned
-├── .okdock.json          which template this came from
 └── data/                 the world
 ```
 
@@ -192,7 +193,7 @@ old name, so an existing installation comes up with no manual step:
 |---|---|---|
 | `GAMEDOCK_*` | `OKDOCK_*` | the old variable counts when the new one is not set, with a warning in the log |
 | `<root>/.gamedock/` | `<root>/.okdock/` | the old folder is read when the new one does not exist |
-| `.gamedock.json` in the instance | `.okdock.json` | the old file is read, and the first write swaps it for the new one |
+| `.okdock.json` in the instance | `okdock.*` labels in the compose | the old file is read when the compose file cannot be parsed, and is never written again |
 | `gamedock.locale`, `gamedock.metrics` | `okdock.*` | the old browser key migrates on the first read |
 
 What does **not** rename itself: the directory and the `container_name` of

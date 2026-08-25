@@ -163,3 +163,62 @@ func TestRenderIsDeterministic(t *testing.T) {
 		t.Error("Render is not deterministic")
 	}
 }
+
+func TestTheLabelsCarryWhatTheSchemaHasNoFieldFor(t *testing.T) {
+	spec := spec()
+	spec.Archived = true
+	spec.CreatedAt = time.Date(2026, 8, 21, 12, 0, 0, 0, time.UTC)
+
+	raw, err := Render(spec)
+	if err != nil {
+		t.Fatalf("Render: %v", err)
+	}
+	project, err := Parse(raw)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	svc, ok := project.Service(spec.Name)
+	if !ok {
+		t.Fatalf("the service did not come back: %+v", project)
+	}
+
+	got := svc.Spec()
+	if len(got.SecretKeys) != 1 || got.SecretKeys[0] != "RCON_SENHA" {
+		t.Errorf("secretKeys = %v", got.SecretKeys)
+	}
+	if !got.Archived {
+		t.Error("archived was lost")
+	}
+	if !got.CreatedAt.Equal(spec.CreatedAt) {
+		t.Errorf("createdAt = %v, wanted %v", got.CreatedAt, spec.CreatedAt)
+	}
+	if len(got.Ports) != 1 || got.Ports[0].Label != "Jogo" {
+		t.Errorf("the name of the port was lost: %+v", got.Ports)
+	}
+}
+
+func TestAPortAddedByHandKeepsTheNameOfTheOthers(t *testing.T) {
+	spec := spec()
+	spec.Ports = append(spec.Ports,
+		instance.PortBinding{Host: 25575, Container: 25575, Protocol: "tcp", Label: "rcon"})
+	raw, err := Render(spec)
+	if err != nil {
+		t.Fatalf("Render: %v", err)
+	}
+
+	// a port with no label beside it does not steal the name of the one that has one
+	edited := strings.Replace(string(raw), `      - "25565:25565/tcp"`,
+		"      - \"25565:25565/tcp\"\n      - \"8080:8080/tcp\"", 1)
+	project, err := Parse([]byte(edited))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	svc, _ := project.Service(spec.Name)
+	byPort := map[int]string{}
+	for _, p := range svc.Spec().Ports {
+		byPort[p.Container] = p.Label
+	}
+	if byPort[25565] != "Jogo" || byPort[25575] != "rcon" || byPort[8080] != "" {
+		t.Fatalf("labels = %v", byPort)
+	}
+}

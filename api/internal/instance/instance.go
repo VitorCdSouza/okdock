@@ -59,6 +59,9 @@ type Spec struct {
 	Archived         bool              `json:"archived,omitempty"`
 	CreatedAt        time.Time         `json:"createdAt"`
 	UpdatedAt        time.Time         `json:"updatedAt"`
+
+	// why the compose could not be read, and the instance shows in error instead of vanishing
+	Unreadable string `json:"unreadable,omitempty"`
 }
 
 func (s *Spec) UnmarshalJSON(raw []byte) error {

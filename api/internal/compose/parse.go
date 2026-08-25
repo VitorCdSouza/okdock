@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 
@@ -155,6 +156,21 @@ func (s Service) Spec() instance.Spec {
 	}
 	spec.Ports = append(spec.Ports, s.Ports...)
 	spec.Mounts = append(spec.Mounts, s.Volumes...)
+
+	if raw := s.Labels[Label+".secrets"]; raw != "" {
+		for _, k := range strings.Split(raw, ",") {
+			if k = strings.TrimSpace(k); k != "" {
+				spec.SecretKeys = append(spec.SecretKeys, k)
+			}
+		}
+	}
+	spec.Archived = s.Labels[Label+".archived"] == "true"
+	if at, err := time.Parse(time.RFC3339, s.Labels[Label+".created"]); err == nil {
+		spec.CreatedAt = at
+	}
+	for i, p := range spec.Ports {
+		spec.Ports[i].Label = s.Labels[PortLabel(p.Container, p.Protocol)]
+	}
 	return spec
 }
 
