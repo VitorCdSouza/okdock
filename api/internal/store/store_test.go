@@ -483,3 +483,67 @@ func TestSetTemplatesDirRefusesARelativePath(t *testing.T) {
 		t.Errorf("the folder changed even with the error: %q", s.TemplatesDir())
 	}
 }
+
+func TestListLeavesAStackAlone(t *testing.T) {
+	s := newStore(t)
+	dir := s.Dir("nextcloud")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// four services, one named after the folder: adopting it would take the other three off the board
+	yml := `name: nextcloud
+services:
+  db:
+    image: mariadb
+  redis:
+    image: redis
+  nextcloud:
+    image: nextcloud
+  cron:
+    image: nextcloud
+`
+	if err := os.WriteFile(filepath.Join(dir, "docker-compose.yml"), []byte(yml), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := s.Get("nextcloud"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("wanted ErrNotFound, got %v", err)
+	}
+	list, err := s.List()
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(list) != 0 {
+		t.Fatalf("list = %+v, the stack was adopted", list)
+	}
+}
+
+func TestAFolderWithOnlyAComposeFileIsAnInstance(t *testing.T) {
+	s := newStore(t)
+	dir := s.Dir("duckdns")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// the service is not named after the folder and there is no sidecar, so it is the instance
+	yml := `name: duckdns
+services:
+  dns:
+    image: lscr.io/linuxserver/duckdns
+    ports:
+      - "8080:80/tcp"
+`
+	if err := os.WriteFile(filepath.Join(dir, "docker-compose.yml"), []byte(yml), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := s.Get("duckdns")
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if got.Name != "duckdns" || got.Image != "lscr.io/linuxserver/duckdns" {
+		t.Fatalf("spec = %+v", got)
+	}
+	if got.UpdatedAt.IsZero() {
+		t.Error("updatedAt did not come from the file")
+	}
+}

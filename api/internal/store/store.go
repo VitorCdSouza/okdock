@@ -287,13 +287,14 @@ func (s *Store) service(name string) (compose.Service, error) {
 	if err != nil {
 		return compose.Service{}, err
 	}
+	// one folder holds one instance, so a lone service is it, and the name follows the folder
+	if len(project.Services) == 1 {
+		return project.Services[0], nil
+	}
+	// a stack is not an instance because one service carries the folder name, only our file says so
 	svc, ok := project.Service(name)
-	if !ok {
-		// one folder holds one instance, so a lone service is it, and the name follows the folder
-		if len(project.Services) != 1 {
-			return compose.Service{}, fmt.Errorf("%s: %w", name, errNoService)
-		}
-		svc = project.Services[0]
+	if !ok || svc.Labels[compose.Label+".managed"] != "true" {
+		return compose.Service{}, fmt.Errorf("%s: %w", name, errNoService)
 	}
 	return svc, nil
 }
