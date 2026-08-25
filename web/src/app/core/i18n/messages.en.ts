@@ -157,7 +157,6 @@ export const en: Record<MessageKey, string> = {
   'detail.portFallbackLabel': 'game',
   'detail.inContainer': 'Inside the container: {port}/{protocol}',
   'detail.volumes': 'VOLUMES',
-  'detail.worldTag': 'world',
   'detail.inviteTitle': 'ADDRESS TO INVITE PEOPLE',
   'detail.dnsNoToken':
     'The duckdns account token is missing. There is a single one for the whole panel: it lives in Settings, the gear next to + New instance.',
@@ -253,7 +252,6 @@ export const en: Record<MessageKey, string> = {
   'templates.volumes': 'VOLUMES',
   'templates.volumeHost': 'path in the instance',
   'templates.volumeContainer': 'path in the container',
-  'templates.volumeData': 'holds the data',
   'templates.fields': 'CONFIGURATION FIELDS',
   'templates.fieldsTip':
     'Each field becomes an environment variable of the image, named after the key. Mark it secret so the value only goes to .env.',

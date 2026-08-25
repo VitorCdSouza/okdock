@@ -316,17 +316,10 @@ func (t Template) checkPorts() []Problem {
 
 func (t Template) checkVolumes() []Problem {
 	var problems []Problem
-	data := 0
 	for _, v := range t.Volumes {
 		if !strings.HasPrefix(v.Container, "/") {
 			problems = append(problems, Problem{Field: "volumes", Code: "container_path_not_absolute", Params: map[string]any{"value": v.Container}})
 		}
-		if v.Data {
-			data++
-		}
-	}
-	if data > 1 {
-		problems = append(problems, Problem{Field: "volumes", Code: "many_data_volumes"})
 	}
 	return problems
 }

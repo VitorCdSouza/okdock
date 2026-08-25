@@ -154,7 +154,6 @@ export const pt = {
   'detail.portFallbackLabel': 'jogo',
   'detail.inContainer': 'Dentro do container: {port}/{protocol}',
   'detail.volumes': 'VOLUMES',
-  'detail.worldTag': 'mundo',
   'detail.inviteTitle': 'ENDEREÇO PARA CONVIDAR',
   'detail.dnsNoToken':
     'Falta o token da conta do duckdns. Ele é um só para o painel inteiro: fica em Configurações, na engrenagem ao lado de + Nova instância.',
@@ -247,7 +246,6 @@ export const pt = {
   'templates.volumes': 'VOLUMES',
   'templates.volumeHost': 'caminho na instância',
   'templates.volumeContainer': 'caminho no container',
-  'templates.volumeData': 'guarda os dados',
   'templates.fields': 'CAMPOS DE CONFIGURAÇÃO',
   'templates.fieldsTip':
     'Cada campo vira uma variável de ambiente da imagem, com o nome que está na chave. Marque secreto para o valor ir só para o .env.',

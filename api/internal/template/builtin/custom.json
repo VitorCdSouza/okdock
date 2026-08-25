@@ -8,8 +8,7 @@
   "volumes": [
     {
       "host": "./data",
-      "container": "/data",
-      "data": true
+      "container": "/data"
     }
   ],
   "defaultMemory": "2g",

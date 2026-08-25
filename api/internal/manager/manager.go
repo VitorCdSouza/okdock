@@ -712,7 +712,7 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 	mounts := req.Mounts
 	if len(mounts) == 0 {
 		for _, v := range tmpl.Volumes {
-			mounts = append(mounts, instance.Mount{Host: v.Host, Container: v.Container, Data: v.Data})
+			mounts = append(mounts, instance.Mount{Host: v.Host, Container: v.Container})
 		}
 	}
 

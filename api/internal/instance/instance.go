@@ -40,7 +40,6 @@ func (p PortBinding) String() string {
 type Mount struct {
 	Host      string `json:"host"`
 	Container string `json:"container"`
-	Data      bool   `json:"data,omitempty"`
 }
 
 type Spec struct {

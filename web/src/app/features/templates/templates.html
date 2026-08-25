@@ -182,11 +182,6 @@
             <input class="mono" [ngModel]="vol.container"
                    (ngModelChange)="patchVolume($index, { container: $event })"
                    [attr.aria-label]="t('templates.volumeContainer')" placeholder="/config">
-            <label class="check">
-              <input type="checkbox" [checked]="!!vol.data"
-                     (change)="patchVolume($index, { data: $any($event.target).checked })">
-              <span>{{ t('templates.volumeData') }}</span>
-            </label>
             <button class="icon" (click)="removeVolume($index)"
                     [attr.aria-label]="t('templates.remove')">✕</button>
           </div>

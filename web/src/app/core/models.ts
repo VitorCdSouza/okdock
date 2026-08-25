@@ -32,7 +32,6 @@ export interface TemplatePort {
 export interface TemplateVolume {
   host: string;
   container: string;
-  data?: boolean;
 }
 
 export type BuiltinCategory = 'games' | 'media' | 'database' | 'network' | 'utilities' | 'other';
@@ -104,7 +103,6 @@ export interface PortBinding {
 export interface Mount {
   host: string;
   container: string;
-  data?: boolean;
 }
 
 export interface Stats {

@@ -15,8 +15,7 @@
   "volumes": [
     {
       "host": "./data",
-      "container": "/root/.local/share/Terraria/Worlds",
-      "data": true
+      "container": "/root/.local/share/Terraria/Worlds"
     }
   ],
   "defaultMemory": "2g",

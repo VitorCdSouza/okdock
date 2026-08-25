@@ -126,8 +126,7 @@ To add a template that ships with OkDock:
 1. Add the `.json` to `internal/template/builtin/`, with the id equal to the
    file name.
 2. `go test ./internal/template/`. `TestAllBuiltinTemplatesAreUsable` already
-   covers the basics: full identification, data volume marked, no repeated keys,
-   enums with options, and **every default passing its own validation** (a
+   covers the basics: full identification, no repeated keys, enums with options, and **every default passing its own validation** (a
    default outside the schema would make the instance be born invalid without
    the user touching anything). `Template.Check` runs at load time, so invalid
    JSON takes the boot down instead of showing up broken on screen.

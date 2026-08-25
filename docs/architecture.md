@@ -45,8 +45,8 @@ parse fails, the sidecar answers instead, which is how an instance written
 before this existed, or one whose file the owner broke, is still read.
 
 `.okdock.json` keeps only what the compose cannot say: which template it came
-from, which keys are secret, which mount holds the data, what each port is
-called, whether the instance is archived and when it was created. The password
+from, which keys are secret, what each port is called, whether the instance is
+archived and when it was created. The password
 is not there, it is only in the `.env`, because the sidecar is `0644`.
 
 ### A container from outside is edited in its own file

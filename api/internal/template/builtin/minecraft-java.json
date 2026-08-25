@@ -15,8 +15,7 @@
   "volumes": [
     {
       "host": "./data",
-      "container": "/data",
-      "data": true
+      "container": "/data"
     }
   ],
   "defaultMemory": "4g",

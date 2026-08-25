@@ -14,7 +14,7 @@ function template(over: Partial<Template> = {}): Template {
     short: 'MC',
     image: 'itzg/minecraft-server:java21',
     ports: [],
-    volumes: [{ host: './data', container: '/data', data: true }],
+    volumes: [{ host: './data', container: '/data' }],
     defaultMemory: '4g',
     minMemory: '2g',
     defaultCpus: 2,

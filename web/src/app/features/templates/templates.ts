@@ -42,7 +42,7 @@ function blank(): Template {
     short: '',
     image: '',
     ports: [],
-    volumes: [{ host: './data', container: '/data', data: true }],
+    volumes: [{ host: './data', container: '/data' }],
     defaultMemory: '2g',
     minMemory: '512m',
     defaultCpus: 2,

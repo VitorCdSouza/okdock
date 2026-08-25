@@ -264,13 +264,6 @@ func merge(meta, fromFile instance.Spec) instance.Spec {
 		out.Ports[i].Label = labels[p.Container]
 	}
 
-	data := make(map[string]bool, len(meta.Mounts))
-	for _, m := range meta.Mounts {
-		data[m.Container] = m.Data
-	}
-	for i, m := range out.Mounts {
-		out.Mounts[i].Data = data[m.Container]
-	}
 	return out
 }
 

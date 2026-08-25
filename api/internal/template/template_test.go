@@ -25,9 +25,6 @@ func TestAllBuiltinTemplatesAreUsable(t *testing.T) {
 		if p.ID != CustomID && p.Image == "" {
 			t.Errorf("template %q sem imagem", p.ID)
 		}
-		if _, ok := p.DataVolume(); !ok {
-			t.Errorf("template %q marks no volume as the world one", p.ID)
-		}
 		seen := map[string]bool{}
 		for _, f := range p.Fields {
 			if seen[f.Key] {

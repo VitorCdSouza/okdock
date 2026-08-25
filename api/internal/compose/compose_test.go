@@ -25,7 +25,7 @@ func spec() instance.Spec {
 		Ports: []instance.PortBinding{
 			{Host: 25565, Container: 25565, Protocol: "tcp", Label: "Jogo"},
 		},
-		Mounts:           []instance.Mount{{Host: "./data", Container: "/data", Data: true}},
+		Mounts:           []instance.Mount{{Host: "./data", Container: "/data"}},
 		MemoryLimit:      "6g",
 		CPUs:             2,
 		Restart:          "unless-stopped",

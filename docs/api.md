@@ -161,7 +161,7 @@ back to the original** instead of disappearing; if there never was a file,
 A rejected template answers `422 invalid_fields` with the same `problems` list
 as instance creation: `bad_template_id`, `unknown_category`, `bad_memory`,
 `bad_port`, `duplicate_port`, `container_path_not_absolute`,
-`many_data_volumes`, `duplicate_field`, `bad_field_type`,
+`duplicate_field`, `bad_field_type`,
 `enum_without_options`, `arg_without_flag`.
 
 A `field`:
@@ -266,7 +266,7 @@ An instance joins what is on disk with what Docker answered just now:
   "env": {"EULA": "true", "TYPE": "PAPER"},
   "secretKeys": ["RCON_PASSWORD"],
   "ports": [{"host": 25565, "container": 25565, "protocol": "tcp", "label": "game"}],
-  "mounts": [{"host": "./data", "container": "/data", "data": true}],
+  "mounts": [{"host": "./data", "container": "/data"}],
   "memoryLimit": "6g", "cpus": 2, "restart": "unless-stopped",
   "stopGraceSeconds": 120,
   "createdAt": "2026-08-21T12:00:00Z", "updatedAt": "2026-08-21T12:00:00Z",

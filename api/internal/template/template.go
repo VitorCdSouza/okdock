@@ -60,7 +60,6 @@ type Port struct {
 type Volume struct {
 	Host      string `json:"host"`
 	Container string `json:"container"`
-	Data      bool   `json:"data,omitempty"`
 }
 
 type Category string
@@ -124,15 +123,6 @@ func (p Template) Field(key string) (Field, bool) {
 		}
 	}
 	return Field{}, false
-}
-
-func (p Template) DataVolume() (Volume, bool) {
-	for _, v := range p.Volumes {
-		if v.Data {
-			return v, true
-		}
-	}
-	return Volume{}, false
 }
 
 func (p Template) Defaults() map[string]string {

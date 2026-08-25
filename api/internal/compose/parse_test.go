@@ -110,7 +110,7 @@ func TestParseReadsWhatRenderWrote(t *testing.T) {
 		Env:              map[string]string{"EULA": "TRUE", "RCON_PASSWORD": "hunter2"},
 		SecretKeys:       []string{"RCON_PASSWORD"},
 		Ports:            []instance.PortBinding{{Host: 25565, Container: 25565, Protocol: "tcp"}},
-		Mounts:           []instance.Mount{{Host: "./data", Container: "/data", Data: true}},
+		Mounts:           []instance.Mount{{Host: "./data", Container: "/data"}},
 		MemoryLimit:      "4G",
 		CPUs:             2,
 		Restart:          "unless-stopped",

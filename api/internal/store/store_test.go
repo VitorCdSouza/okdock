@@ -29,7 +29,7 @@ func spec(name string) instance.Spec {
 		Env:              map[string]string{"EULA": "true", "SENHA": "hunter2"},
 		SecretKeys:       []string{"SENHA"},
 		Ports:            []instance.PortBinding{{Host: 25565, Container: 25565, Protocol: "tcp"}},
-		Mounts:           []instance.Mount{{Host: "./data", Container: "/data", Data: true}},
+		Mounts:           []instance.Mount{{Host: "./data", Container: "/data"}},
 		MemoryLimit:      "4g",
 		CPUs:             2,
 		Restart:          "unless-stopped",
@@ -395,9 +395,6 @@ func TestGetReadsTheComposeFile(t *testing.T) {
 		t.Errorf("ports = %+v", got.Ports)
 	}
 	// the sidecar still answers for what compose cannot say
-	if !got.Mounts[0].Data {
-		t.Error("the data flag of the mount was lost")
-	}
 	if len(got.SecretKeys) != 1 || got.SecretKeys[0] != "SENHA" {
 		t.Errorf("secret keys = %v", got.SecretKeys)
 	}
