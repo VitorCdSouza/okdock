@@ -9,13 +9,12 @@ import { TemplateForm } from '../../shared/template-form';
 import { GameIcon } from '../../shared/game-icon';
 import { InfoDot } from '../../shared/info-dot';
 import { ImageSearch } from '../../shared/image-search';
-import { Select } from '../../shared/select';
 
 type Step = 1 | 2;
 
 @Component({
   selector: 'ok-new-instance',
-  imports: [FormsModule, TemplateForm, GameIcon, InfoDot, ImageSearch, Select],
+  imports: [FormsModule, TemplateForm, GameIcon, InfoDot, ImageSearch],
   templateUrl: './new-instance.html',
   styleUrl: './new-instance.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,37 +37,12 @@ export class NewInstance {
   readonly image = signal('');
   readonly memoryLimit = signal('');
   readonly values = signal<Record<string, string>>({});
-  readonly hostPorts = signal<Record<string, number>>({});
-  readonly dnsDomain = signal('');
   readonly startAfterCreate = signal(true);
 
   readonly busy = signal(false);
   readonly error = signal<OkDockError | null>(null);
 
   readonly groups = computed(() => this.store.byCategory());
-
-  readonly hasDnsToken = computed(() => !!this.store.dns()?.token);
-
-  readonly dnsOptions = computed(() => {
-    const dns = this.store.dns();
-    if (!dns) return [];
-    const taken = new Set(dns.links.map((l) => l.domain));
-    return dns.domains.filter((d) => !taken.has(d.domain));
-  });
-
-  readonly dnsChoices = computed(() => [
-    { value: '', label: this.t('new.dnsNone') },
-    ...this.dnsOptions().map((d) => ({ value: d.domain, label: d.hostname })),
-  ]);
-
-  readonly ports = computed(() => {
-    const p = this.template();
-    if (!p) return [];
-    return (p.ports ?? []).map((port) => ({
-      ...port,
-      host: this.hostPorts()[this.portKey(port.container, port.protocol)] ?? port.defaultHost,
-    }));
-  });
 
   readonly nameError = computed(() => {
     const n = this.name();
@@ -107,15 +81,6 @@ export class NewInstance {
     return this.i18n.category(category);
   }
 
-  portLabel(label: string | undefined): string {
-    if (!label) return this.t('detail.portFallbackLabel');
-    return this.i18n.maybe(`port.${label}`) ?? label;
-  }
-
-  portKey(container: number, protocol: string): string {
-    return `${container}/${protocol}`;
-  }
-
   pick(p: Template): void {
     this.template.set(p);
     this.image.set(p.image);
@@ -125,15 +90,7 @@ export class NewInstance {
       if (f.default) defaults[f.key] = f.default;
     }
     this.values.set(defaults);
-    this.hostPorts.set({});
-    this.dnsDomain.set('');
     this.error.set(null);
-  }
-
-  setPort(container: number, protocol: string, raw: string): void {
-    const n = Number(raw);
-    if (!Number.isFinite(n)) return;
-    this.hostPorts.update((cur) => ({ ...cur, [this.portKey(container, protocol)]: n }));
   }
 
   next(): void {
@@ -153,32 +110,13 @@ export class NewInstance {
     this.busy.set(true);
     this.error.set(null);
     this.api.create({ ...this.request(), start: this.startAfterCreate() }).subscribe({
-      next: () => this.linkThenClose(),
-      error: (err: OkDockError) => {
-        this.error.set(err);
-        this.busy.set(false);
-      },
-    });
-  }
-
-  private linkThenClose(): void {
-    const domain = this.dnsDomain();
-    if (!domain) {
-      this.busy.set(false);
-      this.created.emit(this.name());
-      return;
-    }
-    this.api.linkDns(this.name(), domain).subscribe({
       next: () => {
         this.busy.set(false);
         this.created.emit(this.name());
       },
       error: (err: OkDockError) => {
+        this.error.set(err);
         this.busy.set(false);
-        this.store.notify(
-          this.t('new.dnsLinkFailed', { name: this.name(), domain, error: err.message }),
-        );
-        this.created.emit(this.name());
       },
     });
   }
@@ -190,8 +128,9 @@ export class NewInstance {
       templateId: p.id,
       image: this.image() || undefined,
       values: this.values(),
-      ports: this.ports().map((port) => ({
-        host: port.host,
+      // no port field on the screen for now, so what goes up is what the template suggests
+      ports: (p.ports ?? []).map((port) => ({
+        host: port.defaultHost,
         container: port.container,
         protocol: port.protocol,
         label: port.label,

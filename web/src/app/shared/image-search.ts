@@ -64,25 +64,26 @@ const TAG_LIST_MIN = 260;
   template: `
     <div class="wrap" (click)="$event.stopPropagation()">
       <div class="fields">
-        <span class="box grow">
-          <label [attr.for]="fieldId() || null">
+        <span class="box" [class.grow]="!lockRepo()" [class.fixed]="lockRepo()">
+          <label [attr.for]="lockRepo() ? null : fieldId() || null">
             {{ label() || t('images.image') }}
             @if (required()) { <span class="req">*</span> }
             @if (tip()) { <ok-info [text]="tip()" /> }
           </label>
           <span class="entry" #repoEntry>
-            <input class="mono" spellcheck="false" [attr.id]="fieldId() || null"
-                   [class.locked]="lockRepo()" [readonly]="lockRepo()"
-                   [placeholder]="placeholder()" [ngModel]="repo()"
-                   (ngModelChange)="typeRepo($event)">
-            @if (open() === 'repo' && busy()) {
-              <span class="state mono">{{ t('images.searching') }}</span>
-            } @else if (open() === 'repo' && failed()) {
-              <span class="state mono bad">{{ t('images.failed') }}</span>
-            } @else if (open() === 'repo' && empty()) {
-              <span class="state mono">{{ t('images.none') }}</span>
-            }
-            @if (!lockRepo()) {
+            @if (lockRepo()) {
+              <span class="text mono">{{ repo() }}</span>
+            } @else {
+              <input class="mono" spellcheck="false" [attr.id]="fieldId() || null"
+                     [placeholder]="placeholder()" [ngModel]="repo()"
+                     (ngModelChange)="typeRepo($event)">
+              @if (open() === 'repo' && busy()) {
+                <span class="state mono">{{ t('images.searching') }}</span>
+              } @else if (open() === 'repo' && failed()) {
+                <span class="state mono bad">{{ t('images.failed') }}</span>
+              } @else if (open() === 'repo' && empty()) {
+                <span class="state mono">{{ t('images.none') }}</span>
+              }
               <button type="button" class="caret" tabindex="-1"
                       [attr.aria-label]="t('images.openList')" (click)="openRepos()">
                 <svg viewBox="0 0 10 6" aria-hidden="true">
@@ -155,6 +156,8 @@ const TAG_LIST_MIN = 260;
     .fields { display: flex; gap: 8px; align-items: flex-end; }
     .box { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
     .grow { flex: 1; }
+    /* an image the template already decided is text, and takes only the room it needs */
+    .fixed { flex: 0 1 auto; }
     .version { flex: 0 1 320px; min-width: 140px; }
     label {
       display: flex;
@@ -168,7 +171,16 @@ const TAG_LIST_MIN = 260;
     .entry { position: relative; display: block; }
     .entry input { width: 100%; padding-right: 30px; }
     .entry input:disabled { opacity: .5; cursor: not-allowed; }
-    .entry input.locked { color: var(--fg-dim); padding-right: 9px; }
+    /* the padding of an input, so the text sits on the same line as the version */
+    .entry .text {
+      display: block;
+      padding: 8px 0;
+      font-size: var(--fs-md);
+      color: var(--fg-soft);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
     .caret {
       position: absolute;
