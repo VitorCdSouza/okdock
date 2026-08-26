@@ -12,13 +12,6 @@ import { ImageSearch } from '../../shared/image-search';
 
 type Step = 1 | 2;
 
-// a host port somebody else holds, or one this form is about to ask for twice
-interface PortClash {
-  port: number;
-  protocol: string;
-  owner: string | null;
-}
-
 @Component({
   selector: 'ok-new-instance',
   imports: [FormsModule, TemplateForm, GameIcon, InfoDot, ImageSearch],
@@ -52,7 +45,7 @@ export class NewInstance {
 
   readonly groups = computed(() => this.store.byCategory());
 
-  // the host side opens on the port the template declared, taken or not, and the line says so
+  // the host side opens on the port the template declared, the api is what refuses a taken one
   readonly ports = computed(() => {
     const p = this.template();
     if (!p) return [];
@@ -62,33 +55,6 @@ export class NewInstance {
       host: chosen[this.portKey(port.container, port.protocol)] ?? port.container,
     }));
   });
-
-  // the port the template declared can already be somebody else, so the check runs from the start
-  readonly portClashes = computed<Record<string, PortClash>>(() => {
-    const owners = new Map<string, string>();
-    for (const inst of this.store.instances()) {
-      for (const bound of inst.ports ?? []) {
-        owners.set(this.portKey(bound.host, bound.protocol), inst.name);
-      }
-    }
-    const out: Record<string, PortClash> = {};
-    const here = new Map<string, string>();
-    for (const port of this.ports()) {
-      const key = this.portKey(port.container, port.protocol);
-      const host = this.portKey(port.host, port.protocol);
-      const owner = owners.get(host);
-      if (owner) out[key] = { port: port.host, protocol: port.protocol, owner };
-      else if (here.has(host)) out[key] = { port: port.host, protocol: port.protocol, owner: null };
-      here.set(host, key);
-    }
-    return out;
-  });
-
-  readonly portWarnings = computed(() =>
-    this.ports()
-      .map((port) => this.portClash(port.container, port.protocol))
-      .filter((warning) => !!warning),
-  );
 
   readonly nameError = computed(() => {
     const n = this.name();
@@ -129,15 +95,6 @@ export class NewInstance {
 
   portKey(container: number, protocol: string): string {
     return `${container}/${protocol}`;
-  }
-
-  portClash(container: number, protocol: string): string {
-    const clash = this.portClashes()[this.portKey(container, protocol)];
-    if (!clash) return '';
-    if (clash.owner) {
-      return this.t('error.port_taken', { port: clash.port, proto: clash.protocol, owner: clash.owner });
-    }
-    return this.t('new.portTwice', { port: clash.port, proto: clash.protocol });
   }
 
   pick(p: Template): void {

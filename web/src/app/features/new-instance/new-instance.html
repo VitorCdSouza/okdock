@@ -48,10 +48,6 @@
 
       @case (2) {
         @if (template(); as p) {
-          @for (warning of portWarnings(); track warning) {
-            <div class="alert warn">{{ warning }}</div>
-          }
-
           <section>
             <div class="field name" [class.has-error]="!!nameError()">
               <label for="inst-name">
@@ -95,7 +91,7 @@
                     <div class="fixed mono">{{ port.container }}/{{ port.protocol }}</div>
                   </div>
                   <span class="to" aria-hidden="true">→</span>
-                  <div class="field" [class.has-error]="!!portClash(port.container, port.protocol)">
+                  <div class="field">
                     <label [attr.for]="'inst-port-' + port.container + '-' + port.protocol">
                       {{ t('new.portHost') }}
                     </label>

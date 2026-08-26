@@ -64,15 +64,12 @@ describe('NewInstance: the host port the form starts with', () => {
     expect(screen.ports().map((p) => p.host)).toEqual([25565]);
   });
 
-  it('offers it even when another instance holds it, and says who', () => {
+  it('offers it even when another instance holds it', () => {
     store.instances.set([instance('smp', 25565)]);
 
     screen.pick(template());
 
     expect(screen.ports()[0].host).toBe(25565);
-    const warning = screen.portClash(25565, 'tcp');
-    expect(warning).toContain('25565');
-    expect(warning).toContain('smp');
   });
 
   it('offers every port the template declared', () => {
@@ -87,56 +84,6 @@ describe('NewInstance: the host port the form starts with', () => {
     );
 
     expect(screen.ports().map((p) => p.host)).toEqual([25565, 25565, 25575]);
-  });
-
-  it('names the port and the owner when a typed port is taken', () => {
-    store.instances.set([instance('smp', 25600)]);
-    screen.pick(template());
-
-    screen.setPort(25565, 'tcp', '25600');
-
-    const warning = screen.portClash(25565, 'tcp');
-    expect(warning).toContain('25600');
-    expect(warning).toContain('smp');
-  });
-
-  it('says nothing while the port is free', () => {
-    store.instances.set([instance('smp', 25600)]);
-    screen.pick(template());
-
-    expect(screen.portClash(25565, 'tcp')).toBe('');
-
-    screen.setPort(25565, 'tcp', '25601');
-    expect(screen.portClash(25565, 'tcp')).toBe('');
-  });
-
-  it('catches the same port asked for twice on this screen', () => {
-    screen.pick(
-      template({
-        ports: [
-          { container: 25565, protocol: 'tcp', label: 'game' },
-          { container: 25575, protocol: 'tcp', label: 'rcon' },
-        ],
-      }),
-    );
-
-    screen.setPort(25575, 'tcp', '25565');
-
-    expect(screen.portClash(25575, 'tcp')).toContain('25565');
-    // the first line asked for it first, so it is the second one that complains
-    expect(screen.portClash(25565, 'tcp')).toBe('');
-  });
-
-  it('carries the warning to the top of the form', () => {
-    store.instances.set([instance('smp', 25565)]);
-
-    screen.pick(template());
-
-    expect(screen.portWarnings().length).toBe(1);
-    expect(screen.portWarnings()[0]).toContain('smp');
-
-    screen.setPort(25565, 'tcp', '25601');
-    expect(screen.portWarnings()).toEqual([]);
   });
 
   it('keeps what was typed by hand', () => {

@@ -193,7 +193,6 @@ export const pt = {
     'À esquerda a porta que a imagem escuta dentro do container, fixada pelo template. À direita a porta do servidor por onde se chega nela.',
   'new.portContainer': 'no container',
   'new.portHost': 'no servidor',
-  'new.portTwice': 'a porta {port}/{proto} já está em outra linha desta tela',
   'new.dns': 'Nome para convidar',
   'new.dnsTip':
     'Vincula um dos nomes já cadastrados nas configurações; o vínculo mantém o IP em dia sozinho. O que se passa adiante é sempre nome:porta, porque o duckdns não guarda porta, e encaminhá-la no roteador continua sendo manual.',
