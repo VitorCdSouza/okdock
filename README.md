@@ -66,6 +66,13 @@ it already has. What updates is `up -d`.
 To build on your own machine instead of taking the published image, the
 `build: .` is still there: `docker compose up -d --build`.
 
+`make deploy` is the short way in. It builds the image here, hands it to the
+server over ssh and recreates the container with `--pull never`, so what runs is
+what was just built. The whole thing takes seconds, while going through the CI
+waits for GitHub to schedule a runner, which is minutes and out of anyone
+control. The workflows keep running on every push, as the check they always
+were, and `ghcr.io` keeps the tag per commit to fall back to.
+
 The panel comes up on `:8090`, mapped to the `:8080` it listens on inside the
 container, with the frontend embedded in the binary itself: one container, no
 separate web server. The outside port is 8090 because 8080 on the server belongs

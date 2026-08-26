@@ -4,6 +4,8 @@ services:
   okdock:
     build: .
     image: ghcr.io/vitorcdsouza/okdock:latest
+    # the image the CI publishes. an image handed over by make deploy is already
+    # here, and that path passes --pull never so this line does not undo it
     pull_policy: always
     container_name: okdock
     restart: unless-stopped

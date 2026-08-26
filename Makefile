@@ -3,6 +3,9 @@ API   := api
 WEB   := web
 DATA  ?= $(PWD)/.data
 DIST  := $(API)/internal/webui/dist
+IMAGE := ghcr.io/vitorcdsouza/okdock:latest
+SERVER      ?= vitorcds@192.168.0.100
+SERVER_DIR  ?= servidor/okdock
 
 .DEFAULT_GOAL := help
 
@@ -65,6 +68,13 @@ lint: ## vet + gofmt
 	cd $(API) && go vet ./...
 	@out=$$(cd $(API) && gofmt -l .); \
 	  if [ -n "$$out" ]; then echo "gofmt pending in:"; echo "$$out"; exit 1; fi
+
+.PHONY: deploy
+deploy: ## Build here, hand the image to the server and recreate the container
+	docker build -t $(IMAGE) .
+	docker save $(IMAGE) | ssh $(SERVER) 'docker load'
+	ssh $(SERVER) 'cd $(SERVER_DIR) && docker compose up -d --pull never'
+	@ssh $(SERVER) 'curl -fs http://localhost:8090/api/v1/health' && echo
 
 .PHONY: clean
 clean: ## Remove build artifacts
