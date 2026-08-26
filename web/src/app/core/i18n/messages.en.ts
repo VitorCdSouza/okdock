@@ -194,6 +194,11 @@ export const en: Record<MessageKey, string> = {
   'new.image': 'Image',
   'new.memoryLimit': 'Container RAM limit',
   'new.memoryTip': 'The container ceiling, not the JVM heap. Minimum for this image: {memory}',
+  'new.ports': 'Ports',
+  'new.portsTip':
+    'On the left the port the image listens on inside the container, fixed by the template. On the right the port on the server that reaches it.',
+  'new.portContainer': 'in the container',
+  'new.portHost': 'on the server',
   'new.dns': 'Name to invite people with',
   'new.dnsTip':
     'Links one of the names already registered in the settings; the link keeps the IP up to date on its own. What you pass along is always name:port, because duckdns does not store a port, and forwarding it on the router is still manual.',

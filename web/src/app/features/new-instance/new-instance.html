@@ -49,6 +49,18 @@
       @case (2) {
         @if (template(); as p) {
           <section>
+            <div class="field name" [class.has-error]="!!nameError()">
+              <label for="inst-name">
+                {{ t('new.name') }} <span class="req">*</span>
+                <ok-info [text]="t('new.nameTip')" />
+              </label>
+              <input id="inst-name" class="mono" [ngModel]="name()"
+                     (ngModelChange)="name.set($event)" placeholder="smp-familia" autofocus>
+              @if (nameError()) {
+                <span class="err">{{ nameError() }}</span>
+              }
+            </div>
+
             <div class="image-row">
               <ok-image-search fieldId="inst-image" [(image)]="image"
                                [lockRepo]="p.id !== 'custom'"
@@ -64,32 +76,37 @@
                        (ngModelChange)="memoryLimit.set($event)" placeholder="4g">
               </div>
             </div>
+          </section>
 
-            <div class="name-row">
-              <div class="field name" [class.has-error]="!!nameError()">
-                <label for="inst-name">
-                  {{ t('new.name') }} <span class="req">*</span>
-                  <ok-info [text]="t('new.nameTip')" />
-                </label>
-                <input id="inst-name" class="mono" [ngModel]="name()"
-                       (ngModelChange)="name.set($event)" placeholder="smp-familia" autofocus>
-                @if (nameError()) {
-                  <span class="err">{{ nameError() }}</span>
-                }
+          @if (ports().length) {
+            <section>
+              <div class="section-title">
+                {{ t('new.ports') }}
+                <ok-info [text]="t('new.portsTip')" />
               </div>
-
               @for (port of ports(); track portKey(port.container, port.protocol)) {
-                <div class="field">
-                  <label>
-                    {{ t('detail.hostPort', { label: portLabel(port.label) }) }}
-                    <ok-info [text]="t('detail.inContainer', { port: port.container, protocol: port.protocol })" />
-                  </label>
-                  <input type="number" class="mono" [value]="port.host"
-                         (input)="setPort(port.container, port.protocol, $any($event.target).value)">
+                <div class="port-line">
+                  <div class="field">
+                    <label>{{ t('new.portContainer') }}</label>
+                    <div class="fixed mono">
+                      {{ port.container }}/{{ port.protocol }}
+                      <span class="tag">{{ portLabel(port.label) }}</span>
+                    </div>
+                  </div>
+                  <span class="to" aria-hidden="true">→</span>
+                  <div class="field">
+                    <label [attr.for]="'inst-port-' + port.container + '-' + port.protocol">
+                      {{ t('new.portHost') }}
+                    </label>
+                    <input type="number" class="mono"
+                           [attr.id]="'inst-port-' + port.container + '-' + port.protocol"
+                           [value]="port.host"
+                           (input)="setPort(port.container, port.protocol, $any($event.target).value)">
+                  </div>
                 </div>
               }
-            </div>
-          </section>
+            </section>
+          }
 
           @if (budgetWarning()) {
             <div class="alert warn">{{ budgetWarning() }}</div>

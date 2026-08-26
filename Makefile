@@ -70,7 +70,7 @@ lint: ## vet + gofmt
 	  if [ -n "$$out" ]; then echo "gofmt pending in:"; echo "$$out"; exit 1; fi
 
 .PHONY: deploy
-deploy: ## Build here, hand the image to the server and recreate the container
+deploy: ## build here, hand the image to the server, recreate the container
 	docker build -t $(IMAGE) .
 	docker save $(IMAGE) | ssh $(SERVER) 'docker load'
 	ssh $(SERVER) 'cd $(SERVER_DIR) && docker compose up -d --pull never'

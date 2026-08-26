@@ -85,10 +85,20 @@ section { display: flex; flex-direction: column; gap: 12px; }
 .image-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: end; }
 .image-row ok-image-search { grid-column: span 2; }
 
-/* the same three columns above, so the port sits right under the RAM limit; the
-   name error grows its own row, so it does not move the line above */
-.name-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: start; }
-.name-row .name { grid-column: span 2; }
+/* what the image listens on, fixed by the template, and the port on the server */
+.port-line { display: grid; grid-template-columns: 1fr 20px 1fr; gap: 12px; align-items: end; }
+.port-line .to { color: var(--fg-faint); text-align: center; padding-bottom: 9px; }
+/* the same box an input draws, dashed and with no field behind it */
+.port-line .fixed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-md);
+  color: var(--fg-soft);
+}
 .alias { font-size: var(--fs-xs); color: var(--fg-faint); }
 .has-error input { border-color: var(--bad-line); }
 .err { font: 400 var(--fs-xs)/1.4 var(--sans); color: var(--bad); }
