@@ -22,7 +22,7 @@ function instance(over: Partial<Instance> = {}): Instance {
     stopGraceSeconds: 120,
     createdAt: '2026-08-21T00:00:00Z',
     updatedAt: '2026-08-21T00:00:00Z',
-    dir: '/srv/games/smp',
+    dir: '/containers/smp',
     state: 'running',
     ...over,
   };

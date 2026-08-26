@@ -55,6 +55,8 @@ export const en: Record<MessageKey, string> = {
 
   'kanban.loading': 'loading instances…',
   'kanban.empty': 'No instances yet.',
+  'kanban.noRoot':
+    'No containers folder chosen yet. Open the settings and pick which folder on the server the instances live in.',
   'kanban.createFirst': '+ Create the first one',
   'kanban.noMatch': 'No instance matches the filter.',
   'kanban.dropToUpdate': 'drop to look for a newer image',
@@ -199,6 +201,22 @@ export const en: Record<MessageKey, string> = {
     'On the left the port the image listens on inside the container, fixed by the template. On the right the port on the server that reaches it.',
   'new.portContainer': 'in the container',
   'new.portHost': 'on the server',
+  'new.volumes': 'Volumes',
+  'new.volumesTip':
+    'On the left the path the image writes inside the container, fixed by the template. On the right the folder on the server behind it; a relative path is born next to the docker-compose.yml of the instance.',
+  'new.volumeContainer': 'in the container',
+  'new.volumeHost': 'on the server',
+  'picker.title': 'Pick a folder on the server',
+  'picker.willBeCreated': 'will be created',
+  'picker.empty': 'nothing here',
+  'picker.newFolder': 'name of the new folder',
+  'picker.create': 'create',
+  'picker.ok': 'use this folder',
+  'picker.new': 'new',
+  'picker.nothingPicked': 'no folder picked',
+  'picker.expand': 'expand',
+  'picker.collapse': 'collapse',
+  'new.volumeBrowse': 'pick a folder',
   'new.dns': 'Name to invite people with',
   'new.dnsTip':
     'Links one of the names already registered in the settings; the link keeps the IP up to date on its own. What you pass along is always name:port, because duckdns does not store a port, and forwarding it on the router is still manual.',
@@ -274,17 +292,18 @@ export const en: Record<MessageKey, string> = {
   'templates.categoryPlaceholder': 'category name',
   'templates.categoryConfirm': 'create',
   'templates.emptyCategory': 'No template in this category.',
-  'templates.newHint': 'writes a new file in .okdock/templates',
+  'templates.newHint': 'writes a new file in the templates folder of the settings',
   'templates.editHint': 'editing a built-in template saves a copy; deleting the copy restores the original',
 
   'settings.title': 'Settings',
   'settings.rootTitle': 'CONTAINERS FOLDER',
   'settings.rootTip':
-    'Absolute path where each container becomes a directory, with the compose file inside it and one folder per volume of the image. The panel creates the folder if it is missing. What already exists is not moved: containers under the old folder stay up where they are and come back to the list if it comes back. Inside the panel container, only a path mounted there under the same name works.',
+    'Absolute path where each container becomes a directory, with the compose file inside it and one folder per volume of the image. It only lists what is mounted into the panel, because a folder it cannot open it also cannot hand to docker. What already exists is not moved: containers under the old folder stay up where they are and come back to the list if it comes back. Inside the panel container, only a path mounted there under the same name works.',
   'settings.rootSaved': 'new folder in use',
+  'settings.browse': 'Pick',
   'settings.templatesTitle': 'TEMPLATES FOLDER',
   'settings.templatesTip':
-    'Absolute path where the templates written in the panel live, one .json each. With nothing chosen it is the panel config folder. Changing it moves no file: what was on the old folder stays there and shows up again if it comes back. A template that ships with the panel is in the binary and shows up either way.',
+    'Absolute path where the templates written in the panel live, one .json each. With nothing chosen it is the folder the panel was started with, /templates inside the container. Changing it moves no file: what was on the old folder stays there and shows up again if it comes back. A template that ships with the panel is in the binary and shows up either way.',
   'settings.templatesSaved': 'new folder in use',
   'settings.duckdnsTitle': 'DUCKDNS',
   'settings.tokenPlaceholder': 'token from your duckdns.org account',
@@ -327,6 +346,8 @@ export const en: Record<MessageKey, string> = {
 
   'error.not_found': 'instance {name} not found',
   'error.already_exists': 'an instance named {name} already exists',
+  'error.no_root': 'no containers folder chosen; pick one in the settings',
+  'error.path_outside': 'that folder is not mounted in the panel',
   'error.invalid_root': 'invalid root',
   'error.invalid_root.not_absolute': '{path} is not an absolute path',
   'error.invalid_root.create_failed': 'could not create {path}: {detail}',

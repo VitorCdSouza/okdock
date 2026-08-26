@@ -29,7 +29,7 @@ func templates(t *testing.T) *template.Catalog {
 
 func newManager(t *testing.T, totalRAM int64) (*Manager, *dockerx.Fake) {
 	t.Helper()
-	st, err := store.New(t.TempDir())
+	st, err := store.New(store.Config{Dir: t.TempDir(), Root: t.TempDir()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1173,5 +1173,52 @@ func TestMountsForKeepsTwoVolumesOutOfTheSameFolder(t *testing.T) {
 	got := mountsFor([]template.Volume{{Container: "/config"}, {Container: "/etc/config"}})
 	if got[0].Host != "./config" || got[1].Host != "./etc-config" {
 		t.Fatalf("mounts = %+v, the second one took the folder of the first", got)
+	}
+}
+
+func TestListLeavesThePanelOwnFolderOut(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	root := m.store.Root()
+	self, err := os.Hostname()
+	if err != nil || self == "" {
+		t.Skip("no hostname to answer for the panel own container")
+	}
+	if err := m.store.Create(instance.Spec{
+		Name:        "okdock",
+		Image:       "ghcr.io/vitorcdsouza/okdock:latest",
+		MemoryLimit: "1g",
+	}); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	fake.HostList = []dockerx.HostContainer{{
+		ID:      self + "abc",
+		Name:    "okdock",
+		Image:   "ghcr.io/vitorcdsouza/okdock:latest",
+		State:   "running",
+		Project: "okdock",
+		Service: "okdock",
+		WorkDir: filepath.Join(root, "okdock"),
+	}}
+
+	list, err := m.List(t.Context())
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(list) != 0 {
+		t.Errorf("the panel listed itself: %+v", list)
+	}
+}
+
+func TestThePickerDoesNotOfferThePanelOwnFolders(t *testing.T) {
+	m, _ := newManager(t, 16*gb)
+	roots := m.browser().Roots()
+
+	for _, ours := range []string{m.store.ConfigRoot, m.store.DefaultTemplatesDir()} {
+		if ours != "" && slices.Contains(roots, ours) {
+			t.Errorf("%q was offered as a folder for an instance", ours)
+		}
+	}
+	if !slices.Contains(roots, m.store.Root()) {
+		t.Errorf("the instance folder is missing from %v", roots)
 	}
 }

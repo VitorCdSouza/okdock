@@ -53,6 +53,8 @@ export const pt = {
 
   'kanban.loading': 'carregando instâncias…',
   'kanban.empty': 'Nenhuma instância ainda.',
+  'kanban.noRoot':
+    'Nenhuma pasta de containers escolhida ainda. Abra as configurações e escolha em qual pasta do servidor as instâncias vão morar.',
   'kanban.createFirst': '+ Criar a primeira',
   'kanban.noMatch': 'Nenhuma instância bate com o filtro.',
   'kanban.dropToUpdate': 'soltar para procurar imagem nova',
@@ -193,6 +195,22 @@ export const pt = {
     'À esquerda a porta que a imagem escuta dentro do container, fixada pelo template. À direita a porta do servidor por onde se chega nela.',
   'new.portContainer': 'no container',
   'new.portHost': 'no servidor',
+  'new.volumes': 'Volumes',
+  'new.volumesTip':
+    'À esquerda o caminho que a imagem grava dentro do container, fixado pelo template. À direita a pasta do servidor por trás dele; um caminho relativo nasce ao lado do docker-compose.yml da instância.',
+  'new.volumeContainer': 'no container',
+  'new.volumeHost': 'no servidor',
+  'picker.title': 'Escolher pasta no servidor',
+  'picker.willBeCreated': 'vai ser criada',
+  'picker.empty': 'nada aqui',
+  'picker.newFolder': 'nome da pasta nova',
+  'picker.create': 'criar',
+  'picker.ok': 'usar esta pasta',
+  'picker.new': 'nova',
+  'picker.nothingPicked': 'nenhuma pasta escolhida',
+  'picker.expand': 'abrir',
+  'picker.collapse': 'fechar',
+  'new.volumeBrowse': 'escolher pasta',
   'new.dns': 'Nome para convidar',
   'new.dnsTip':
     'Vincula um dos nomes já cadastrados nas configurações; o vínculo mantém o IP em dia sozinho. O que se passa adiante é sempre nome:porta, porque o duckdns não guarda porta, e encaminhá-la no roteador continua sendo manual.',
@@ -268,17 +286,18 @@ export const pt = {
   'templates.categoryPlaceholder': 'nome da categoria',
   'templates.categoryConfirm': 'criar',
   'templates.emptyCategory': 'Nenhum template nesta categoria.',
-  'templates.newHint': 'grava um arquivo novo em .okdock/templates',
+  'templates.newHint': 'grava um arquivo novo na pasta de templates das configurações',
   'templates.editHint': 'editar um template de fábrica grava uma cópia; apagar a cópia devolve o original',
 
   'settings.title': 'Configurações',
   'settings.rootTitle': 'PASTA DOS CONTAINERS',
   'settings.rootTip':
-    'Caminho absoluto onde cada container vira um diretório, com o compose dentro e uma pasta por volume da imagem. O painel cria a pasta se faltar. O que já existe não se move: os containers da pasta antiga continuam de pé onde estão e voltam à lista se ela voltar. Dentro do container do painel, só vale caminho montado lá com o mesmo nome de fora.',
+    'Caminho absoluto onde cada container vira um diretório, com o compose dentro e uma pasta por volume da imagem. Só aparece o que está montado no painel, porque pasta que ele não abre também não dá para entregar ao docker. O que já existe não se move: os containers da pasta antiga continuam de pé onde estão e voltam à lista se ela voltar. Dentro do container do painel, só vale caminho montado lá com o mesmo nome de fora.',
   'settings.rootSaved': 'pasta nova em uso',
+  'settings.browse': 'Escolher',
   'settings.templatesTitle': 'PASTA DOS TEMPLATES',
   'settings.templatesTip':
-    'Caminho absoluto onde ficam os templates escritos no painel, um .json por template. Sem escolher nada, é a pasta de configuração do painel. Trocar não move arquivo: o que estava na pasta antiga fica lá e volta a aparecer se ela voltar. Template de fábrica vem no binário e aparece de qualquer jeito.',
+    'Caminho absoluto onde ficam os templates escritos no painel, um .json por template. Sem escolher nada, é a pasta que o painel recebeu ao subir, /templates dentro do container. Trocar não move arquivo: o que estava na pasta antiga fica lá e volta a aparecer se ela voltar. Template de fábrica vem no binário e aparece de qualquer jeito.',
   'settings.templatesSaved': 'pasta nova em uso',
   'settings.duckdnsTitle': 'DUCKDNS',
   'settings.tokenPlaceholder': 'token da sua conta no duckdns.org',
@@ -321,6 +340,9 @@ export const pt = {
 
   'error.not_found': 'não achei a instância {name}',
   'error.already_exists': 'já existe uma instância chamada {name}',
+  'error.no_root':
+    'nenhuma pasta de containers escolhida; escolha uma nas configurações',
+  'error.path_outside': 'essa pasta não está montada no painel',
   'error.invalid_root': 'raiz inválida',
   'error.invalid_root.not_absolute': '{path} não é um caminho absoluto',
   'error.invalid_root.create_failed': 'não consegui criar {path}: {detail}',

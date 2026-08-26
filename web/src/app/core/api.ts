@@ -6,6 +6,7 @@ import {
   ApiError,
   ApiProblem,
   ComposePreview,
+  DirListing,
   DnsStatus,
   ImageHit,
   ImageSuggestion,
@@ -63,6 +64,14 @@ export class Api {
   // a lookup like the other two, so a failure does not raise the global banner
   suggestFromImage(image: string): Observable<ImageSuggestion> {
     return this.http.get<ImageSuggestion>(`${BASE}/images/suggest?image=${encodeURIComponent(image)}`);
+  }
+
+  browseDirs(path: string): Observable<DirListing> {
+    return this.get<DirListing>(`${BASE}/fs?path=${encodeURIComponent(path)}`);
+  }
+
+  makeDir(path: string): Observable<{ path: string }> {
+    return this.post<{ path: string }>(`${BASE}/fs`, { path });
   }
 
   templates(): Observable<TemplatesResponse> {

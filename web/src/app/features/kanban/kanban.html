@@ -2,8 +2,12 @@
   <div class="empty">{{ t('kanban.loading') }}</div>
 } @else if (store.instances().length === 0) {
   <div class="empty">
-    <p>{{ t('kanban.empty') }}</p>
-    <button class="btn btn-primary" (click)="create.emit()">{{ t('kanban.createFirst') }}</button>
+    @if (store.system() && !store.system()!.root) {
+      <p>{{ t('kanban.noRoot') }}</p>
+    } @else {
+      <p>{{ t('kanban.empty') }}</p>
+      <button class="btn btn-primary" (click)="create.emit()">{{ t('kanban.createFirst') }}</button>
+    }
   </div>
 } @else if (total() === 0) {
   <div class="empty">{{ t('kanban.noMatch') }}</div>

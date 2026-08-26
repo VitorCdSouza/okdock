@@ -36,7 +36,9 @@ func main() {
 func run() error {
 	var (
 		addr        = flag.String("addr", env("OKDOCK_ADDR", ":8080"), "listen address")
-		root        = flag.String("root", env("OKDOCK_ROOT", "/srv/games"), "root of the instance directories")
+		root        = flag.String("root", env("OKDOCK_ROOT", ""), "instance folder to start with, when none was chosen on the settings screen")
+		configDir   = flag.String("config", env("OKDOCK_CONFIG", "/config"), "folder where the panel keeps its own files")
+		tmplDir     = flag.String("templates", env("OKDOCK_TEMPLATES", "/templates"), "folder for the templates written in the panel, until another one is chosen")
 		reserveFlag = flag.String("memory-reserve", env("OKDOCK_MEMORY_RESERVE", "2g"), "RAM reserved for the host, outside the instance budget")
 		allowOrigin = flag.String("allow-origin", env("OKDOCK_ALLOW_ORIGIN", ""), "origem liberada por CORS; use http://localhost:4200 com o ng serve")
 		dockerBin   = flag.String("docker-bin", env("OKDOCK_DOCKER_BIN", "docker"), "docker executable")
@@ -53,7 +55,7 @@ func run() error {
 		return fmt.Errorf("-memory-reserve: %w", err)
 	}
 
-	st, err := store.New(*root)
+	st, err := store.New(store.Config{Dir: *configDir, Root: *root, Templates: *tmplDir})
 	if err != nil {
 		return err
 	}

@@ -20,6 +20,7 @@ import (
 var errNoService = errors.New("no service with the name of the folder")
 
 var (
+	ErrNoRoot      = errors.New("no instance folder chosen")
 	ErrNotFound    = errors.New("instance not found")
 	ErrExists      = errors.New("an instance with that name already exists")
 	ErrInvalidRoot = errors.New("invalid root")
@@ -59,40 +60,53 @@ const (
 type Store struct {
 	ConfigRoot string
 
-	mu        sync.RWMutex
-	root      string
-	templates string
+	mu           sync.RWMutex
+	root         string
+	templates    string
+	defaultTmpls string
 }
 
-func New(root string) (*Store, error) {
-	abs, err := filepath.Abs(root)
+// Config says where the panel keeps its own files, and what to fall back to when nothing was chosen
+type Config struct {
+	Dir       string
+	Root      string
+	Templates string
+}
+
+// New reads the panel config, and an instance root only exists after somebody chose one
+func New(cfg Config) (*Store, error) {
+	abs, err := filepath.Abs(cfg.Dir)
 	if err != nil {
 		return nil, err
 	}
 	if err := os.MkdirAll(abs, 0o755); err != nil {
-		return nil, fmt.Errorf("criando raiz %s: %w", abs, err)
+		return nil, fmt.Errorf("creating the config folder %s: %w", abs, err)
 	}
-	s := &Store{ConfigRoot: abs, root: abs}
+	s := &Store{ConfigRoot: abs, defaultTmpls: cfg.Templates}
 
-	cfg, err := s.LoadPanel()
+	saved, err := s.LoadPanel()
 	if err != nil {
-		slog.Warn("unreadable panel config, staying on the boot root", "err", err)
+		slog.Warn("unreadable panel config, no instance folder until one is chosen", "err", err)
 		return s, nil
 	}
-	if cfg.Root != "" && cfg.Root != abs {
-		if err := prepareRoot(cfg.Root); err != nil {
-			slog.Warn("the saved root could not be used, staying on the boot root",
-				"root", cfg.Root, "err", err)
+	root := saved.Root
+	if root == "" {
+		root = cfg.Root
+	}
+	if root != "" {
+		if abs, err := usableDir(root); err != nil {
+			slog.Warn("the instance folder cannot be used, choose another one on the settings screen",
+				"root", root, "err", err)
 		} else {
-			s.root = cfg.Root
+			s.root = abs
 		}
 	}
-	if cfg.Templates != "" {
-		if err := prepareRoot(cfg.Templates); err != nil {
-			slog.Warn("the saved templates folder could not be used, staying on the panel one",
-				"templates", cfg.Templates, "err", err)
+	if saved.Templates != "" {
+		if err := prepareRoot(saved.Templates); err != nil {
+			slog.Warn("the saved templates folder could not be used, staying on the default one",
+				"templates", saved.Templates, "err", err)
 		} else {
-			s.templates = cfg.Templates
+			s.templates = saved.Templates
 		}
 	}
 	return s, nil
@@ -178,11 +192,22 @@ func (s *Store) Dir(name string) string {
 	return filepath.Join(s.Root(), name)
 }
 
+// nothing on disk to read or write while the instance folder has not been chosen
+func (s *Store) haveRoot() error {
+	if s.Root() == "" {
+		return ErrNoRoot
+	}
+	return nil
+}
+
 func (s *Store) ComposePath(name string) string {
 	return filepath.Join(s.Dir(name), composeFile)
 }
 
 func (s *Store) List() ([]instance.Spec, error) {
+	if s.Root() == "" {
+		return nil, nil
+	}
 	entries, err := os.ReadDir(s.Root())
 	if err != nil {
 		return nil, err
@@ -210,6 +235,9 @@ func (s *Store) List() ([]instance.Spec, error) {
 
 // Get reads the instance from the compose file, and one that does not parse still says why
 func (s *Store) Get(name string) (instance.Spec, error) {
+	if err := s.haveRoot(); err != nil {
+		return instance.Spec{}, err
+	}
 	if err := instance.ValidateName(name); err != nil {
 		return instance.Spec{}, err
 	}
@@ -335,11 +363,17 @@ func merge(meta, fromFile instance.Spec) instance.Spec {
 }
 
 func (s *Store) Exists(name string) bool {
+	if s.haveRoot() != nil {
+		return false
+	}
 	_, err := os.Stat(s.Dir(name))
 	return err == nil
 }
 
 func (s *Store) Create(spec instance.Spec) error {
+	if err := s.haveRoot(); err != nil {
+		return err
+	}
 	if err := instance.ValidateName(spec.Name); err != nil {
 		return err
 	}
@@ -359,6 +393,9 @@ func (s *Store) Create(spec instance.Spec) error {
 }
 
 func (s *Store) Update(spec instance.Spec) error {
+	if err := s.haveRoot(); err != nil {
+		return err
+	}
 	if !s.Exists(spec.Name) {
 		return &NotFoundError{Name: spec.Name}
 	}
@@ -424,6 +461,9 @@ func writeAtomic(path string, data []byte, perm os.FileMode) error {
 }
 
 func (s *Store) Delete(name string, keepData bool) error {
+	if err := s.haveRoot(); err != nil {
+		return err
+	}
 	if err := instance.ValidateName(name); err != nil {
 		return err
 	}
@@ -443,6 +483,9 @@ func (s *Store) Delete(name string, keepData bool) error {
 }
 
 func (s *Store) ReadCompose(name string) ([]byte, error) {
+	if err := s.haveRoot(); err != nil {
+		return nil, err
+	}
 	raw, err := os.ReadFile(s.ComposePath(name))
 	if errors.Is(err, os.ErrNotExist) {
 		return nil, &NotFoundError{Name: name}

@@ -280,6 +280,30 @@ func (s *Server) setTemplatesDir(w http.ResponseWriter, r *http.Request) {
 	s.system(w, r)
 }
 
+func (s *Server) browseDirs(w http.ResponseWriter, r *http.Request) {
+	listing, err := s.mgr.BrowseDirs(r.URL.Query().Get("path"))
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, listing)
+}
+
+func (s *Server) makeDir(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Path string `json:"path"`
+	}
+	if !decodeJSON(w, r, &req) {
+		return
+	}
+	dir, err := s.mgr.MakeDir(strings.TrimSpace(req.Path))
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]string{"path": dir})
+}
+
 func (s *Server) getDNS(w http.ResponseWriter, _ *http.Request) {
 	status := s.mgr.DNS()
 	if status.Links == nil {

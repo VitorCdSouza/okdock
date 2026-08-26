@@ -38,7 +38,7 @@ func newServer(t *testing.T) *Server {
 
 func newServerWithRegistry(t *testing.T) (*Server, *registry.Fake) {
 	t.Helper()
-	st, err := store.New(t.TempDir())
+	st, err := store.New(store.Config{Dir: t.TempDir(), Root: t.TempDir()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func newServerWithRegistry(t *testing.T) (*Server, *registry.Fake) {
 
 func newServerWithDocker(t *testing.T) (*Server, *dockerx.Fake) {
 	t.Helper()
-	st, err := store.New(t.TempDir())
+	st, err := store.New(store.Config{Dir: t.TempDir(), Root: t.TempDir()})
 	if err != nil {
 		t.Fatal(err)
 	}

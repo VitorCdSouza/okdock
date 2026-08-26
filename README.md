@@ -36,8 +36,8 @@ the output of both prefixed by `[api]` and `[web]`. Ctrl-C takes both down. Open
 If you prefer one terminal each, `make dev-api` and `make dev-web` are still
 there.
 
-In this mode the API writes instances to `./.data`, so you can poke around
-without touching `/srv/games`.
+In this mode the API writes instances, config and templates under `./.data`, so
+you can poke around without touching the real folder.
 
 None of this needs Docker installed on the development machine: with no daemon
 the panel opens, lists nothing and says docker did not answer. The tests pass
@@ -78,14 +78,26 @@ container, with the frontend embedded in the binary itself: one container, no
 separate web server. The outside port is 8090 because 8080 on the server belongs
 to nextcloud.
 
-Two things in the deploy `docker-compose.yml` are not details:
+Three things in the deploy `docker-compose.yml` are not details:
 
 - **`/var/run/docker.sock` mounted.** It is the only road to Docker; the panel
   speaks neither TCP nor SSH.
-- **`/srv/games:/srv/games`, the same path on both sides.** The bind mounts of
-  the generated compose are resolved by the *host* daemon, which cannot see the
-  container filesystem. If the path differs, the world is created in the wrong
-  place, silently.
+- **`${PWD}/..:${PWD}/..`, the same path on both sides.** The folder that holds
+  the panel folder, which is where the instances go, and the only folder the
+  settings screen offers. `${PWD}` is filled in by compose itself, so the file
+  carries nobody path, and the daemon collapses the `..` on both sides. The bind
+  mounts of the generated compose are resolved by the *host* daemon, which
+  cannot see the container filesystem, so a path that reads differently on the
+  two sides creates the world in the wrong place, silently. Mount more lines to
+  reach somewhere else, always with the same text twice.
+- **`./config` and `./templates`.** The panel configuration and the templates
+  written in it, next to the compose file of the panel itself. Nothing of the
+  panel is written inside the instance folder anymore.
+
+The instance folder is not in the file: it is chosen on the settings screen, out
+of what is mounted above, and the panel starts with none. Until one is picked,
+the board still shows the containers that Docker reports and says what is
+missing.
 
 The container carries its own `docker compose` (the Alpine plugin), so it does
 not depend on the version installed on the host.
@@ -95,7 +107,9 @@ not depend on the version installed on the host.
 | Variable | Default | What for |
 |---|---|---|
 | `OKDOCK_ADDR` | `:8080` | listen address |
-| `OKDOCK_ROOT` | `/srv/games` | initial instance root and home of `.okdock/` |
+| `OKDOCK_CONFIG` | `/config` | folder for `.okdock/`, the panel own files, `./config` in the deploy |
+| `OKDOCK_TEMPLATES` | `/templates` | templates written in the panel, until another folder is chosen |
+| `OKDOCK_ROOT` | empty | instance folder to start with, when none was chosen yet |
 | `OKDOCK_MEMORY_RESERVE` | `2g` | RAM kept outside the instance budget |
 | `OKDOCK_ALLOW_ORIGIN` | empty | opens CORS, only for `ng serve` |
 | `OKDOCK_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
@@ -159,7 +173,7 @@ A password never enters `docker-compose.yml`: fields marked as secret go to an
 ## An instance directory
 
 ```
-/srv/games/smp-family/
+<instance folder>/smp-family/
 ├── docker-compose.yml    generated, this is what Docker reads, and it is
 │                         the whole instance: the okdock.* labels carry the
 │                         template, the secret key names and the port names
@@ -167,15 +181,13 @@ A password never enters `docker-compose.yml`: fields marked as secret go to an
 └── data/                 the world
 ```
 
-The panel configuration (the duckdns token, the domain links and the root chosen
-on the settings screen) lives outside of that, in `/srv/games/.okdock/` with
-`0600`. The dot in the name is not decoration: it is what stops the folder from
-being read as an instance.
+The panel configuration (the duckdns token, the domain links and the folders
+chosen on the settings screen) lives outside of that, in `.okdock/` inside
+`OKDOCK_CONFIG`, with `0600`. In the deploy that is `./config` next to the
+compose file of the panel, never the instance folder: it is the file that records where
+the instances went, so it cannot live where they are.
 
-That folder always stays on the root the process started with (`OKDOCK_ROOT`),
-even after the instance root is changed from the panel, because it is the file
-that records where the root went. Changing the root does not move what already
-exists: docker keeps the absolute path of the bind mounts, so old instances stay
+Changing the instance folder does not move what already exists: docker keeps the absolute path of the bind mounts, so old instances stay
 up where they are and come back to the list if the root comes back. Inside the
 container, only a path mounted there under the same name is worth anything.
 

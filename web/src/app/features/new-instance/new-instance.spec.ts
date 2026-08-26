@@ -4,7 +4,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { NewInstance } from './new-instance';
 import { Store } from '../../core/state';
-import { Instance, Template } from '../../core/models';
+import { Instance, SystemInfo, Template } from '../../core/models';
 
 function template(over: Partial<Template> = {}): Template {
   return {
@@ -40,7 +40,7 @@ function instance(name: string, host: number): Instance {
     stopGraceSeconds: 120,
     createdAt: '2026-08-26T12:00:00Z',
     updatedAt: '2026-08-26T12:00:00Z',
-    dir: `/srv/games/${name}`,
+    dir: `/containers/${name}`,
     state: 'running',
   };
 }
@@ -84,6 +84,59 @@ describe('NewInstance: the host port the form starts with', () => {
     );
 
     expect(screen.ports().map((p) => p.host)).toEqual([25565, 25565, 25575]);
+  });
+
+  it('offers a folder named after the path in the container', () => {
+    screen.pick(template({ volumes: [{ container: '/data' }, { container: '/config' }] }));
+
+    expect(screen.volumes().map((v) => v.host)).toEqual(['./data', './config']);
+  });
+
+  it('does not put two volumes in the same folder', () => {
+    screen.pick(template({ volumes: [{ container: '/data' }, { container: '/opt/data' }] }));
+
+    expect(screen.volumes().map((v) => v.host)).toEqual(['./data', './opt-data']);
+  });
+
+  it('sends the folder that was typed', () => {
+    screen.pick(template({ volumes: [{ container: '/data' }] }));
+    screen.setVolume('/data', '/containers/mundos');
+
+    expect(screen.volumes()[0].host).toBe('/containers/mundos');
+  });
+
+  it('turns a folder under the instance into a relative one', () => {
+    store.system.set({ root: '/home/vitorcds/servidor' } as SystemInfo);
+    screen.pick(template({ volumes: [{ container: '/data' }] }));
+    screen.name.set('smp');
+
+    screen.pickDir('/data');
+    screen.dirPicked('/home/vitorcds/servidor/smp/data');
+
+    expect(screen.volumes()[0].host).toBe('./data');
+  });
+
+  it('keeps a folder outside the instance as it is', () => {
+    store.system.set({ root: '/home/vitorcds/servidor' } as SystemInfo);
+    screen.pick(template({ volumes: [{ container: '/data' }] }));
+    screen.name.set('smp');
+
+    screen.pickDir('/data');
+    screen.dirPicked('/home/vitorcds/servidor/media/filmes');
+
+    expect(screen.volumes()[0].host).toBe('/home/vitorcds/servidor/media/filmes');
+  });
+
+  it('offers the instance folder and its volumes as folders to be created', () => {
+    store.system.set({ root: '/home/vitorcds/servidor' } as SystemInfo);
+    screen.pick(template({ volumes: [{ container: '/data' }, { container: '/config' }] }));
+    screen.name.set('smp');
+
+    expect(screen.ghostDirs().map((g) => g.path)).toEqual([
+      '/home/vitorcds/servidor/smp',
+      '/home/vitorcds/servidor/smp/data',
+      '/home/vitorcds/servidor/smp/config',
+    ]);
   });
 
   it('keeps what was typed by hand', () => {

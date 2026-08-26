@@ -199,6 +199,18 @@ export interface SystemInfo {
   instanceCount: number;
 }
 
+export interface DirEntry {
+  name: string;
+  path: string;
+}
+
+export interface DirListing {
+  path: string;
+  parent?: string;
+  roots: string[];
+  entries: DirEntry[];
+}
+
 export interface SpecRequest {
   name: string;
   templateId: string;

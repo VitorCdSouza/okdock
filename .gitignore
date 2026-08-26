@@ -18,6 +18,7 @@
 
 *.log
 
-# the two folders the panel can be pointed at, when they land in the checkout
+# what the deploy compose mounts, and the folders the panel can be pointed at
+/config/
 /templates/
 /containers/

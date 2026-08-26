@@ -9,10 +9,11 @@
   <div class="body">
     <section>
       <div class="section-title">{{ t('settings.rootTitle') }}</div>
-      <div class="grid3">
-        <input class="mono" spellcheck="false" placeholder="/srv/games"
+      <div class="grid4">
+        <input class="mono" spellcheck="false" placeholder="/home/you/containers"
                [ngModel]="rootDraft()" (ngModelChange)="rootDraft.set($event)"
                (keydown.enter)="saveRoot()">
+        <button class="btn btn-sm" (click)="picking.set('root')">{{ t('settings.browse') }}</button>
         <button class="btn btn-sm btn-go" (click)="saveRoot()"
                 [disabled]="rootBusy() || !rootChanged()">
           {{ rootBusy() ? t('common.saving') : t('common.save') }}
@@ -25,10 +26,11 @@
 
     <section>
       <div class="section-title">{{ t('settings.templatesTitle') }}</div>
-      <div class="grid3">
-        <input class="mono" spellcheck="false" placeholder="/srv/okdock/templates"
+      <div class="grid4">
+        <input class="mono" spellcheck="false" placeholder="/templates"
                [ngModel]="templatesDraft()" (ngModelChange)="templatesDraft.set($event)"
                (keydown.enter)="saveTemplates()">
+        <button class="btn btn-sm" (click)="picking.set('templates')">{{ t('settings.browse') }}</button>
         <button class="btn btn-sm btn-go" (click)="saveTemplates()"
                 [disabled]="templatesBusy() || !templatesChanged()">
           {{ templatesBusy() ? t('common.saving') : t('common.save') }}
@@ -145,3 +147,8 @@
     </section>
   </div>
 </div>
+
+@if (picking(); as which) {
+  <ok-dir-picker [start]="which === 'root' ? rootDraft() : templatesDraft()"
+                 (picked)="pickFolder($event)" (close)="picking.set(null)" />
+}

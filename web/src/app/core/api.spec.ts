@@ -46,12 +46,12 @@ describe('Api: the error comes as a code, the sentence is built here', () => {
       {
         error: 'invalid_root',
         message: 'invalid root',
-        params: { reason: 'not_dir', path: '/srv/games/arquivo' },
+        params: { reason: 'not_dir', path: '/containers/arquivo' },
       },
       422,
     );
 
-    expect(err.message).toBe('/srv/games/arquivo is not a directory');
+    expect(err.message).toBe('/containers/arquivo is not a directory');
   });
 
   it('falls back to the API text when the code is unknown', () => {

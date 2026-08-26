@@ -13,7 +13,7 @@ import (
 
 func newDNSManager(t *testing.T) (*Manager, *duckdns.Fake) {
 	t.Helper()
-	st, err := store.New(t.TempDir())
+	st, err := store.New(store.Config{Dir: t.TempDir(), Root: t.TempDir()})
 	if err != nil {
 		t.Fatal(err)
 	}

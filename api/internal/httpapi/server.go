@@ -47,6 +47,9 @@ func (s *Server) routes() {
 	m.HandleFunc("PUT /api/v1/system/templates", s.setTemplatesDir)
 	m.HandleFunc("GET /api/v1/events", s.events)
 
+	m.HandleFunc("GET /api/v1/fs", s.browseDirs)
+	m.HandleFunc("POST /api/v1/fs", s.makeDir)
+
 	m.HandleFunc("GET /api/v1/templates", s.listTemplates)
 	m.HandleFunc("GET /api/v1/templates/{id}", s.getTemplate)
 	m.HandleFunc("POST /api/v1/templates", s.createTemplate)

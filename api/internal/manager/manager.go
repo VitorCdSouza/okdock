@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -16,6 +17,7 @@ import (
 	"github.com/VitorCdSouza/okdock/api/internal/compose"
 	"github.com/VitorCdSouza/okdock/api/internal/dockerx"
 	"github.com/VitorCdSouza/okdock/api/internal/duckdns"
+	"github.com/VitorCdSouza/okdock/api/internal/hostfs"
 	"github.com/VitorCdSouza/okdock/api/internal/instance"
 	"github.com/VitorCdSouza/okdock/api/internal/registry"
 	"github.com/VitorCdSouza/okdock/api/internal/store"
@@ -93,6 +95,12 @@ func (m *Manager) List(ctx context.Context) ([]instance.Instance, error) {
 	if err != nil {
 		return nil, err
 	}
+	containers, err := m.docker.PSAll(ctx)
+	if err != nil {
+		slog.Debug("could not list the host containers", "err", err)
+	}
+	specs = dropSelf(specs, m.store.Root(), containers)
+
 	out := make([]instance.Instance, 0, len(specs))
 	running := make([]string, 0, len(specs))
 	for _, spec := range specs {
@@ -102,10 +110,6 @@ func (m *Manager) List(ctx context.Context) ([]instance.Instance, error) {
 		}
 		out = append(out, inst)
 	}
-	containers, err := m.docker.PSAll(ctx)
-	if err != nil {
-		slog.Debug("could not list the host containers", "err", err)
-	}
 	attachNetworks(out, containers)
 
 	external, upExternal := m.listExternal(out, containers)
@@ -114,6 +118,32 @@ func (m *Manager) List(ctx context.Context) ([]instance.Instance, error) {
 
 	m.attachStats(ctx, out, running)
 	return out, nil
+}
+
+// the panel folder can sit inside the instance folder, and the panel is no instance of itself
+func dropSelf(specs []instance.Spec, root string, containers []dockerx.HostContainer) []instance.Spec {
+	self, _ := os.Hostname()
+	if self == "" || root == "" {
+		return specs
+	}
+	dir := ""
+	for _, c := range containers {
+		if strings.HasPrefix(c.ID, self) {
+			dir = filepath.Clean(c.WorkDir)
+			break
+		}
+	}
+	if dir == "" || filepath.Dir(dir) != filepath.Clean(root) {
+		return specs
+	}
+	name := filepath.Base(dir)
+	out := make([]instance.Spec, 0, len(specs))
+	for _, spec := range specs {
+		if spec.Name != name {
+			out = append(out, spec)
+		}
+	}
+	return out
 }
 
 // the managed container carries the instance name, which is how docker ps finds it again
@@ -427,7 +457,7 @@ func (m *Manager) attachStats(ctx context.Context, list []instance.Instance, nam
 }
 
 func (m *Manager) System(ctx context.Context) (SystemInfo, error) {
-	info, err := m.sys.Read(m.store.Root())
+	info, err := m.sys.Read(m.diskPath())
 	if err != nil {
 		return SystemInfo{}, err
 	}
@@ -459,7 +489,22 @@ func (m *Manager) System(ctx context.Context) (SystemInfo, error) {
 	return out, nil
 }
 
+// with no instance folder chosen the numbers of the screen still come from somewhere
+func (m *Manager) diskPath() string {
+	if root := m.store.Root(); root != "" {
+		return root
+	}
+	return "/"
+}
+
+// a folder the panel cannot open is one docker would resolve to somewhere else entirely
 func (m *Manager) SetRoot(root string) error {
+	// a relative path is the store own refusal, and it says which field is wrong
+	if filepath.IsAbs(root) {
+		if err := m.browser().Reachable(root); err != nil {
+			return err
+		}
+	}
 	if err := m.store.SetRoot(root); err != nil {
 		return err
 	}
@@ -468,7 +513,38 @@ func (m *Manager) SetRoot(root string) error {
 }
 
 // moving the folder does not move what is in it, the catalog just answers from the new one
+// BrowseDirs and MakeDir answer the folder picker, inside the root and whatever else is bind mounted here
+func (m *Manager) BrowseDirs(dir string) (hostfs.Listing, error) {
+	return m.browser().List(dir)
+}
+
+func (m *Manager) MakeDir(dir string) (string, error) {
+	return m.browser().Mkdir(dir)
+}
+
+func (m *Manager) browser() *hostfs.Browser {
+	return hostfs.New(func() []string {
+		// the panel own folders read one way in here and another out there, no instance goes in them
+		ours := []string{m.store.ConfigRoot, m.store.DefaultTemplatesDir()}
+		var roots []string
+		if root := m.store.Root(); root != "" {
+			roots = append(roots, root)
+		}
+		for _, mount := range hostfs.BindMounts() {
+			if !slices.Contains(ours, mount) {
+				roots = append(roots, mount)
+			}
+		}
+		return roots
+	})
+}
+
 func (m *Manager) SetTemplatesDir(dir string) error {
+	if filepath.IsAbs(dir) {
+		if err := m.browser().Reachable(dir); err != nil {
+			return err
+		}
+	}
 	if err := m.store.SetTemplatesDir(dir); err != nil {
 		return err
 	}
@@ -632,7 +708,7 @@ func (m *Manager) checkBudget(ctx context.Context, spec instance.Spec) error {
 	if want == 0 {
 		return nil
 	}
-	info, err := m.sys.Read(m.store.Root())
+	info, err := m.sys.Read(m.diskPath())
 	if err != nil {
 		return err
 	}

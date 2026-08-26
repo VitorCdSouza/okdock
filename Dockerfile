@@ -19,7 +19,8 @@ RUN apk add --no-cache docker-cli docker-cli-compose ca-certificates tzdata
 COPY --from=api /out/okdock /usr/local/bin/okdock
 
 ENV OKDOCK_ADDR=:8080 \
-    OKDOCK_ROOT=/srv/games
+    OKDOCK_CONFIG=/config \
+    OKDOCK_TEMPLATES=/templates
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \

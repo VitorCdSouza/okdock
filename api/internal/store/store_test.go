@@ -14,7 +14,8 @@ import (
 
 func newStore(t *testing.T) *Store {
 	t.Helper()
-	s, err := New(t.TempDir())
+	dir := t.TempDir()
+	s, err := New(Config{Dir: dir, Root: dir})
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -233,7 +234,7 @@ func TestSetRootPersiste(t *testing.T) {
 	boot := t.TempDir()
 	newRoot := filepath.Join(t.TempDir(), "jogos")
 
-	s, err := New(boot)
+	s, err := New(Config{Dir: boot, Root: boot})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -244,7 +245,7 @@ func TestSetRootPersiste(t *testing.T) {
 		t.Errorf("Root = %q, queria %q", s.Root(), newRoot)
 	}
 
-	other, err := New(boot)
+	other, err := New(Config{Dir: boot, Root: boot})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -267,9 +268,9 @@ func TestSetRootRefusesARelativePath(t *testing.T) {
 	}
 }
 
-func TestAnUnusableSavedRootFallsBackToTheBootOne(t *testing.T) {
+func TestAnUnusableSavedRootLeavesThePanelWithNoFolder(t *testing.T) {
 	boot := t.TempDir()
-	s, err := New(boot)
+	s, err := New(Config{Dir: boot, Root: boot})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -277,12 +278,47 @@ func TestAnUnusableSavedRootFallsBackToTheBootOne(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	other, err := New(boot)
+	other, err := New(Config{Dir: boot, Root: boot})
 	if err != nil {
 		t.Fatalf("New devia subir mesmo assim: %v", err)
 	}
-	if other.Root() != s.ConfigRoot {
-		t.Errorf("Root = %q, queria a raiz de boot %q", other.Root(), s.ConfigRoot)
+	// the chosen folder is broken, and answering from another one would write the instances somewhere else
+	if other.Root() != "" {
+		t.Errorf("Root = %q, queria nenhuma pasta", other.Root())
+	}
+}
+
+func TestWithNoFolderChosenNothingIsReadOrWritten(t *testing.T) {
+	s, err := New(Config{Dir: t.TempDir()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.Root() != "" {
+		t.Errorf("Root = %q, queria vazio", s.Root())
+	}
+	list, err := s.List()
+	if err != nil || len(list) != 0 {
+		t.Errorf("List = %v, %v, queria uma lista vazia", list, err)
+	}
+	if err := s.Create(spec("smp")); !errors.Is(err, ErrNoRoot) {
+		t.Errorf("Create = %v, queria ErrNoRoot", err)
+	}
+	if _, err := s.Get("smp"); !errors.Is(err, ErrNoRoot) {
+		t.Errorf("Get = %v, queria ErrNoRoot", err)
+	}
+	if s.Exists("smp") {
+		t.Error("Exists disse que sim sem pasta nenhuma")
+	}
+}
+
+func TestTemplatesDirFallsBackToTheGivenFolder(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "templates")
+	s, err := New(Config{Dir: t.TempDir(), Templates: dir})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.TemplatesDir() != dir {
+		t.Errorf("TemplatesDir = %q, queria %q", s.TemplatesDir(), dir)
 	}
 }
 
@@ -300,7 +336,7 @@ func TestThePanelReadsConfigFromTheOldFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := New(boot)
+	s, err := New(Config{Dir: boot, Root: boot})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -446,7 +482,7 @@ func TestSetTemplatesDirPersists(t *testing.T) {
 	boot := t.TempDir()
 	dir := filepath.Join(t.TempDir(), "templates")
 
-	s, err := New(boot)
+	s, err := New(Config{Dir: boot, Root: boot})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -460,7 +496,7 @@ func TestSetTemplatesDirPersists(t *testing.T) {
 		t.Errorf("TemplatesDir = %q, wanted %q", s.TemplatesDir(), dir)
 	}
 
-	other, err := New(boot)
+	other, err := New(Config{Dir: boot, Root: boot})
 	if err != nil {
 		t.Fatal(err)
 	}

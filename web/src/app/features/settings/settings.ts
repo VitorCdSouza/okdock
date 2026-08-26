@@ -8,10 +8,11 @@ import { I18n } from '../../core/i18n/i18n';
 import { Select } from '../../shared/select';
 import { MessageKey } from '../../core/i18n/messages.pt';
 import { InfoDot } from '../../shared/info-dot';
+import { DirPicker } from '../../shared/dir-picker';
 
 @Component({
   selector: 'ok-settings',
-  imports: [FormsModule, InfoDot, Select],
+  imports: [FormsModule, DirPicker, InfoDot, Select],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -45,6 +46,8 @@ export class Settings {
   readonly domains = computed(() => this.store.dns()?.domains ?? []);
   readonly hasToken = computed(() => !!this.store.dns()?.token);
   readonly suffix = computed(() => this.store.dns()?.suffix ?? '.duckdns.org');
+
+  readonly picking = signal<'root' | 'templates' | null>(null);
 
   readonly rootDraft = signal('');
   readonly rootBusy = signal(false);
@@ -102,6 +105,19 @@ export class Settings {
         this.tokenHidden.set(true);
       }
     });
+  }
+
+  // the picker already asked which folder, so the choice goes in as soon as it closes
+  pickFolder(path: string): void {
+    const which = this.picking();
+    this.picking.set(null);
+    if (which === 'root') {
+      this.rootDraft.set(path);
+      this.saveRoot();
+      return;
+    }
+    this.templatesDraft.set(path);
+    this.saveTemplates();
   }
 
   saveTemplates(): void {

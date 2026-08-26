@@ -85,7 +85,7 @@
                 <ok-info [text]="t('new.portsTip')" />
               </div>
               @for (port of ports(); track portKey(port.container, port.protocol)) {
-                <div class="port-line">
+                <div class="map-line">
                   <div class="field">
                     <label>{{ t('new.portContainer') }}</label>
                     <div class="fixed mono">{{ port.container }}/{{ port.protocol }}</div>
@@ -99,6 +99,36 @@
                            [attr.id]="'inst-port-' + port.container + '-' + port.protocol"
                            [value]="port.host"
                            (input)="setPort(port.container, port.protocol, $any($event.target).value)">
+                  </div>
+                </div>
+              }
+            </section>
+          }
+
+          @if (volumes().length) {
+            <section>
+              <div class="section-title">
+                {{ t('new.volumes') }}
+                <ok-info [text]="t('new.volumesTip')" />
+              </div>
+              @for (volume of volumes(); track volume.container) {
+                <div class="map-line">
+                  <div class="field">
+                    <label>{{ t('new.volumeContainer') }}</label>
+                    <div class="fixed mono">{{ volume.container }}</div>
+                  </div>
+                  <span class="to" aria-hidden="true">→</span>
+                  <div class="field">
+                    <label [attr.for]="'inst-vol-' + volume.container">{{ t('new.volumeHost') }}</label>
+                    <div class="with-button">
+                      <input class="mono" [attr.id]="'inst-vol-' + volume.container"
+                             [value]="volume.host"
+                             (input)="setVolume(volume.container, $any($event.target).value)">
+                      <button class="btn btn-sm" (click)="pickDir(volume.container)"
+                              [attr.aria-label]="t('new.volumeBrowse')" [attr.title]="t('new.volumeBrowse')">
+                        📁
+                      </button>
+                    </div>
                   </div>
                 </div>
               }
@@ -125,6 +155,11 @@
       }
     }
   </div>
+
+  @if (picking()) {
+    <ok-dir-picker [start]="pickerStart()" [ghosts]="ghostDirs()"
+                   (picked)="dirPicked($event)" (close)="picking.set(null)" />
+  }
 
   <footer>
     <span class="hint mono">

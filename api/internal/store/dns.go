@@ -17,15 +17,21 @@ const (
 	templatesDir   = "templates"
 )
 
-// where the templates written in the panel live, the config folder when nothing is chosen
+// where the templates written in the panel live, the folder the process was given when nothing is chosen
 func (s *Store) TemplatesDir() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if s.templates != "" {
 		return s.templates
 	}
+	if s.defaultTmpls != "" {
+		return s.defaultTmpls
+	}
 	return filepath.Join(s.ConfigRoot, panelDir, templatesDir)
 }
+
+// the folder the process was given for templates, which is the panel own and no place for an instance
+func (s *Store) DefaultTemplatesDir() string { return s.defaultTmpls }
 
 func (s *Store) readPanel(file string) ([]byte, error) {
 	raw, err := os.ReadFile(filepath.Join(s.ConfigRoot, panelDir, file))

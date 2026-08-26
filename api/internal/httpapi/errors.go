@@ -8,6 +8,7 @@ import (
 
 	"github.com/VitorCdSouza/okdock/api/internal/dockerx"
 	"github.com/VitorCdSouza/okdock/api/internal/duckdns"
+	"github.com/VitorCdSouza/okdock/api/internal/hostfs"
 	"github.com/VitorCdSouza/okdock/api/internal/instance"
 	"github.com/VitorCdSouza/okdock/api/internal/manager"
 	"github.com/VitorCdSouza/okdock/api/internal/registry"
@@ -56,6 +57,10 @@ func writeError(w http.ResponseWriter, err error) {
 			Message: err.Error(),
 			Params:  map[string]any{"name": notFound.Name},
 		})
+	case errors.Is(err, hostfs.ErrOutside):
+		writeJSON(w, http.StatusForbidden, apiError{Error: "path_outside", Message: err.Error()})
+	case errors.Is(err, store.ErrNoRoot):
+		writeJSON(w, http.StatusConflict, apiError{Error: "no_root", Message: err.Error()})
 	case errors.Is(err, store.ErrNotFound):
 		writeJSON(w, http.StatusNotFound, apiError{Error: "not_found", Message: err.Error()})
 	case errors.As(err, &exists):

@@ -85,11 +85,11 @@ section { display: flex; flex-direction: column; gap: 12px; }
 .image-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: end; }
 .image-row ok-image-search { grid-column: span 2; }
 
-/* what the image listens on, fixed by the template, and the port on the server */
-.port-line { display: grid; grid-template-columns: 1fr 20px 1fr; gap: 12px; align-items: end; }
-.port-line .to { color: var(--fg-faint); text-align: center; padding-bottom: 9px; }
+/* what the template fixed on the left, what the server gives it on the right */
+.map-line { display: grid; grid-template-columns: 1fr 20px 1fr; gap: 12px; align-items: end; }
+.map-line .to { color: var(--fg-faint); text-align: center; padding-bottom: 9px; }
 /* the same box an input draws, dashed and with no field behind it */
-.port-line .fixed {
+.map-line .fixed {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -155,3 +155,6 @@ section { display: flex; flex-direction: column; gap: 12px; }
   margin: 14px 0 8px;
 }
 .category-title:first-child { margin-top: 0; }
+
+.with-button { display: flex; gap: 6px; align-items: center; }
+.with-button input { flex: 1; }

@@ -12,15 +12,10 @@ services:
       - "8090:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /srv/games:/srv/games
-      # where the compose projects that were not born in the panel live. Without
-      # this the panel sees them through docker ps and nothing else: the file
-      # path the daemon reports does not exist inside this container, so editing
-      # and updating them stay off. The same path on both sides, because the
-      # compose CLI reads the file in here and the daemon resolves the bind
-      # mounts of that file out there
-      - /home/vitorcds/servidor:/home/vitorcds/servidor
+      - ./config:/config
+      - ./templates:/templates
+      # the folder before this one, the same path on both sides
+      - ${PWD}/..:${PWD}/..
     environment:
-      OKDOCK_ROOT: /srv/games
       OKDOCK_MEMORY_RESERVE: 2g
       OKDOCK_LOG_LEVEL: info

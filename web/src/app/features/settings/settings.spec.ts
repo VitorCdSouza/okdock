@@ -84,13 +84,26 @@ describe('Settings', () => {
   });
 
   it('only offers to save the root once it changed', () => {
-    store.system.set({ root: '/srv/games' } as SystemInfo);
+    store.system.set({ root: '/containers' } as SystemInfo);
 
-    settings.rootDraft.set('/srv/games');
+    settings.rootDraft.set('/containers');
     expect(settings.rootChanged()).toBeFalse();
 
     settings.rootDraft.set('/mnt/jogos');
     expect(settings.rootChanged()).toBeTrue();
+  });
+
+  it('a folder taken from the picker is saved without a second click', () => {
+    store.system.set({ root: '/containers' } as SystemInfo);
+    settings.picking.set('root');
+
+    settings.pickFolder('/home/vitorcds/containers');
+
+    expect(settings.picking()).toBeNull();
+    const save = http.expectOne((r) => r.method === 'PUT' && r.url === '/api/v1/system/root');
+    expect(save.request.body).toEqual({ root: '/home/vitorcds/containers' });
+    save.flush({ root: '/home/vitorcds/containers' } as SystemInfo);
+    http.expectOne('/api/v1/instances').flush({ instances: [] });
   });
 
   it('shows the docker version, or that it did not answer', () => {

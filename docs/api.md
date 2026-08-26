@@ -78,8 +78,8 @@ different from what the user asked for.
   "memoryTotal": 16106127360, "memoryAvailable": 9663676416, "memoryUsed": 6442450944,
   "diskTotal": 987842478080, "diskFree": 646392975360, "diskUsed": 341449502720,
   "cpuCount": 8, "cpuPercent": 41.2,
-  "root": "/srv/games",
-  "templatesRoot": "/srv/okdock/templates",
+  "root": "/home/you/containers",
+  "templatesRoot": "/templates",
   "dockerVersion": "27.1.0",
   "memoryReserve": 2147483648,
   "memoryBudget": 13958643712,
@@ -110,21 +110,53 @@ if it is missing and answers `422 invalid_root` when it cannot.
 Instances that already exist **do not move**: docker keeps the absolute path of
 the bind mounts, so they stay up where they are and disappear from the listing
 until the root comes back. The choice is saved in
-`<OKDOCK_ROOT>/.okdock/config.json`, on the boot root and not on the new one,
-otherwise the next process would look for the file in the wrong place.
+`<OKDOCK_CONFIG>/.okdock/config.json`, which is the panel own folder and never
+the instance one, otherwise the next process would look for the file in the
+folder it is trying to find.
+
+The panel starts with no instance folder at all, and every route that reads or
+writes one answers `409 no_root` until one is chosen. `GET /instances` is the
+exception: it keeps answering with what docker reports.
 
 ### `PUT /system/templates`
 
 ```json
-{"templates": "/srv/okdock/templates"}
+{"templates": "/home/you/okdock/templates"}
 ```
 
 The same rules as the root, and saved in the same file: absolute, writable,
-`422 invalid_root` when it is not. With nothing chosen it is
-`<OKDOCK_ROOT>/.okdock/templates`, which is where the templates were before the
-folder could be chosen. Changing it moves no file: what was written on the old
-folder stays there and shows up again if it comes back. Builtin templates are
+`422 invalid_root` when it is not. With nothing chosen it is the folder the
+process was given in `OKDOCK_TEMPLATES`, `/templates` inside the container.
+Changing it moves no file: what was written on the old folder stays there and
+shows up again if it comes back. Builtin templates are
 in the binary and do not depend on this.
+
+### `GET /fs?path=`
+
+The folder picker of the settings screen and of the volume fields.
+
+```json
+{
+  "path": "/home/you/containers",
+  "parent": "/home/you",
+  "roots": ["/home/you/containers", "/home/you"],
+  "entries": [{"name": "smp-family", "path": "/home/you/containers/smp-family"}]
+}
+```
+
+`roots` are the folders bind mounted into the panel plus the instance one, and
+they are the only thing it answers for: anything else comes back
+`403 path_outside`. With no `path` it lists the first root. Files are left out,
+and so is anything starting with a dot.
+
+### `POST /fs`
+
+```json
+{"path": "/home/you/containers/new-one"}
+```
+
+Creates one folder inside a root and answers `201` with the path it created. The
+same `403 path_outside` guards it.
 
 ### `GET /health`
 
@@ -287,7 +319,7 @@ An instance joins what is on disk with what Docker answered just now:
   "stopGraceSeconds": 120,
   "createdAt": "2026-08-21T12:00:00Z", "updatedAt": "2026-08-21T12:00:00Z",
 
-  "dir": "/srv/games/smp-family",
+  "dir": "/home/you/containers/smp-family",
   "networks": ["smp-family_default"],
   "state": "running",
   "status": "Up 3 days (healthy)",

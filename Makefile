@@ -22,14 +22,14 @@ dev: ## Bring API and web up in one terminal, Ctrl-C takes both down
 	@echo "  (use localhost, not 127.0.0.1: ng serve listens on IPv6 only)"
 	@echo
 	@trap 'trap - INT TERM EXIT; kill 0' INT TERM EXIT; \
-	  ( cd $(API) && OKDOCK_ROOT=$(DATA) OKDOCK_ALLOW_ORIGIN=http://localhost:4200 \
+	  ( cd $(API) && OKDOCK_ROOT=$(DATA) OKDOCK_CONFIG=$(DATA)/.config OKDOCK_TEMPLATES=$(DATA)/templates OKDOCK_ALLOW_ORIGIN=http://localhost:4200 \
 	      go run ./cmd/okdock 2>&1 | sed -u 's/^/[api] /' ) & \
 	  ( cd $(WEB) && npm start 2>&1 | sed -u 's/^/[web] /' ) & \
 	  wait
 
 .PHONY: dev-api
 dev-api: ## API only, on :8080
-	cd $(API) && OKDOCK_ROOT=$(DATA) \
+	cd $(API) && OKDOCK_ROOT=$(DATA) OKDOCK_CONFIG=$(DATA)/.config OKDOCK_TEMPLATES=$(DATA)/templates \
 	  OKDOCK_ALLOW_ORIGIN=http://localhost:4200 \
 	  go run ./cmd/okdock
 
@@ -73,6 +73,7 @@ lint: ## vet + gofmt
 deploy: ## build here, hand the image to the server, recreate the container
 	docker build -t $(IMAGE) .
 	docker save $(IMAGE) | ssh $(SERVER) 'docker load'
+	scp -q docker-compose.yml $(SERVER):$(SERVER_DIR)/docker-compose.yml
 	ssh $(SERVER) 'cd $(SERVER_DIR) && docker compose up -d --pull never'
 	@ssh $(SERVER) 'curl -fs http://localhost:8090/api/v1/health' && echo
 

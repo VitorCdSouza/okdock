@@ -42,7 +42,7 @@ h2 { margin: 0; font: 600 var(--fs-2xl) var(--sans); }
   gap: 20px;
 }
 section { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
-section > .grid3, section > .alert, section > .checks, section > .row { align-self: stretch; }
+section > .grid3, section > .grid4, section > .alert, section > .checks, section > .row { align-self: stretch; }
 section + section { border-top: 1px solid var(--line); padding-top: 20px; }
 
 .grid3 {
@@ -52,6 +52,15 @@ section + section { border-top: 1px solid var(--line); padding-top: 20px; }
   gap: 8px;
 }
 .grid3 > input { min-width: 0; }
+
+.grid4 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 96px 26px;
+  align-items: center;
+  gap: 8px;
+}
+.grid4 > input { min-width: 0; }
+.grid4 > .btn { justify-content: center; }
 
 .row {
   display: grid;
