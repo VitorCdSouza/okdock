@@ -64,29 +64,29 @@ describe('NewInstance: the host port the form starts with', () => {
     expect(screen.ports().map((p) => p.host)).toEqual([25565]);
   });
 
-  it('walks past a port another instance already holds', () => {
+  it('offers it even when another instance holds it, and says who', () => {
     store.instances.set([instance('smp', 25565)]);
 
     screen.pick(template());
 
-    expect(screen.ports()[0].host).toBe(25566);
+    expect(screen.ports()[0].host).toBe(25565);
+    const warning = screen.portClash(25565, 'tcp');
+    expect(warning).toContain('25565');
+    expect(warning).toContain('smp');
   });
 
-  it('two ports of the same template do not land on each other', () => {
-    store.instances.set([instance('smp', 25565)]);
-
+  it('offers every port the template declared', () => {
     screen.pick(
       template({
         ports: [
           { container: 25565, protocol: 'tcp', label: 'game' },
           { container: 25565, protocol: 'udp', label: 'voice' },
-          { container: 25566, protocol: 'tcp', label: 'rcon' },
+          { container: 25575, protocol: 'tcp', label: 'rcon' },
         ],
       }),
     );
 
-    // udp is a list of its own, tcp 25566 is the one that has to move
-    expect(screen.ports().map((p) => p.host)).toEqual([25566, 25565, 25567]);
+    expect(screen.ports().map((p) => p.host)).toEqual([25565, 25565, 25575]);
   });
 
   it('names the port and the owner when a typed port is taken', () => {

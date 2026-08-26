@@ -21,7 +21,7 @@ func (m *Manager) updateExternal(ctx context.Context, inst instance.Instance, re
 	if err != nil {
 		return instance.Spec{}, err
 	}
-	if err := m.checkPorts(spec); err != nil {
+	if err := m.checkPorts(ctx, spec); err != nil {
 		return instance.Spec{}, err
 	}
 	if isUp(inst.State) {

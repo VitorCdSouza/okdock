@@ -52,24 +52,18 @@ export class NewInstance {
 
   readonly groups = computed(() => this.store.byCategory());
 
-  // the template says only which port the image listens on, the host side is picked here
+  // the host side opens on the port the template declared, taken or not, and the line says so
   readonly ports = computed(() => {
     const p = this.template();
     if (!p) return [];
-    const taken = new Set<string>();
-    for (const inst of this.store.instances()) {
-      for (const bound of inst.ports ?? []) taken.add(this.portKey(bound.host, bound.protocol));
-    }
     const chosen = this.hostPorts();
-    return (p.ports ?? []).map((port) => {
-      const key = this.portKey(port.container, port.protocol);
-      const host = chosen[key] ?? freeHostPort(taken, port.container, port.protocol);
-      taken.add(this.portKey(host, port.protocol));
-      return { ...port, host };
-    });
+    return (p.ports ?? []).map((port) => ({
+      ...port,
+      host: chosen[this.portKey(port.container, port.protocol)] ?? port.container,
+    }));
   });
 
-  // a suggested port never collides, one typed by hand can
+  // the port the template declared can already be somebody else, so the check runs from the start
   readonly portClashes = computed<Record<string, PortClash>>(() => {
     const owners = new Map<string, string>();
     for (const inst of this.store.instances()) {
@@ -203,14 +197,6 @@ export class NewInstance {
       memoryLimit: this.memoryLimit() || undefined,
     };
   }
-}
-
-// mirrors manager.SuggestPort: the first port nobody holds, counting up from the container one
-function freeHostPort(taken: Set<string>, base: number, protocol: string): number {
-  for (let port = base; port < base + 200 && port < 65536; port++) {
-    if (!taken.has(`${port}/${protocol}`)) return port;
-  }
-  return base;
 }
 
 function parseMemory(s: string): number {

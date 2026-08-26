@@ -656,7 +656,7 @@ func (m *Manager) checkBudget(ctx context.Context, spec instance.Spec) error {
 	return nil
 }
 
-func (m *Manager) checkPorts(spec instance.Spec) error {
+func (m *Manager) checkPorts(ctx context.Context, spec instance.Spec) error {
 	specs, err := m.store.List()
 	if err != nil {
 		return err
@@ -668,6 +668,11 @@ func (m *Manager) checkPorts(spec instance.Spec) error {
 		}
 		for _, p := range other.Ports {
 			taken[fmt.Sprintf("%d/%s", p.Host, p.Protocol)] = other.Name
+		}
+	}
+	for port, name := range m.portsHeldOutside(ctx, spec.Name) {
+		if _, ok := taken[port]; !ok {
+			taken[port] = name
 		}
 	}
 	seen := map[string]bool{}
@@ -682,6 +687,25 @@ func (m *Manager) checkPorts(spec instance.Spec) error {
 		seen[key] = true
 	}
 	return nil
+}
+
+// a container the panel did not create holds the port just as hard, and docker ps is the only place it shows
+func (m *Manager) portsHeldOutside(ctx context.Context, skip string) map[string]string {
+	containers, err := m.docker.PSAll(ctx)
+	if err != nil {
+		slog.Debug("could not list the host containers to check the ports", "err", err)
+		return nil
+	}
+	out := map[string]string{}
+	for _, c := range containers {
+		if c.Name == skip || (c.State != "running" && c.State != "restarting") {
+			continue
+		}
+		for _, p := range c.Ports {
+			out[fmt.Sprintf("%d/%s", p.Host, p.Protocol)] = c.Name
+		}
+	}
+	return out
 }
 
 func (m *Manager) SuggestPort(base int, proto string) int {
@@ -837,7 +861,7 @@ func (m *Manager) Create(ctx context.Context, req SpecRequest) (instance.Spec, e
 	if m.store.Exists(spec.Name) {
 		return instance.Spec{}, fmt.Errorf("%q: %w", spec.Name, store.ErrExists)
 	}
-	if err := m.checkPorts(spec); err != nil {
+	if err := m.checkPorts(ctx, spec); err != nil {
 		return instance.Spec{}, err
 	}
 	if req.Start {
@@ -915,7 +939,7 @@ func (m *Manager) Update(ctx context.Context, name string, req SpecRequest) (ins
 		return instance.Spec{}, err
 	}
 	spec.Archived = old.Archived
-	if err := m.checkPorts(spec); err != nil {
+	if err := m.checkPorts(ctx, spec); err != nil {
 		return instance.Spec{}, err
 	}
 

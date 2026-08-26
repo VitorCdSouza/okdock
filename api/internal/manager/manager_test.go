@@ -199,6 +199,40 @@ func TestCreateRejectsPortAlreadyUsed(t *testing.T) {
 	}
 }
 
+func TestCreateRejectsPortHeldByAContainerFromOutside(t *testing.T) {
+	m, fake := newManager(t, 32*gb)
+	fake.HostList = []dockerx.HostContainer{hostContainer("jellyfin", "media")}
+
+	req := req("filmes", "2g")
+	req.TemplateID = "custom"
+	req.Image = "jellyfin/jellyfin:10.9"
+	req.Ports = []instance.PortBinding{{Host: 8096, Container: 8096, Protocol: "tcp"}}
+	_, err := m.Create(t.Context(), req)
+
+	var pe *ErrPortTaken
+	if !errors.As(err, &pe) {
+		t.Fatalf("expected ErrPortTaken, got %v", err)
+	}
+	if pe.Port != 8096 || pe.Owner != "jellyfin" {
+		t.Errorf("the error should name the port and the container holding it, got %+v", pe)
+	}
+}
+
+func TestAStoppedContainerDoesNotHoldThePort(t *testing.T) {
+	m, fake := newManager(t, 32*gb)
+	stopped := hostContainer("jellyfin", "media")
+	stopped.State = "exited"
+	fake.HostList = []dockerx.HostContainer{stopped}
+
+	req := req("filmes", "2g")
+	req.TemplateID = "custom"
+	req.Image = "jellyfin/jellyfin:10.9"
+	req.Ports = []instance.PortBinding{{Host: 8096, Container: 8096, Protocol: "tcp"}}
+	if _, err := m.Create(t.Context(), req); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+}
+
 func TestSuggestPortSkipsTakenOnes(t *testing.T) {
 	m, _ := newManager(t, 32*gb)
 	if _, err := m.Create(context.Background(), req("mc-a", "4g")); err != nil {
