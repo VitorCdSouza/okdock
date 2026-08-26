@@ -34,7 +34,7 @@ export const en: Record<MessageKey, string> = {
   'time.years.one': '{n} year ago',
   'time.years.other': '{n} years ago',
 
-  'app.newTemplate': '+ New template',
+  'app.templates': 'Templates',
   'app.settings': 'Settings',
   'app.metric.cpu': 'CPU',
   'app.metric.memory': 'RAM',

@@ -32,7 +32,7 @@ export const pt = {
   'time.years.one': 'há {n} ano',
   'time.years.other': 'há {n} anos',
 
-  'app.newTemplate': '+ Novo template',
+  'app.templates': 'Templates',
   'app.settings': 'Configurações',
   'app.metric.cpu': 'CPU',
   'app.metric.memory': 'RAM',
