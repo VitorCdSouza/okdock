@@ -89,6 +89,44 @@ describe('NewInstance: the host port the form starts with', () => {
     expect(screen.ports().map((p) => p.host)).toEqual([25566, 25565, 25567]);
   });
 
+  it('names the port and the owner when a typed port is taken', () => {
+    store.instances.set([instance('smp', 25600)]);
+    screen.pick(template());
+
+    screen.setPort(25565, 'tcp', '25600');
+
+    const warning = screen.portClash(25565, 'tcp');
+    expect(warning).toContain('25600');
+    expect(warning).toContain('smp');
+  });
+
+  it('says nothing while the port is free', () => {
+    store.instances.set([instance('smp', 25600)]);
+    screen.pick(template());
+
+    expect(screen.portClash(25565, 'tcp')).toBe('');
+
+    screen.setPort(25565, 'tcp', '25601');
+    expect(screen.portClash(25565, 'tcp')).toBe('');
+  });
+
+  it('catches the same port asked for twice on this screen', () => {
+    screen.pick(
+      template({
+        ports: [
+          { container: 25565, protocol: 'tcp', label: 'game' },
+          { container: 25575, protocol: 'tcp', label: 'rcon' },
+        ],
+      }),
+    );
+
+    screen.setPort(25575, 'tcp', '25565');
+
+    expect(screen.portClash(25575, 'tcp')).toContain('25565');
+    // the first line asked for it first, so it is the second one that complains
+    expect(screen.portClash(25565, 'tcp')).toBe('');
+  });
+
   it('keeps what was typed by hand', () => {
     screen.pick(template());
     screen.setPort(25565, 'tcp', '30000');

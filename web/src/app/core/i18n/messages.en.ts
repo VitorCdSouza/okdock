@@ -199,6 +199,7 @@ export const en: Record<MessageKey, string> = {
     'On the left the port the image listens on inside the container, fixed by the template. On the right the port on the server that reaches it.',
   'new.portContainer': 'in the container',
   'new.portHost': 'on the server',
+  'new.portTwice': 'port {port}/{proto} is already on another line of this form',
   'new.dns': 'Name to invite people with',
   'new.dnsTip':
     'Links one of the names already registered in the settings; the link keeps the IP up to date on its own. What you pass along is always name:port, because duckdns does not store a port, and forwarding it on the router is still manual.',

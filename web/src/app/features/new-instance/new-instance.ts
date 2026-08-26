@@ -12,6 +12,13 @@ import { ImageSearch } from '../../shared/image-search';
 
 type Step = 1 | 2;
 
+// a host port somebody else holds, or one this form is about to ask for twice
+interface PortClash {
+  port: number;
+  protocol: string;
+  owner: string | null;
+}
+
 @Component({
   selector: 'ok-new-instance',
   imports: [FormsModule, TemplateForm, GameIcon, InfoDot, ImageSearch],
@@ -62,6 +69,27 @@ export class NewInstance {
     });
   });
 
+  // a suggested port never collides, one typed by hand can
+  readonly portClashes = computed<Record<string, PortClash>>(() => {
+    const owners = new Map<string, string>();
+    for (const inst of this.store.instances()) {
+      for (const bound of inst.ports ?? []) {
+        owners.set(this.portKey(bound.host, bound.protocol), inst.name);
+      }
+    }
+    const out: Record<string, PortClash> = {};
+    const here = new Map<string, string>();
+    for (const port of this.ports()) {
+      const key = this.portKey(port.container, port.protocol);
+      const host = this.portKey(port.host, port.protocol);
+      const owner = owners.get(host);
+      if (owner) out[key] = { port: port.host, protocol: port.protocol, owner };
+      else if (here.has(host)) out[key] = { port: port.host, protocol: port.protocol, owner: null };
+      here.set(host, key);
+    }
+    return out;
+  });
+
   readonly nameError = computed(() => {
     const n = this.name();
     if (!n) return '';
@@ -99,13 +127,17 @@ export class NewInstance {
     return this.i18n.category(category);
   }
 
-  portLabel(label: string | undefined): string {
-    if (!label) return this.t('detail.portFallbackLabel');
-    return this.i18n.maybe(`port.${label}`) ?? label;
-  }
-
   portKey(container: number, protocol: string): string {
     return `${container}/${protocol}`;
+  }
+
+  portClash(container: number, protocol: string): string {
+    const clash = this.portClashes()[this.portKey(container, protocol)];
+    if (!clash) return '';
+    if (clash.owner) {
+      return this.t('error.port_taken', { port: clash.port, proto: clash.protocol, owner: clash.owner });
+    }
+    return this.t('new.portTwice', { port: clash.port, proto: clash.protocol });
   }
 
   pick(p: Template): void {

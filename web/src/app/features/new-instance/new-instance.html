@@ -88,13 +88,10 @@
                 <div class="port-line">
                   <div class="field">
                     <label>{{ t('new.portContainer') }}</label>
-                    <div class="fixed mono">
-                      {{ port.container }}/{{ port.protocol }}
-                      <span class="tag">{{ portLabel(port.label) }}</span>
-                    </div>
+                    <div class="fixed mono">{{ port.container }}/{{ port.protocol }}</div>
                   </div>
                   <span class="to" aria-hidden="true">→</span>
-                  <div class="field">
+                  <div class="field" [class.has-error]="!!portClash(port.container, port.protocol)">
                     <label [attr.for]="'inst-port-' + port.container + '-' + port.protocol">
                       {{ t('new.portHost') }}
                     </label>
@@ -102,6 +99,9 @@
                            [attr.id]="'inst-port-' + port.container + '-' + port.protocol"
                            [value]="port.host"
                            (input)="setPort(port.container, port.protocol, $any($event.target).value)">
+                    @if (portClash(port.container, port.protocol); as clash) {
+                      <span class="err">{{ clash }}</span>
+                    }
                   </div>
                 </div>
               }
