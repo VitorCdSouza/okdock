@@ -42,9 +42,8 @@ func (m *Manager) SuggestFromImage(ctx context.Context, ref string) (Suggestion,
 	out := Suggestion{Ports: []template.Port{}, Volumes: []template.Volume{}}
 	for _, p := range info.Ports {
 		out.Ports = append(out.Ports, template.Port{
-			Container:   p.Container,
-			Protocol:    p.Protocol,
-			DefaultHost: m.SuggestPort(p.Container, p.Protocol),
+			Container: p.Container,
+			Protocol:  p.Protocol,
 		})
 	}
 	for _, dir := range volumes {

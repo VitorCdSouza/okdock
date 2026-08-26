@@ -45,13 +45,21 @@ export class NewInstance {
 
   readonly groups = computed(() => this.store.byCategory());
 
+  // the template says only which port the image listens on, the host side is picked here
   readonly ports = computed(() => {
     const p = this.template();
     if (!p) return [];
-    return (p.ports ?? []).map((port) => ({
-      ...port,
-      host: this.hostPorts()[this.portKey(port.container, port.protocol)] ?? port.defaultHost,
-    }));
+    const taken = new Set<string>();
+    for (const inst of this.store.instances()) {
+      for (const bound of inst.ports ?? []) taken.add(this.portKey(bound.host, bound.protocol));
+    }
+    const chosen = this.hostPorts();
+    return (p.ports ?? []).map((port) => {
+      const key = this.portKey(port.container, port.protocol);
+      const host = chosen[key] ?? freeHostPort(taken, port.container, port.protocol);
+      taken.add(this.portKey(host, port.protocol));
+      return { ...port, host };
+    });
   });
 
   readonly nameError = computed(() => {
@@ -163,6 +171,14 @@ export class NewInstance {
       memoryLimit: this.memoryLimit() || undefined,
     };
   }
+}
+
+// mirrors manager.SuggestPort: the first port nobody holds, counting up from the container one
+function freeHostPort(taken: Set<string>, base: number, protocol: string): number {
+  for (let port = base; port < base + 200 && port < 65536; port++) {
+    if (!taken.has(`${port}/${protocol}`)) return port;
+  }
+  return base;
 }
 
 function parseMemory(s: string): number {

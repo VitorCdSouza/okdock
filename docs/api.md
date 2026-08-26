@@ -239,7 +239,7 @@ repository part is used.
 
 ```json
 {
-  "ports": [{"container": 8096, "protocol": "tcp", "defaultHost": 8096, "label": ""}],
+  "ports": [{"container": 8096, "protocol": "tcp", "label": ""}],
   "volumes": [{"container": "/cache"}, {"container": "/config"}]
 }
 ```

@@ -8,7 +8,6 @@
     {
       "container": 7777,
       "protocol": "tcp",
-      "defaultHost": 7777,
       "label": "game"
     }
   ],

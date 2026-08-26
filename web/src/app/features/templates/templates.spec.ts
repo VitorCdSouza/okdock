@@ -49,15 +49,15 @@ describe('Templates: registering a template', () => {
     screen.create();
     screen.patch({
       image: 'jellyfin/jellyfin:10.9',
-      ports: [{ container: 8096, protocol: 'tcp', defaultHost: 9000, label: 'web' }],
+      ports: [{ container: 8096, protocol: 'tcp', label: 'web' }],
       volumes: [{ container: '/config' }],
     });
 
     screen.suggest();
     http.expectOne('/api/v1/images/suggest?image=jellyfin%2Fjellyfin%3A10.9').flush({
       ports: [
-        { container: 8096, protocol: 'tcp', defaultHost: 8096, label: '' },
-        { container: 1900, protocol: 'udp', defaultHost: 1900, label: '' },
+        { container: 8096, protocol: 'tcp', label: '' },
+        { container: 1900, protocol: 'udp', label: '' },
       ],
       volumes: [
         { container: '/config' },
@@ -66,8 +66,8 @@ describe('Templates: registering a template', () => {
     });
 
     const draft = screen.draft()!;
-    // the port already there keeps the host the user chose
-    expect(draft.ports![0].defaultHost).toBe(9000);
+    // the port already there keeps the label the user chose
+    expect(draft.ports![0].label).toBe('web');
     // and only what was missing came in, the volume it already had stayed one
     expect(draft.volumes[0].container).toBe('/config');
     expect(draft.ports!.length).toBe(2);
@@ -95,7 +95,7 @@ describe('Templates: registering a template', () => {
 
     screen.suggest('volumes');
     http.expectOne('/api/v1/images/suggest?image=jellyfin%2Fjellyfin%3A10.9').flush({
-      ports: [{ container: 8096, protocol: 'tcp', defaultHost: 8096, label: '' }],
+      ports: [{ container: 8096, protocol: 'tcp', label: '' }],
       volumes: [{ container: '/config' }],
     });
 
@@ -110,7 +110,7 @@ describe('Templates: registering a template', () => {
 
     screen.imagePicked('jellyfin/jellyfin:10.9');
     http.expectOne('/api/v1/images/suggest?image=jellyfin%2Fjellyfin%3A10.9').flush({
-      ports: [{ container: 8096, protocol: 'tcp', defaultHost: 8096, label: '' }],
+      ports: [{ container: 8096, protocol: 'tcp', label: '' }],
       volumes: [{ container: '/config' }],
     });
 

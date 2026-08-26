@@ -1060,7 +1060,7 @@ func TestSuggestFromTheImageItself(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SuggestFromImage: %v", err)
 	}
-	if len(got.Ports) != 1 || got.Ports[0].Container != 8096 || got.Ports[0].DefaultHost != 8096 {
+	if len(got.Ports) != 1 || got.Ports[0].Container != 8096 || got.Ports[0].Protocol != "tcp" {
 		t.Fatalf("ports = %+v", got.Ports)
 	}
 	want := []template.Volume{{Container: "/cache"}, {Container: "/config"}}
@@ -1089,21 +1089,18 @@ func TestSuggestFallsBackToAContainerForTheVolumes(t *testing.T) {
 	}
 }
 
-func TestSuggestDodgesAPortAlreadyTaken(t *testing.T) {
-	m, fake := newManager(t, 16*gb)
+func TestBuildSpecDodgesAPortAlreadyTaken(t *testing.T) {
+	m, _ := newManager(t, 16*gb)
 	if _, err := m.Create(t.Context(), SpecRequest{Name: "smp", TemplateID: "minecraft-java"}); err != nil {
 		t.Fatal(err)
 	}
-	fake.ImageConfigs["itzg/minecraft-server"] = dockerx.ImageInfo{
-		Ports: []dockerx.HostPort{{Container: 25565, Protocol: "tcp"}},
-	}
 
-	got, err := m.SuggestFromImage(t.Context(), "itzg/minecraft-server")
+	spec, err := m.BuildSpec(SpecRequest{Name: "creative", TemplateID: "minecraft-java"})
 	if err != nil {
-		t.Fatalf("SuggestFromImage: %v", err)
+		t.Fatalf("BuildSpec: %v", err)
 	}
-	if got.Ports[0].DefaultHost == 25565 {
-		t.Fatalf("the suggested host port collides with the instance already there: %+v", got.Ports)
+	if len(spec.Ports) != 1 || spec.Ports[0].Container != 25565 || spec.Ports[0].Host != 25566 {
+		t.Fatalf("ports = %+v, the host side should skip the instance already there", spec.Ports)
 	}
 }
 

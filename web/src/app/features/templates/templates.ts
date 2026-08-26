@@ -224,7 +224,7 @@ export class Templates {
   addPort(): void {
     const cur = this.draft();
     if (!cur) return;
-    const port: TemplatePort = { container: 8080, protocol: 'tcp', defaultHost: 8080, label: 'web' };
+    const port: TemplatePort = { container: 8080, protocol: 'tcp', label: 'web' };
     this.patch({ ports: [...(cur.ports ?? []), port] });
   }
 

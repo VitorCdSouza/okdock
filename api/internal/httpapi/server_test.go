@@ -153,7 +153,7 @@ func TestCreateTemplateAndUseIt(t *testing.T) {
 		"id": "jellyfin", "name": "Jellyfin", "category": "media", "short": "JF",
 		"image": "jellyfin/jellyfin:10.9", "defaultMemory": "2g", "minMemory": "512m",
 		"defaultCpus": 2, "stopGraceSeconds": 30,
-		"ports":   []map[string]any{{"container": 8096, "protocol": "tcp", "defaultHost": 8096, "label": "web"}},
+		"ports":   []map[string]any{{"container": 8096, "protocol": "tcp", "label": "web"}},
 		"volumes": []map[string]any{{"container": "/config"}},
 		"fields": []map[string]any{
 			{"key": "TZ", "label": "Fuso", "type": "text", "default": "America/Sao_Paulo"},

@@ -244,7 +244,6 @@ export const en: Record<MessageKey, string> = {
     'Reads the volumes the image declares and, when it declares none, the paths mounted by a container already running that image on the server. It leaves what you filled in alone and only adds what is missing. Configuration variables do not come from here, an image does not declare the ones its entrypoint reads.',
   'templates.ports': 'PORTS',
   'templates.portContainer': 'container port',
-  'templates.portHost': 'suggested host port',
   'templates.portLabel': 'label',
   'templates.portProtocol': 'protocol',
   'templates.volumes': 'VOLUMES',

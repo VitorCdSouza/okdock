@@ -21,10 +21,10 @@ export interface TemplateField {
   advanced?: boolean;
 }
 
+// only the port inside the container, the host side is decided when the instance is created
 export interface TemplatePort {
   container: number;
   protocol: 'tcp' | 'udp';
-  defaultHost: number;
   label: string;
   optional?: boolean;
 }

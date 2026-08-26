@@ -157,9 +157,6 @@
             <ok-select class="proto" [value]="port.protocol" [options]="protocolOptions"
                        [ariaLabel]="t('templates.portProtocol')"
                        (valueChange)="patchPort($index, { protocol: $any($event) })" />
-            <input class="mono" type="number" [ngModel]="port.defaultHost"
-                   (ngModelChange)="patchPort($index, { defaultHost: +$event })"
-                   [attr.aria-label]="t('templates.portHost')">
             <input class="mono" [ngModel]="port.label" (ngModelChange)="patchPort($index, { label: $event })"
                    [attr.aria-label]="t('templates.portLabel')" placeholder="web">
             <button class="icon" (click)="removePort($index)"

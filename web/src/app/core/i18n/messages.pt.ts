@@ -238,7 +238,6 @@ export const pt = {
     'Lê os volumes que a imagem declara e, quando ela não declara nenhum, os caminhos montados por um container que já roda essa imagem no servidor. Não mexe no que você já preencheu, só acrescenta o que falta. Variável de configuração não sai daqui, a imagem não declara as que o entrypoint lê.',
   'templates.ports': 'PORTAS',
   'templates.portContainer': 'porta no container',
-  'templates.portHost': 'porta sugerida no host',
   'templates.portLabel': 'rótulo',
   'templates.portProtocol': 'protocolo',
   'templates.volumes': 'VOLUMES',

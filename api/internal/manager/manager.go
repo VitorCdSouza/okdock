@@ -745,7 +745,7 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 				continue
 			}
 			ports = append(ports, instance.PortBinding{
-				Host:      m.SuggestPort(p.DefaultHost, p.Protocol),
+				Host:      m.SuggestPort(p.Container, p.Protocol),
 				Container: p.Container,
 				Protocol:  p.Protocol,
 				Label:     p.Label,

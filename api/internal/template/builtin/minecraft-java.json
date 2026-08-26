@@ -8,7 +8,6 @@
     {
       "container": 25565,
       "protocol": "tcp",
-      "defaultHost": 25565,
       "label": "game"
     }
   ],

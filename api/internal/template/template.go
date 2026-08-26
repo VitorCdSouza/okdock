@@ -49,12 +49,12 @@ type Field struct {
 
 func (f Field) IsArg() bool { return f.Target == TargetArg }
 
+// a template says only which port the image listens on, the host side is decided at creation
 type Port struct {
-	Container   int    `json:"container"`
-	Protocol    string `json:"protocol"`
-	DefaultHost int    `json:"defaultHost"`
-	Label       string `json:"label"`
-	Optional    bool   `json:"optional,omitempty"`
+	Container int    `json:"container"`
+	Protocol  string `json:"protocol"`
+	Label     string `json:"label"`
+	Optional  bool   `json:"optional,omitempty"`
 }
 
 // a template says only where the image wants its directory, the host side is decided at creation
