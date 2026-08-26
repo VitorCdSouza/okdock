@@ -127,6 +127,18 @@ describe('NewInstance: the host port the form starts with', () => {
     expect(screen.portClash(25565, 'tcp')).toBe('');
   });
 
+  it('carries the warning to the top of the form', () => {
+    store.instances.set([instance('smp', 25565)]);
+
+    screen.pick(template());
+
+    expect(screen.portWarnings().length).toBe(1);
+    expect(screen.portWarnings()[0]).toContain('smp');
+
+    screen.setPort(25565, 'tcp', '25601');
+    expect(screen.portWarnings()).toEqual([]);
+  });
+
   it('keeps what was typed by hand', () => {
     screen.pick(template());
     screen.setPort(25565, 'tcp', '30000');

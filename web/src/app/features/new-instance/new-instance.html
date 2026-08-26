@@ -48,6 +48,10 @@
 
       @case (2) {
         @if (template(); as p) {
+          @for (warning of portWarnings(); track warning) {
+            <div class="alert warn">{{ warning }}</div>
+          }
+
           <section>
             <div class="field name" [class.has-error]="!!nameError()">
               <label for="inst-name">
@@ -99,9 +103,6 @@
                            [attr.id]="'inst-port-' + port.container + '-' + port.protocol"
                            [value]="port.host"
                            (input)="setPort(port.container, port.protocol, $any($event.target).value)">
-                    @if (portClash(port.container, port.protocol); as clash) {
-                      <span class="err">{{ clash }}</span>
-                    }
                   </div>
                 </div>
               }

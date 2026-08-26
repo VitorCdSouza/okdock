@@ -84,6 +84,12 @@ export class NewInstance {
     return out;
   });
 
+  readonly portWarnings = computed(() =>
+    this.ports()
+      .map((port) => this.portClash(port.container, port.protocol))
+      .filter((warning) => !!warning),
+  );
+
   readonly nameError = computed(() => {
     const n = this.name();
     if (!n) return '';
