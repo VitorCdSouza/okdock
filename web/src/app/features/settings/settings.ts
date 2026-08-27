@@ -8,11 +8,11 @@ import { I18n } from '../../core/i18n/i18n';
 import { Select } from '../../shared/select';
 import { MessageKey } from '../../core/i18n/messages.pt';
 import { InfoDot } from '../../shared/info-dot';
-import { DirPicker } from '../../shared/dir-picker';
+import { PickDir } from '../../shared/pick-dir';
 
 @Component({
   selector: 'ok-settings',
-  imports: [FormsModule, DirPicker, InfoDot, Select],
+  imports: [FormsModule, PickDir, InfoDot, Select],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,7 +47,6 @@ export class Settings {
   readonly hasToken = computed(() => !!this.store.dns()?.token);
   readonly suffix = computed(() => this.store.dns()?.suffix ?? '.duckdns.org');
 
-  readonly picking = signal<'root' | 'templates' | null>(null);
 
   readonly rootDraft = signal('');
   readonly rootBusy = signal(false);
@@ -108,9 +107,7 @@ export class Settings {
   }
 
   // the picker already asked which folder, so the choice goes in as soon as it closes
-  pickFolder(path: string): void {
-    const which = this.picking();
-    this.picking.set(null);
+  pickFolder(which: 'root' | 'templates', path: string): void {
     if (which === 'root') {
       this.rootDraft.set(path);
       this.saveRoot();

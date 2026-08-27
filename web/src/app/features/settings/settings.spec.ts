@@ -95,11 +95,9 @@ describe('Settings', () => {
 
   it('a folder taken from the picker is saved without a second click', () => {
     store.system.set({ root: '/containers' } as SystemInfo);
-    settings.picking.set('root');
 
-    settings.pickFolder('/home/vitorcds/containers');
+    settings.pickFolder('root', '/home/vitorcds/containers');
 
-    expect(settings.picking()).toBeNull();
     const save = http.expectOne((r) => r.method === 'PUT' && r.url === '/api/v1/system/root');
     expect(save.request.body).toEqual({ root: '/home/vitorcds/containers' });
     save.flush({ root: '/home/vitorcds/containers' } as SystemInfo);

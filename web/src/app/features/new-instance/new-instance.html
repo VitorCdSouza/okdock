@@ -124,10 +124,8 @@
                       <input class="mono" [attr.id]="'inst-vol-' + volume.container"
                              [value]="volume.host"
                              (input)="setVolume(volume.container, $any($event.target).value)">
-                      <button class="btn btn-sm" (click)="pickDir(volume.container)"
-                              [attr.aria-label]="t('new.volumeBrowse')" [attr.title]="t('new.volumeBrowse')">
-                        📁
-                      </button>
+                      <ok-pick-dir [start]="pickerStart()" [ghosts]="ghostDirs()"
+                                   (picked)="dirPicked(volume.container, $event)" />
                     </div>
                   </div>
                 </div>
@@ -155,11 +153,6 @@
       }
     }
   </div>
-
-  @if (picking()) {
-    <ok-dir-picker [start]="pickerStart()" [ghosts]="ghostDirs()"
-                   (picked)="dirPicked($event)" (close)="picking.set(null)" />
-  }
 
   <footer>
     <span class="hint mono">

@@ -110,8 +110,7 @@ describe('NewInstance: the host port the form starts with', () => {
     screen.pick(template({ volumes: [{ container: '/data' }] }));
     screen.name.set('smp');
 
-    screen.pickDir('/data');
-    screen.dirPicked('/home/vitorcds/servidor/smp/data');
+    screen.dirPicked('/data', '/home/vitorcds/servidor/smp/data');
 
     expect(screen.volumes()[0].host).toBe('./data');
   });
@@ -121,8 +120,7 @@ describe('NewInstance: the host port the form starts with', () => {
     screen.pick(template({ volumes: [{ container: '/data' }] }));
     screen.name.set('smp');
 
-    screen.pickDir('/data');
-    screen.dirPicked('/home/vitorcds/servidor/media/filmes');
+    screen.dirPicked('/data', '/home/vitorcds/servidor/media/filmes');
 
     expect(screen.volumes()[0].host).toBe('/home/vitorcds/servidor/media/filmes');
   });

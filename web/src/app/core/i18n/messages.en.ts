@@ -9,6 +9,7 @@ export const en: Record<MessageKey, string> = {
   'common.loading': 'loading…',
   'common.checking': 'checking…',
   'common.copied': 'copied: {text}',
+  'common.pick': 'Pick',
 
   'category.games': 'Games',
   'category.media': 'Media',
@@ -216,7 +217,6 @@ export const en: Record<MessageKey, string> = {
   'picker.nothingPicked': 'no folder picked',
   'picker.expand': 'expand',
   'picker.collapse': 'collapse',
-  'new.volumeBrowse': 'pick a folder',
   'new.dns': 'Name to invite people with',
   'new.dnsTip':
     'Links one of the names already registered in the settings; the link keeps the IP up to date on its own. What you pass along is always name:port, because duckdns does not store a port, and forwarding it on the router is still manual.',
@@ -300,7 +300,6 @@ export const en: Record<MessageKey, string> = {
   'settings.rootTip':
     'Absolute path where each container becomes a directory, with the compose file inside it and one folder per volume of the image. It only lists what is mounted into the panel, because a folder it cannot open it also cannot hand to docker. What already exists is not moved: containers under the old folder stay up where they are and come back to the list if it comes back. Inside the panel container, only a path mounted there under the same name works.',
   'settings.rootSaved': 'new folder in use',
-  'settings.browse': 'Pick',
   'settings.templatesTitle': 'TEMPLATES FOLDER',
   'settings.templatesTip':
     'Absolute path where the templates written in the panel live, one .json each. With nothing chosen it is the folder the panel was started with, /templates inside the container. Changing it moves no file: what was on the old folder stays there and shows up again if it comes back. A template that ships with the panel is in the binary and shows up either way.',

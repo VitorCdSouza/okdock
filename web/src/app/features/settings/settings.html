@@ -13,7 +13,7 @@
         <input class="mono" spellcheck="false" placeholder="/home/you/containers"
                [ngModel]="rootDraft()" (ngModelChange)="rootDraft.set($event)"
                (keydown.enter)="saveRoot()">
-        <button class="btn btn-sm" (click)="picking.set('root')">{{ t('settings.browse') }}</button>
+        <ok-pick-dir [start]="rootDraft()" (picked)="pickFolder('root', $event)" />
         <button class="btn btn-sm btn-go" (click)="saveRoot()"
                 [disabled]="rootBusy() || !rootChanged()">
           {{ rootBusy() ? t('common.saving') : t('common.save') }}
@@ -30,7 +30,7 @@
         <input class="mono" spellcheck="false" placeholder="/templates"
                [ngModel]="templatesDraft()" (ngModelChange)="templatesDraft.set($event)"
                (keydown.enter)="saveTemplates()">
-        <button class="btn btn-sm" (click)="picking.set('templates')">{{ t('settings.browse') }}</button>
+        <ok-pick-dir [start]="templatesDraft()" (picked)="pickFolder('templates', $event)" />
         <button class="btn btn-sm btn-go" (click)="saveTemplates()"
                 [disabled]="templatesBusy() || !templatesChanged()">
           {{ templatesBusy() ? t('common.saving') : t('common.save') }}
@@ -147,8 +147,3 @@
     </section>
   </div>
 </div>
-
-@if (picking(); as which) {
-  <ok-dir-picker [start]="which === 'root' ? rootDraft() : templatesDraft()"
-                 (picked)="pickFolder($event)" (close)="picking.set(null)" />
-}

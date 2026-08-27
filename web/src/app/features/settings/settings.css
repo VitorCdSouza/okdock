@@ -60,7 +60,7 @@ section + section { border-top: 1px solid var(--line); padding-top: 20px; }
   gap: 8px;
 }
 .grid4 > input { min-width: 0; }
-.grid4 > .btn { justify-content: center; }
+.grid4 > .btn, .grid4 > ok-pick-dir { justify-content: center; }
 
 .row {
   display: grid;

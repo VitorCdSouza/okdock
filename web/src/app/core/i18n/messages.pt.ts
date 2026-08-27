@@ -7,6 +7,7 @@ export const pt = {
   'common.loading': 'carregando…',
   'common.checking': 'verificando…',
   'common.copied': 'copiado: {text}',
+  'common.pick': 'Escolher',
 
   'category.games': 'Jogos',
   'category.media': 'Mídia',
@@ -210,7 +211,6 @@ export const pt = {
   'picker.nothingPicked': 'nenhuma pasta escolhida',
   'picker.expand': 'abrir',
   'picker.collapse': 'fechar',
-  'new.volumeBrowse': 'escolher pasta',
   'new.dns': 'Nome para convidar',
   'new.dnsTip':
     'Vincula um dos nomes já cadastrados nas configurações; o vínculo mantém o IP em dia sozinho. O que se passa adiante é sempre nome:porta, porque o duckdns não guarda porta, e encaminhá-la no roteador continua sendo manual.',
@@ -294,7 +294,6 @@ export const pt = {
   'settings.rootTip':
     'Caminho absoluto onde cada container vira um diretório, com o compose dentro e uma pasta por volume da imagem. Só aparece o que está montado no painel, porque pasta que ele não abre também não dá para entregar ao docker. O que já existe não se move: os containers da pasta antiga continuam de pé onde estão e voltam à lista se ela voltar. Dentro do container do painel, só vale caminho montado lá com o mesmo nome de fora.',
   'settings.rootSaved': 'pasta nova em uso',
-  'settings.browse': 'Escolher',
   'settings.templatesTitle': 'PASTA DOS TEMPLATES',
   'settings.templatesTip':
     'Caminho absoluto onde ficam os templates escritos no painel, um .json por template. Sem escolher nada, é a pasta que o painel recebeu ao subir, /templates dentro do container. Trocar não move arquivo: o que estava na pasta antiga fica lá e volta a aparecer se ela voltar. Template de fábrica vem no binário e aparece de qualquer jeito.',

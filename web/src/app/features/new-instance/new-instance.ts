@@ -9,13 +9,14 @@ import { TemplateForm } from '../../shared/template-form';
 import { GameIcon } from '../../shared/game-icon';
 import { InfoDot } from '../../shared/info-dot';
 import { ImageSearch } from '../../shared/image-search';
-import { DirPicker, GhostDir } from '../../shared/dir-picker';
+import { GhostDir } from '../../shared/dir-picker';
+import { PickDir } from '../../shared/pick-dir';
 
 type Step = 1 | 2;
 
 @Component({
   selector: 'ok-new-instance',
-  imports: [FormsModule, TemplateForm, GameIcon, InfoDot, ImageSearch, DirPicker],
+  imports: [FormsModule, TemplateForm, GameIcon, InfoDot, ImageSearch, PickDir],
   templateUrl: './new-instance.html',
   styleUrl: './new-instance.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,7 +41,6 @@ export class NewInstance {
   readonly values = signal<Record<string, string>>({});
   readonly hostPorts = signal<Record<string, number>>({});
   readonly hostDirs = signal<Record<string, string>>({});
-  readonly picking = signal<string | null>(null);
   readonly startAfterCreate = signal(true);
 
   readonly busy = signal(false);
@@ -145,17 +145,10 @@ export class NewInstance {
     return this.store.system()?.root ?? '';
   }
 
-  pickDir(container: string): void {
-    this.picking.set(container);
-  }
-
-  dirPicked(path: string): void {
-    const container = this.picking();
-    if (!container) return;
+  dirPicked(container: string, path: string): void {
     const dir = this.instanceDir();
     const inside = dir && (path === dir || path.startsWith(dir + '/'));
     this.setVolume(container, inside ? '.' + path.slice(dir.length) : path);
-    this.picking.set(null);
   }
 
   setVolume(container: string, host: string): void {
