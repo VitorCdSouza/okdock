@@ -173,10 +173,12 @@ const TAG_LIST_MIN = 260;
     .entry { position: relative; display: block; }
     .entry input { width: 100%; padding-right: 30px; }
     .entry input:disabled { opacity: .5; cursor: not-allowed; }
-    /* the padding of an input, so the text sits on the same line as the version */
+    /* the same dashed box the fixed side of a port or volume draws */
     .entry .text {
       display: block;
-      padding: 8px 0;
+      padding: 7px 9px;
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--r-sm);
       font-size: var(--fs-md);
       color: var(--fg-soft);
       white-space: nowrap;
