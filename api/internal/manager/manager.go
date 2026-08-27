@@ -34,7 +34,9 @@ type Options struct {
 	DNS           duckdns.Client
 	Registry      registry.Client
 	MemoryReserve int64
-	Now           func() time.Time
+	// the folders bound into the panel, hostfs.BindMounts when the caller says nothing
+	Mounts func() []string
+	Now    func() time.Time
 }
 
 const DefaultMemoryReserve = 2 << 30
@@ -45,6 +47,7 @@ type Manager struct {
 	docker    dockerx.Runner
 	sys       system.Reader
 	reserve   int64
+	mounts    func() []string
 	now       func() time.Time
 
 	mu  sync.Mutex
@@ -69,6 +72,10 @@ func New(o Options) *Manager {
 	if now == nil {
 		now = func() time.Time { return time.Now().UTC() }
 	}
+	mounts := o.Mounts
+	if mounts == nil {
+		mounts = hostfs.BindMounts
+	}
 	dnsCfg, err := o.Store.LoadDNS()
 	if err != nil {
 		slog.Warn("could not read the DNS config", "file", o.Store.DNSPath(), "err", err)
@@ -80,6 +87,7 @@ func New(o Options) *Manager {
 		docker:    o.Docker,
 		sys:       o.System,
 		reserve:   reserve,
+		mounts:    mounts,
 		now:       now,
 		ops:       map[string]*instance.Operation{},
 		dns:       o.DNS,
@@ -535,7 +543,7 @@ func (m *Manager) browser() *hostfs.Browser {
 		if root := m.store.Root(); root != "" {
 			roots = append(roots, root)
 		}
-		for _, mount := range hostfs.BindMounts() {
+		for _, mount := range m.mounts() {
 			if !slices.Contains(ours, mount) {
 				roots = append(roots, mount)
 			}

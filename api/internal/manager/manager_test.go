@@ -44,6 +44,7 @@ func newManager(t *testing.T, totalRAM int64) (*Manager, *dockerx.Fake) {
 			CPUCount:        8,
 		}},
 		MemoryReserve: 2 << 30,
+		Mounts:        func() []string { return nil },
 	})
 	return m, fake
 }

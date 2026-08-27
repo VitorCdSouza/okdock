@@ -52,6 +52,8 @@ func newServerWithRegistry(t *testing.T) (*Server, *registry.Fake) {
 		System: system.StaticReader{Info: system.Info{
 			MemoryTotal: 16 << 30, MemoryAvailable: 12 << 30, CPUCount: 8,
 		}},
+		// the runner has no bind mount of its own, and a test cannot depend on the ones this machine has
+		Mounts: func() []string { return []string{os.TempDir()} },
 	})
 	return New(Options{Manager: mgr, Templates: cat}), reg
 }
@@ -71,6 +73,8 @@ func newServerWithDocker(t *testing.T) (*Server, *dockerx.Fake) {
 		System: system.StaticReader{Info: system.Info{
 			MemoryTotal: 16 << 30, MemoryAvailable: 12 << 30, CPUCount: 8,
 		}},
+		// the runner has no bind mount of its own, and a test cannot depend on the ones this machine has
+		Mounts: func() []string { return []string{os.TempDir()} },
 	})
 	return New(Options{Manager: mgr, Templates: cat}), fake
 }
