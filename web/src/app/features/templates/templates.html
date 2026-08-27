@@ -1,6 +1,6 @@
 <div class="backdrop" (click)="close.emit()"></div>
 
-<div class="dialog" role="dialog" [attr.aria-label]="t('templates.title')">
+<div class="dialog wide" role="dialog" [attr.aria-label]="t('templates.title')">
   <header>
     <h2>{{ t('templates.title') }}</h2>
     <div class="actions">
@@ -35,7 +35,7 @@
   </div>
 
   <div class="body">
-    <aside class="list">
+    <aside class="list pane">
       @for (tmpl of shown(); track tmpl.id) {
         <button class="row" [class.on]="draft()?.id === tmpl.id && !isNew()" (click)="edit(tmpl)">
           <ok-game-icon class="badge" [template]="tmpl.id" [fallback]="tmpl.short" />
@@ -56,7 +56,7 @@
       </button>
     </aside>
 
-    <section class="editor">
+    <section class="editor pane">
       @if (draft(); as d) {
         @if (error(); as err) {
           <div class="alert bad">

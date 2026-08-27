@@ -1,7 +1,7 @@
 <div class="backdrop"></div>
 
 @if (instance(); as inst) {
-  <div class="dialog" role="dialog" [attr.aria-label]="t('detail.aria', { name: inst.name })">
+  <div class="dialog wide" role="dialog" [attr.aria-label]="t('detail.aria', { name: inst.name })">
     <header>
       <ok-game-icon class="badge" [template]="instance()?.templateId ?? ''" [fallback]="template()?.short ?? '··'"
                   [style.background]="colors().bg" [style.color]="colors().fg" />
@@ -73,7 +73,7 @@
     }
 
     <div class="body">
-      <div class="main">
+      <div class="main pane">
         @switch (tab()) {
           @case ('config') {
             @if (template(); as p) {

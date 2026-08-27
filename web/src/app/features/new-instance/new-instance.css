@@ -1,38 +1,3 @@
-.backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(4, 5, 8, .72);
-  z-index: 40;
-}
-
-.dialog {
-  position: fixed;
-  z-index: 41;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(940px, calc(100vw - 48px));
-  max-height: calc(100vh - 64px);
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-raised);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-lg);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
-  overflow: hidden;
-}
-
-.dialog > header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--line);
-  background: var(--bg-header);
-}
-h2 { margin: 0; font: 600 var(--fs-2xl) var(--sans); }
-
 .steps { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: var(--fs-xs); }
 .steps span {
   padding: 3px 8px;
@@ -42,17 +7,6 @@ h2 { margin: 0; font: 600 var(--fs-2xl) var(--sans); }
 }
 .steps span.on { background: var(--accent-bg); color: var(--accent); }
 .steps .arrow { background: none; color: #3a3f49; padding: 0; }
-
-/* the gutter is always reserved, or the bar shifts the form when it shows up */
-.body {
-  padding: 20px 12px 20px 22px;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
-  overscroll-behavior: contain;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
 
 .templates {
   display: grid;
@@ -137,25 +91,7 @@ section { display: flex; flex-direction: column; gap: 12px; }
 }
 .check input { accent-color: var(--accent); }
 
-.alert {
-  padding: 10px 12px;
-  border-radius: var(--r-sm);
-  font: 400 var(--fs-sm)/1.55 var(--sans);
-}
-.alert.bad { background: var(--bad-bg); border: 1px solid var(--bad-line); color: #f3b3b3; }
-.alert.warn { background: var(--warn-bg); border: 1px solid var(--warn-line); color: #c9b98c; }
-.alert ul { margin: 8px 0 0; padding-left: 18px; }
-.alert li { font-size: var(--fs-xs); }
 
-.dialog > footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 22px;
-  border-top: 1px solid var(--line);
-  background: #0d0f14;
-}
 .hint { display: flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--fg-dim); }
 .actions { display: flex; gap: 8px; }
 

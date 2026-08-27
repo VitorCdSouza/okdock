@@ -118,10 +118,97 @@ select {
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--line-hover); }
 
+/* every modal is the same shell, and the box has a fixed size: changing step
+   or tab does not resize it and slide it back to the middle of the screen */
+.backdrop { position: fixed; inset: 0; background: rgba(4, 5, 8, .72); z-index: 40; }
+/* a modal opened from inside another one */
+.backdrop.over { z-index: 50; }
+
 .dialog {
+  --dialog-w: 960px;
+  --dialog-h: 780px;
   --scroll-bg: var(--bg-raised);
   scrollbar-color: var(--line-strong) var(--bg-raised);
+  position: fixed;
+  z-index: 41;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(var(--dialog-w), calc(100vw - 48px));
+  height: min(var(--dialog-h), calc(100vh - 56px));
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-lg);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
+  overflow: hidden;
 }
+/* the second size, for what needs a list or a log beside the form */
+.dialog.wide { --dialog-w: 1200px; --dialog-h: 840px; }
+/* a question or a picker, as tall as the little it has to say */
+.dialog.ask {
+  --dialog-w: 520px;
+  z-index: 51;
+  height: auto;
+  max-height: calc(100vh - 56px);
+  padding: 18px 20px;
+  gap: 14px;
+}
+
+.dialog > header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-header);
+}
+.dialog > header h2 { margin: 0; font: 600 var(--fs-2xl) var(--sans); }
+.dialog > .body { flex: 1; min-height: 0; }
+
+.dialog > footer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+  background: var(--bg-sunken);
+}
+/* the small one carries no bar: its header and footer are just rows */
+.dialog.ask > header, .dialog.ask > footer {
+  padding: 0;
+  border: none;
+  background: none;
+}
+.dialog.ask h3 { margin: 0; font: 600 var(--fs-xl) var(--sans); }
+.dialog.ask p { margin: 0; font: 400 var(--fs-sm)/1.6 var(--sans); color: var(--fg-muted); }
+
+/* whatever scrolls inside a dialog: the body itself, or one of its columns.
+   the gutter is always reserved, or the bar shifts the content when it shows */
+.dialog .pane {
+  padding: 20px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.alert {
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  font: 400 var(--fs-sm)/1.55 var(--sans);
+}
+.alert.bad { background: var(--bad-bg); border: 1px solid var(--bad-line); color: #f3b3b3; }
+.alert.warn { background: var(--warn-bg); border: 1px solid var(--warn-line); color: #c9b98c; }
+.alert ul { margin: 8px 0 0; padding-left: 18px; }
+.alert li { font-size: var(--fs-xs); }
 
 .mono { font-family: var(--mono); }
 

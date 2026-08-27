@@ -1,30 +1,3 @@
-.backdrop { position: fixed; inset: 0; background: rgba(4, 5, 8, .72); z-index: 40; }
-
-.dialog {
-  position: fixed;
-  z-index: 41;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(1240px, calc(100vw - 48px));
-  height: min(820px, calc(100vh - 56px));
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-raised);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-lg);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
-  overflow: hidden;
-}
-
-.dialog > header {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--line);
-  background: var(--bg-header);
-}
 .badge {
   width: 40px; height: 40px; flex: none;
   border-radius: var(--r-sm);
@@ -69,8 +42,6 @@
 .tabs button.on { border-bottom-color: var(--accent); color: var(--fg); font-weight: 600; }
 
 .body {
-  flex: 1;
-  min-height: 0;
   display: grid;
   grid-template-columns: 1fr;
   background: #0d0f14;
@@ -78,24 +49,14 @@
   scrollbar-color: var(--line-strong) #0d0f14;
 }
 
-.main {
-  padding: 20px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
-}
+.main { min-width: 0; }
 
+/* the bar of the shell, in a column: the warning sits over the buttons */
 .edit-bar {
-  flex: none;
-  padding: 12px 20px;
-  background: var(--bg-header);
-  border-top: 1px solid var(--line);
-  display: flex;
   flex-direction: column;
+  align-items: stretch;
   gap: 10px;
+  background: var(--bg-header);
 }
 .edit-row { display: flex; align-items: center; gap: 10px; }
 .edit-actions { display: flex; gap: 8px; margin-left: auto; }
@@ -159,16 +120,8 @@
 .console .line { white-space: pre-wrap; word-break: break-word; }
 .console .dim { color: var(--fg-faint); }
 
-.alert { padding: 10px 12px; border-radius: var(--r-sm); font: 400 var(--fs-sm)/1.55 var(--sans); }
-.alert.bad {
-  margin: 12px 20px 0;
-  background: var(--bad-bg);
-  border: 1px solid var(--bad-line);
-  color: #f3b3b3;
-}
-.alert.warn { background: var(--warn-bg); border: 1px solid var(--warn-line); color: #c9b98c; }
-.alert ul { margin: 6px 0 0; padding-left: 18px; }
-.alert li { font-size: var(--fs-xs); }
+/* the error of the screen goes between the tabs and the body */
+.dialog > .alert.bad { margin: 12px 20px 0; }
 
 .none {
   margin: 0;

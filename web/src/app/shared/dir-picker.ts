@@ -36,9 +36,9 @@ export interface TreeNode {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:keydown.escape)': 'close.emit()' },
   template: `
-    <div class="backdrop" (click)="close.emit()"></div>
+    <div class="backdrop over" (click)="close.emit()"></div>
 
-    <div class="panel" role="dialog" [attr.aria-label]="t('picker.title')">
+    <div class="dialog ask" role="dialog" [attr.aria-label]="t('picker.title')">
       <header>
         <h3>{{ t('picker.title') }}</h3>
         <button class="btn btn-sm" (click)="close.emit()" [attr.aria-label]="t('common.close')">✕</button>
@@ -93,26 +93,6 @@ export interface TreeNode {
     </div>
   `,
   styles: `
-    .backdrop { position: fixed; inset: 0; background: rgba(4, 5, 8, .72); z-index: 50; }
-    .panel {
-      position: fixed;
-      z-index: 51;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: min(520px, calc(100vw - 48px));
-      max-height: calc(100vh - 96px);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      padding: 16px 18px;
-      background: var(--bg-raised);
-      border: 1px solid var(--line-strong);
-      border-radius: var(--r-lg);
-      box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
-    }
-    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    h3 { margin: 0; font: 600 var(--fs-lg) var(--sans); }
-
     .tree {
       flex: 1;
       min-height: 240px;
@@ -155,14 +135,6 @@ export interface TreeNode {
     footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .path { font-size: var(--fs-2xs); color: var(--fg-faint); overflow: hidden; text-overflow: ellipsis; }
     .actions { display: flex; gap: 8px; flex: none; }
-    .alert.bad {
-      padding: 8px 10px;
-      border-radius: var(--r-sm);
-      background: var(--bad-bg);
-      border: 1px solid var(--bad-line);
-      color: #f3b3b3;
-      font-size: var(--fs-xs);
-    }
   `,
 })
 export class DirPicker implements OnInit {

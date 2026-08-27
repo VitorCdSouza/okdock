@@ -1,46 +1,3 @@
-.backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(4, 5, 8, .72);
-  z-index: 40;
-}
-
-.dialog {
-  position: fixed;
-  z-index: 41;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(680px, calc(100vw - 48px));
-  max-height: calc(100vh - 64px);
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-raised);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-lg);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
-  overflow: hidden;
-}
-
-.dialog > header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--line);
-  background: var(--bg-header);
-}
-h2 { margin: 0; font: 600 var(--fs-2xl) var(--sans); }
-
-.body {
-  padding: 20px 22px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
 section { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 section > .grid3, section > .grid4, section > .alert, section > .checks, section > .row { align-self: stretch; }
 section + section { border-top: 1px solid var(--line); padding-top: 20px; }
@@ -154,13 +111,6 @@ section + section { border-top: 1px solid var(--line); padding-top: 20px; }
 }
 .add:hover:not(:disabled) { border-color: var(--accent-line); color: var(--accent); }
 
-.alert {
-  padding: 10px 12px;
-  border-radius: var(--r-sm);
-  font-size: var(--fs-sm);
-  line-height: 1.55;
-}
-.alert.bad { background: var(--bad-bg); border: 1px solid var(--bad-line); color: #f3b3b3; }
 
 .none {
   margin: 0;

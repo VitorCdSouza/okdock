@@ -113,8 +113,8 @@
 }
 
 @if (pendingDelete(); as target) {
-  <div class="confirm-backdrop" (click)="cancelRemove()"></div>
-  <div class="confirm" role="alertdialog" [attr.aria-label]="t('kanban.confirmDeleteAria')">
+  <div class="backdrop over" (click)="cancelRemove()"></div>
+  <div class="dialog ask danger" role="alertdialog" [attr.aria-label]="t('kanban.confirmDeleteAria')">
     <h3>{{ t('kanban.deleteTitle', { name: target.name }) }}</h3>
     <p>
       {{ t('kanban.deleteBody') }} <span class="mono">{{ target.dir }}</span>.
@@ -138,8 +138,8 @@
 }
 
 @if (pendingAction(); as pending) {
-  <div class="confirm-backdrop" (click)="cancelAction()"></div>
-  <div class="confirm action" role="alertdialog">
+  <div class="backdrop over" (click)="cancelAction()"></div>
+  <div class="dialog ask" role="alertdialog">
     @if (pending.target === 'updating') {
       <h3>{{ t('kanban.updateTitle', { name: pending.instance.name }) }}</h3>
       <p>

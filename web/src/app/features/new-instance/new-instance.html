@@ -13,7 +13,7 @@
     <button class="btn btn-sm" (click)="close.emit()" [attr.aria-label]="t('common.close')">✕</button>
   </header>
 
-  <div class="body">
+  <div class="body pane">
     @if (error(); as err) {
       <div class="alert bad">
         <strong>{{ err.message }}</strong>
