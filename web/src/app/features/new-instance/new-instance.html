@@ -85,30 +85,36 @@
               <button class="add" (click)="addPort()"
                       [title]="t('new.addPort')" [attr.aria-label]="t('new.addPort')">＋</button>
             </div>
-            @for (port of ports(); track portKey(port.container, port.protocol)) {
+            @for (port of ports(); track portKey(port.container, port.protocol); let first = $first) {
               <div class="map-line">
                 <div class="field">
-                  <label>{{ t('new.portContainer') }}</label>
+                  @if (first) { <label>{{ t('new.portContainer') }}</label> }
                   <div class="fixed mono">{{ port.container }}/{{ port.protocol }}</div>
                 </div>
                 <span class="to" aria-hidden="true">→</span>
                 <div class="field">
-                  <label [attr.for]="'inst-port-' + port.container + '-' + port.protocol">
-                    {{ t('new.portHost') }}
-                  </label>
+                  @if (first) {
+                    <label [attr.for]="'inst-port-' + port.container + '-' + port.protocol">
+                      {{ t('new.portHost') }}
+                    </label>
+                  }
                   <input type="number" class="mono"
                          [attr.id]="'inst-port-' + port.container + '-' + port.protocol"
+                         [attr.aria-label]="t('new.portHost')"
                          [value]="port.host"
                          (input)="setPort(port.container, port.protocol, $any($event.target).value)">
                 </div>
               </div>
             }
-            @for (port of extraPorts(); track port.id) {
+            @for (port of extraPorts(); track port.id; let first = $first) {
               <div class="map-line">
                 <div class="field">
-                  <label [attr.for]="'inst-newport-' + port.id">{{ t('new.portContainer') }}</label>
+                  @if (first && !ports().length) {
+                    <label [attr.for]="'inst-newport-' + port.id">{{ t('new.portContainer') }}</label>
+                  }
                   <div class="pair">
                     <input type="number" class="mono" [attr.id]="'inst-newport-' + port.id"
+                           [attr.aria-label]="t('new.portContainer')"
                            [value]="port.container"
                            (input)="setExtraPortContainer(port.id, $any($event.target).value)">
                     <ok-select [value]="port.protocol" [options]="protocols"
@@ -118,9 +124,12 @@
                 </div>
                 <span class="to" aria-hidden="true">→</span>
                 <div class="field">
-                  <label [attr.for]="'inst-newporth-' + port.id">{{ t('new.portHost') }}</label>
+                  @if (first && !ports().length) {
+                    <label [attr.for]="'inst-newporth-' + port.id">{{ t('new.portHost') }}</label>
+                  }
                   <div class="with-button">
                     <input type="number" class="mono" [attr.id]="'inst-newporth-' + port.id"
+                           [attr.aria-label]="t('new.portHost')"
                            [value]="port.host"
                            (input)="setExtraPortHost(port.id, $any($event.target).value)">
                     <button class="drop" (click)="dropPort(port.id)"
@@ -138,17 +147,20 @@
               <button class="add" (click)="addVolume()"
                       [title]="t('new.addVolume')" [attr.aria-label]="t('new.addVolume')">＋</button>
             </div>
-            @for (volume of volumes(); track volume.container) {
+            @for (volume of volumes(); track volume.container; let first = $first) {
               <div class="map-line">
                 <div class="field">
-                  <label>{{ t('new.volumeContainer') }}</label>
+                  @if (first) { <label>{{ t('new.volumeContainer') }}</label> }
                   <div class="fixed mono">{{ volume.container }}</div>
                 </div>
                 <span class="to" aria-hidden="true">→</span>
                 <div class="field">
-                  <label [attr.for]="'inst-vol-' + volume.container">{{ t('new.volumeHost') }}</label>
+                  @if (first) {
+                    <label [attr.for]="'inst-vol-' + volume.container">{{ t('new.volumeHost') }}</label>
+                  }
                   <div class="with-button">
                     <input class="mono" [attr.id]="'inst-vol-' + volume.container"
+                           [attr.aria-label]="t('new.volumeHost')"
                            [value]="volume.host"
                            (input)="setVolume(volume.container, $any($event.target).value)">
                     <ok-pick-dir [start]="pickerStart()" [ghosts]="ghostDirs()"
@@ -157,19 +169,25 @@
                 </div>
               </div>
             }
-            @for (volume of extraVolumes(); track volume.id) {
+            @for (volume of extraVolumes(); track volume.id; let first = $first) {
               <div class="map-line">
                 <div class="field">
-                  <label [attr.for]="'inst-newvol-' + volume.id">{{ t('new.volumeContainer') }}</label>
+                  @if (first && !volumes().length) {
+                    <label [attr.for]="'inst-newvol-' + volume.id">{{ t('new.volumeContainer') }}</label>
+                  }
                   <input class="mono" [attr.id]="'inst-newvol-' + volume.id" placeholder="/data"
+                         [attr.aria-label]="t('new.volumeContainer')"
                          [value]="volume.container"
                          (input)="setExtraVolumeContainer(volume.id, $any($event.target).value)">
                 </div>
                 <span class="to" aria-hidden="true">→</span>
                 <div class="field">
-                  <label [attr.for]="'inst-newvolh-' + volume.id">{{ t('new.volumeHost') }}</label>
+                  @if (first && !volumes().length) {
+                    <label [attr.for]="'inst-newvolh-' + volume.id">{{ t('new.volumeHost') }}</label>
+                  }
                   <div class="with-button">
                     <input class="mono" [attr.id]="'inst-newvolh-' + volume.id"
+                           [attr.aria-label]="t('new.volumeHost')"
                            [value]="volume.host"
                            (input)="setExtraVolumeHost(volume.id, $any($event.target).value)">
                     <ok-pick-dir [start]="pickerStart()" [ghosts]="ghostDirs()"
