@@ -344,6 +344,7 @@ export const pt = {
     'nenhuma pasta de containers escolhida; escolha uma nas configurações',
   'error.path_outside': 'essa pasta não está montada no painel',
   'error.invalid_root': 'raiz inválida',
+  'error.invalid_root.panel_folder': '{path} é uma pasta do painel, não das instâncias',
   'error.invalid_root.not_absolute': '{path} não é um caminho absoluto',
   'error.invalid_root.create_failed': 'não consegui criar {path}: {detail}',
   'error.invalid_root.unreadable': 'não consegui ler {path}: {detail}',

@@ -12,10 +12,10 @@ services:
       - "8090:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./config:/config
-      - ./templates:/templates
-      # the folder before this one, the same path on both sides
+      # the folder before this one, the same path on both sides, and it holds this one
       - ${PWD}/..:${PWD}/..
     environment:
+      OKDOCK_CONFIG: ${PWD}/config
+      OKDOCK_TEMPLATES: ${PWD}/templates
       OKDOCK_MEMORY_RESERVE: 2g
       OKDOCK_LOG_LEVEL: info

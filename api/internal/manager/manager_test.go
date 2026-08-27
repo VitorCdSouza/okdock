@@ -29,7 +29,7 @@ func templates(t *testing.T) *template.Catalog {
 
 func newManager(t *testing.T, totalRAM int64) (*Manager, *dockerx.Fake) {
 	t.Helper()
-	st, err := store.New(store.Config{Dir: t.TempDir(), Root: t.TempDir()})
+	st, err := store.New(store.Config{Dir: t.TempDir(), Root: t.TempDir(), Templates: t.TempDir()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1220,5 +1220,17 @@ func TestThePickerDoesNotOfferThePanelOwnFolders(t *testing.T) {
 	}
 	if !slices.Contains(roots, m.store.Root()) {
 		t.Errorf("the instance folder is missing from %v", roots)
+	}
+}
+
+func TestTheInstanceFolderIsNotThePanelOwn(t *testing.T) {
+	m, _ := newManager(t, 16*gb)
+	var bad *store.InvalidRootError
+
+	if err := m.SetRoot(m.store.ConfigRoot); !errors.As(err, &bad) || bad.Reason != "panel_folder" {
+		t.Errorf("SetRoot on the config folder = %v", err)
+	}
+	if err := m.SetRoot(m.store.DefaultTemplatesDir()); !errors.As(err, &bad) || bad.Reason != "panel_folder" {
+		t.Errorf("SetRoot on the templates folder = %v", err)
 	}
 }

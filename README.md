@@ -90,8 +90,11 @@ Three things in the deploy `docker-compose.yml` are not details:
   cannot see the container filesystem, so a path that reads differently on the
   two sides creates the world in the wrong place, silently. Mount more lines to
   reach somewhere else, always with the same text twice.
-- **`./config` and `./templates`.** The panel configuration and the templates
-  written in it, next to the compose file of the panel itself. Nothing of the
+- **`OKDOCK_CONFIG` and `OKDOCK_TEMPLATES` under `${PWD}`.** The panel
+  configuration and the templates written in it, in `config/` and `templates/`
+  next to the compose file of the panel. They need no mount of their own: the
+  folder above is already mounted, and reading them at their real path is what
+  keeps one folder from having two names inside the container. Nothing of the
   panel is written inside the instance folder anymore.
 
 The instance folder is not in the file: it is chosen on the settings screen, out
@@ -107,8 +110,8 @@ not depend on the version installed on the host.
 | Variable | Default | What for |
 |---|---|---|
 | `OKDOCK_ADDR` | `:8080` | listen address |
-| `OKDOCK_CONFIG` | `/config` | folder for `.okdock/`, the panel own files, `./config` in the deploy |
-| `OKDOCK_TEMPLATES` | `/templates` | templates written in the panel, until another folder is chosen |
+| `OKDOCK_CONFIG` | `/config` | folder for `.okdock/`, the panel own files; `${PWD}/config` in the deploy |
+| `OKDOCK_TEMPLATES` | `/templates` | templates written in the panel, until another folder is chosen; `${PWD}/templates` in the deploy |
 | `OKDOCK_ROOT` | empty | instance folder to start with, when none was chosen yet |
 | `OKDOCK_MEMORY_RESERVE` | `2g` | RAM kept outside the instance budget |
 | `OKDOCK_ALLOW_ORIGIN` | empty | opens CORS, only for `ng serve` |
@@ -183,7 +186,7 @@ A password never enters `docker-compose.yml`: fields marked as secret go to an
 
 The panel configuration (the duckdns token, the domain links and the folders
 chosen on the settings screen) lives outside of that, in `.okdock/` inside
-`OKDOCK_CONFIG`, with `0600`. In the deploy that is `./config` next to the
+`OKDOCK_CONFIG`, with `0600`. In the deploy that is `config/` next to the
 compose file of the panel, never the instance folder: it is the file that records where
 the instances went, so it cannot live where they are.
 

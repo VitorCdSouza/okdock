@@ -349,6 +349,7 @@ export const en: Record<MessageKey, string> = {
   'error.no_root': 'no containers folder chosen; pick one in the settings',
   'error.path_outside': 'that folder is not mounted in the panel',
   'error.invalid_root': 'invalid root',
+  'error.invalid_root.panel_folder': '{path} is a folder of the panel itself, not of the instances',
   'error.invalid_root.not_absolute': '{path} is not an absolute path',
   'error.invalid_root.create_failed': 'could not create {path}: {detail}',
   'error.invalid_root.unreadable': 'could not read {path}: {detail}',

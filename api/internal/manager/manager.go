@@ -499,6 +499,10 @@ func (m *Manager) diskPath() string {
 
 // a folder the panel cannot open is one docker would resolve to somewhere else entirely
 func (m *Manager) SetRoot(root string) error {
+	clean := filepath.Clean(root)
+	if clean == m.store.ConfigRoot || clean == m.store.DefaultTemplatesDir() {
+		return &store.InvalidRootError{Reason: "panel_folder", Path: root}
+	}
 	// a relative path is the store own refusal, and it says which field is wrong
 	if filepath.IsAbs(root) {
 		if err := m.browser().Reachable(root); err != nil {
