@@ -30,6 +30,13 @@ export interface TreeNode {
   leaf: boolean;
 }
 
+// a folder with the lid down, and the same one with the front panel tipped open
+const CLOSED_FOLDER =
+  'M1.8 12.4V3.6a1 1 0 0 1 1-1h3l1.5 1.7h6.2a1 1 0 0 1 1 1v7.1a1 1 0 0 1-1 1H2.8a1 1 0 0 1-1-1z';
+export const OPEN_FOLDER =
+  'M1.8 12.4V3.6a1 1 0 0 1 1-1h3l1.5 1.7h5.2a1 1 0 0 1 1 1v1.2' +
+  'M1.8 12.4l1.9-4.8a1 1 0 0 1 .93-.63h10.1a.55.55 0 0 1 .51.75l-1.6 4.3a1 1 0 0 1-.93.65z';
+
 @Component({
   selector: 'ok-dir-picker',
   imports: [FormsModule],
@@ -54,7 +61,9 @@ export interface TreeNode {
                     [attr.aria-label]="node.open ? t('picker.collapse') : t('picker.expand')">
               @if (node.loading) { <span class="spin">·</span> } @else { {{ node.open ? '⌄' : '›' }} }
             </button>
-            <span class="folder" aria-hidden="true">{{ node.open ? '📂' : '📁' }}</span>
+            <svg class="folder" viewBox="0 0 16 16" aria-hidden="true">
+              <path [attr.d]="node.open ? openFolder : closedFolder" />
+            </svg>
             <span class="name mono">{{ node.name }}</span>
             @if (node.ghost) { <span class="mark">{{ t('picker.willBeCreated') }}</span> }
           </div>
@@ -72,7 +81,7 @@ export interface TreeNode {
         <div class="make">
           <input class="mono" [ngModel]="newName()" (ngModelChange)="newName.set($event)"
                  [placeholder]="t('picker.newFolder')" (keydown.enter)="make()">
-          <button class="btn btn-sm btn-primary" (click)="make()" [disabled]="!newName().trim() || busy()">
+          <button class="btn btn-primary" (click)="make()" [disabled]="!newName().trim() || busy()">
             {{ t('picker.create') }}
           </button>
         </div>
@@ -93,10 +102,11 @@ export interface TreeNode {
     </div>
   `,
   styles: `
+    /* the box has a height of its own, so the tree takes what is left of it */
+    .dialog.ask { height: min(560px, calc(100vh - 56px)); }
     .tree {
       flex: 1;
-      min-height: 240px;
-      max-height: 46vh;
+      min-height: 0;
       overflow: auto;
       padding: 4px 0;
       background: var(--bg-input);
@@ -125,7 +135,17 @@ export interface TreeNode {
     }
     .twist.hidden { visibility: hidden; }
     .spin { color: var(--fg-faint); }
-    .folder { flex: none; font-size: 12px; }
+    .folder {
+      flex: none;
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: var(--fg-faint);
+      stroke-width: 1.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .node.on .folder { stroke: var(--accent); }
     .name { overflow: hidden; text-overflow: ellipsis; }
     .mark { font-size: var(--fs-2xs); color: var(--fg-faint); }
     .empty { padding: 12px 10px; font-size: var(--fs-sm); color: var(--fg-dim); }
@@ -138,6 +158,9 @@ export interface TreeNode {
   `,
 })
 export class DirPicker implements OnInit {
+  readonly closedFolder = CLOSED_FOLDER;
+  readonly openFolder = OPEN_FOLDER;
+
   private readonly api = inject(Api);
   private readonly i18n = inject(I18n);
   readonly t = this.i18n.t;
