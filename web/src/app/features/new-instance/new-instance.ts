@@ -11,12 +11,35 @@ import { InfoDot } from '../../shared/info-dot';
 import { ImageSearch } from '../../shared/image-search';
 import { GhostDir } from '../../shared/dir-picker';
 import { PickDir } from '../../shared/pick-dir';
+import { Select } from '../../shared/select';
 
 type Step = 1 | 2;
 
+// a port, a volume or a variable the template does not declare, typed on the screen
+interface ExtraPort {
+  id: number;
+  container: string;
+  protocol: 'tcp' | 'udp';
+  host: string;
+  autoHost: boolean;
+}
+
+interface ExtraVolume {
+  id: number;
+  container: string;
+  host: string;
+  autoHost: boolean;
+}
+
+interface ExtraField {
+  id: number;
+  key: string;
+  value: string;
+}
+
 @Component({
   selector: 'ok-new-instance',
-  imports: [FormsModule, TemplateForm, GameIcon, InfoDot, ImageSearch, PickDir],
+  imports: [FormsModule, TemplateForm, GameIcon, InfoDot, ImageSearch, PickDir, Select],
   templateUrl: './new-instance.html',
   styleUrl: './new-instance.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,7 +64,17 @@ export class NewInstance {
   readonly values = signal<Record<string, string>>({});
   readonly hostPorts = signal<Record<string, number>>({});
   readonly hostDirs = signal<Record<string, string>>({});
+  readonly extraPorts = signal<ExtraPort[]>([]);
+  readonly extraVolumes = signal<ExtraVolume[]>([]);
+  readonly extraFields = signal<ExtraField[]>([]);
   readonly startAfterCreate = signal(true);
+
+  readonly protocols = [
+    { value: 'tcp', label: 'tcp' },
+    { value: 'udp', label: 'udp' },
+  ];
+
+  private nextId = 1;
 
   readonly busy = signal(false);
   readonly error = signal<OkDockError | null>(null);
@@ -119,7 +152,7 @@ export class NewInstance {
     const dir = this.instanceDir();
     if (!dir) return [];
     const ghosts: GhostDir[] = [{ path: dir }];
-    for (const volume of this.volumes()) {
+    for (const volume of [...this.volumes(), ...this.extraVolumes()]) {
       ghosts.push({ path: this.absoluteDir(volume.host) });
     }
     return ghosts.filter((ghost) => !!ghost.path);
@@ -155,6 +188,98 @@ export class NewInstance {
     this.hostDirs.update((cur) => ({ ...cur, [container]: host }));
   }
 
+  addPort(): void {
+    this.extraPorts.update((cur) => [
+      ...cur,
+      { id: this.nextId++, container: '', protocol: 'tcp', host: '', autoHost: true },
+    ]);
+  }
+
+  dropPort(id: number): void {
+    this.extraPorts.update((cur) => cur.filter((port) => port.id !== id));
+  }
+
+  // the host side follows what is typed on the container side until somebody types on it
+  setExtraPortContainer(id: number, raw: string): void {
+    this.extraPorts.update((cur) =>
+      cur.map((port) =>
+        port.id === id ? { ...port, container: raw, host: port.autoHost ? raw : port.host } : port,
+      ),
+    );
+  }
+
+  setExtraPortHost(id: number, raw: string): void {
+    this.extraPorts.update((cur) =>
+      cur.map((port) => (port.id === id ? { ...port, host: raw, autoHost: false } : port)),
+    );
+  }
+
+  setExtraPortProtocol(id: number, protocol: string): void {
+    this.extraPorts.update((cur) =>
+      cur.map((port) => (port.id === id ? { ...port, protocol: protocol as 'tcp' | 'udp' } : port)),
+    );
+  }
+
+  addVolume(): void {
+    this.extraVolumes.update((cur) => [
+      ...cur,
+      { id: this.nextId++, container: '', host: '', autoHost: true },
+    ]);
+  }
+
+  dropVolume(id: number): void {
+    this.extraVolumes.update((cur) => cur.filter((volume) => volume.id !== id));
+  }
+
+  setExtraVolumeContainer(id: number, raw: string): void {
+    this.extraVolumes.update((cur) =>
+      cur.map((volume) =>
+        volume.id === id
+          ? { ...volume, container: raw, host: volume.autoHost ? hostDirFor(raw) : volume.host }
+          : volume,
+      ),
+    );
+  }
+
+  setExtraVolumeHost(id: number, raw: string): void {
+    this.extraVolumes.update((cur) =>
+      cur.map((volume) => (volume.id === id ? { ...volume, host: raw, autoHost: false } : volume)),
+    );
+  }
+
+  extraVolumePicked(id: number, path: string): void {
+    const dir = this.instanceDir();
+    const inside = dir && (path === dir || path.startsWith(dir + '/'));
+    this.setExtraVolumeHost(id, inside ? '.' + path.slice(dir.length) : path);
+  }
+
+  addField(): void {
+    this.extraFields.update((cur) => [...cur, { id: this.nextId++, key: '', value: '' }]);
+  }
+
+  dropField(id: number): void {
+    this.extraFields.update((cur) => cur.filter((field) => field.id !== id));
+  }
+
+  setExtraFieldKey(id: number, raw: string): void {
+    this.extraFields.update((cur) =>
+      cur.map((field) => (field.id === id ? { ...field, key: raw } : field)),
+    );
+  }
+
+  setExtraFieldValue(id: number, raw: string): void {
+    this.extraFields.update((cur) =>
+      cur.map((field) => (field.id === id ? { ...field, value: raw } : field)),
+    );
+  }
+
+  // a problem the api reported for a variable that has no field on the form
+  extraFieldError(key: string): string {
+    const problem = (this.error()?.problems ?? []).find((p) => p.field === key);
+    if (!problem) return '';
+    return this.i18n.maybe(`problem.${problem.code}`, problem.params) ?? problem.code;
+  }
+
   pick(p: Template): void {
     this.template.set(p);
     this.image.set(p.image);
@@ -166,6 +291,9 @@ export class NewInstance {
     this.values.set(defaults);
     this.hostPorts.set({});
     this.hostDirs.set({});
+    this.extraPorts.set([]);
+    this.extraVolumes.set([]);
+    this.extraFields.set([]);
     this.error.set(null);
   }
 
@@ -210,13 +338,36 @@ export class NewInstance {
       templateId: p.id,
       image: this.image() || undefined,
       values: this.values(),
-      ports: this.ports().map((port) => ({
-        host: port.host,
-        container: port.container,
-        protocol: port.protocol,
-        label: port.label,
-      })),
-      mounts: this.volumes().map((volume) => ({ host: volume.host, container: volume.container })),
+      extraEnv: Object.fromEntries(
+        this.extraFields()
+          .filter((field) => !!field.key.trim())
+          .map((field) => [field.key.trim(), field.value]),
+      ),
+      ports: [
+        ...this.ports().map((port) => ({
+          host: port.host,
+          container: port.container,
+          protocol: port.protocol,
+          label: port.label,
+        })),
+        ...this.extraPorts()
+          .filter((port) => Number(port.container) > 0)
+          .map((port) => ({
+            host: Number(port.host) || Number(port.container),
+            container: Number(port.container),
+            protocol: port.protocol,
+            label: '',
+          })),
+      ],
+      mounts: [
+        ...this.volumes().map((volume) => ({ host: volume.host, container: volume.container })),
+        ...this.extraVolumes()
+          .filter((volume) => !!volume.container.trim())
+          .map((volume) => ({
+            host: volume.host.trim() || hostDirFor(volume.container.trim()),
+            container: volume.container.trim(),
+          })),
+      ],
       memoryLimit: this.memoryLimit() || undefined,
     };
   }

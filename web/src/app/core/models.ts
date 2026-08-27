@@ -216,6 +216,7 @@ export interface SpecRequest {
   templateId: string;
   image?: string;
   values: Record<string, string>;
+  extraEnv?: Record<string, string>;
   ports?: PortBinding[];
   mounts?: Mount[];
   memoryLimit?: string;

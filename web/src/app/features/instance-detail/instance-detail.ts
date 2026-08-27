@@ -326,11 +326,19 @@ export class InstanceDetail {
   private request(): SpecRequest | null {
     const i = this.instance();
     if (!i) return null;
+    // what the template has no field for was added by hand, and rides apart or validation refuses it
+    const known = new Set((this.template()?.fields ?? []).map((f) => f.key));
+    const values: Record<string, string> = {};
+    const extraEnv: Record<string, string> = {};
+    for (const [key, value] of Object.entries(this.values())) {
+      (known.has(key) ? values : extraEnv)[key] = value;
+    }
     return {
       name: i.name,
       templateId: i.templateId,
       image: i.image,
-      values: this.values(),
+      values,
+      extraEnv,
       ports: (i.ports ?? []).map((p) => ({
         host: this.hostPorts()[`${p.container}/${p.protocol}`] ?? p.host,
         container: p.container,

@@ -91,6 +91,30 @@ func TestBuildSpecUsesProviderDefaults(t *testing.T) {
 	}
 }
 
+func TestBuildSpecTakesExtraEnv(t *testing.T) {
+	m, _ := newManager(t, 16*gb)
+	r := req("smp", "")
+	r.ExtraEnv = map[string]string{"TZ": "America/Sao_Paulo"}
+	spec, err := m.BuildSpec(r)
+	if err != nil {
+		t.Fatalf("BuildSpec: %v", err)
+	}
+	if spec.Env["TZ"] != "America/Sao_Paulo" {
+		t.Errorf("env = %v, wanted the variable the panel added", spec.Env)
+	}
+}
+
+func TestBuildSpecRefusesExtraEnvThatIsNotAVariable(t *testing.T) {
+	m, _ := newManager(t, 16*gb)
+	for _, key := range []string{"not a name", "EULA"} {
+		r := req("smp", "")
+		r.ExtraEnv = map[string]string{key: "x"}
+		if _, err := m.BuildSpec(r); err == nil {
+			t.Errorf("BuildSpec accepted %q as an extra variable", key)
+		}
+	}
+}
+
 func TestBuildSpecMarksProviderSecrets(t *testing.T) {
 	m, _ := newManager(t, 32*gb)
 	spec, err := m.BuildSpec(SpecRequest{

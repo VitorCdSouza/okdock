@@ -99,6 +99,27 @@ section { display: flex; flex-direction: column; gap: 12px; }
   font-size: var(--fs-md);
   color: var(--fg-soft);
 }
+/* the plus of a section sits right next to its title */
+.section-title { display: flex; align-items: center; gap: 8px; }
+.add, .drop {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-md);
+  line-height: 1;
+  color: var(--fg-muted);
+}
+.add:hover, .drop:hover { border-color: var(--accent-line); color: var(--accent); }
+.drop:hover { border-color: var(--bad-line); color: var(--bad); }
+/* the container port and its protocol share the column the template side has */
+.pair { display: flex; gap: 6px; align-items: center; }
+.pair input { flex: 1; min-width: 0; }
+.pair ok-select { width: 82px; flex: none; }
+
 .alias { font-size: var(--fs-xs); color: var(--fg-faint); }
 .has-error input { border-color: var(--bad-line); }
 .err { font: 400 var(--fs-xs)/1.4 var(--sans); color: var(--bad); }

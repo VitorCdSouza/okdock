@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -830,6 +831,9 @@ func (m *Manager) BuildSpec(req SpecRequest) (instance.Spec, error) {
 		return instance.Spec{}, err
 	}
 	env, args := tmpl.SplitValues(validated)
+	if err := addExtraEnv(env, tmpl, req.ExtraEnv); err != nil {
+		return instance.Spec{}, err
+	}
 
 	secretKeys := req.SecretKeys
 	if tmpl.ID != template.CustomID {
@@ -916,6 +920,7 @@ type SpecRequest struct {
 	TemplateID  string                 `json:"templateId"`
 	Image       string                 `json:"image,omitempty"`
 	Values      map[string]string      `json:"values"`
+	ExtraEnv    map[string]string      `json:"extraEnv,omitempty"`
 	Ports       []instance.PortBinding `json:"ports,omitempty"`
 	Mounts      []instance.Mount       `json:"mounts,omitempty"`
 	MemoryLimit string                 `json:"memoryLimit,omitempty"`
@@ -923,6 +928,42 @@ type SpecRequest struct {
 	Restart     string                 `json:"restart,omitempty"`
 	SecretKeys  []string               `json:"secretKeys,omitempty"`
 	Start       bool                   `json:"start,omitempty"`
+}
+
+var envKey = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+
+// a variable the template has no field for, typed in the panel, goes straight to the environment
+func addExtraEnv(env map[string]string, tmpl template.Template, extra map[string]string) error {
+	known := make(map[string]bool, len(tmpl.Fields))
+	for _, f := range tmpl.Fields {
+		known[f.Key] = true
+	}
+
+	keys := make([]string, 0, len(extra))
+	for k := range extra {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var problems []template.Problem
+	for _, k := range keys {
+		switch {
+		case !envKey.MatchString(k):
+			problems = append(problems, template.Problem{Field: k, Code: "bad_key"})
+		case known[k]:
+			problems = append(problems, template.Problem{
+				Field:  k,
+				Code:   "duplicate_key",
+				Params: map[string]any{"template": tmpl.ID},
+			})
+		default:
+			env[k] = strings.TrimSpace(extra[k])
+		}
+	}
+	if len(problems) > 0 {
+		return &template.ValidationError{Problems: problems}
+	}
+	return nil
 }
 
 func (m *Manager) PreviewCompose(req SpecRequest) ([]byte, error) {
