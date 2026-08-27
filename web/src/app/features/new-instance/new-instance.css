@@ -104,17 +104,6 @@ section { display: flex; flex-direction: column; gap: 12px; }
 .err { font: 400 var(--fs-xs)/1.4 var(--sans); color: var(--bad); }
 .note { font: 400 var(--fs-xs)/1.45 var(--sans); color: var(--fg-dim); }
 
-.badge-count {
-  margin-left: 8px;
-  padding: 2px 7px;
-  border-radius: var(--r-xs);
-  background: #1b2330;
-  border: 1px solid #2c3a4f;
-  font-size: var(--fs-2xs);
-  color: var(--accent);
-  font-weight: 500;
-}
-
 .check {
   display: flex;
   align-items: center;

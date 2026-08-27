@@ -201,6 +201,7 @@ export const pt = {
     'À esquerda o caminho que a imagem grava dentro do container, fixado pelo template. À direita a pasta do servidor por trás dele; um caminho relativo nasce ao lado do docker-compose.yml da instância.',
   'new.volumeContainer': 'no container',
   'new.volumeHost': 'no servidor',
+  'new.configFields': 'Campos de configuração',
   'picker.title': 'Escolher pasta no servidor',
   'picker.willBeCreated': 'vai ser criada',
   'picker.empty': 'nada aqui',

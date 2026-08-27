@@ -138,9 +138,7 @@
           }
 
           <section>
-            <div class="section-title">{{ t('detail.templateFields') }}
-              <span class="badge-count mono">{{ p.id }} · {{ (p.fields ?? []).length }} vars</span>
-            </div>
+            <div class="section-title">{{ t('new.configFields') }}</div>
             <ok-template-form [template]="p" [(values)]="values" [problems]="error()?.problems ?? []" />
           </section>
 

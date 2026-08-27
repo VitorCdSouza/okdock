@@ -207,6 +207,7 @@ export const en: Record<MessageKey, string> = {
     'On the left the path the image writes inside the container, fixed by the template. On the right the folder on the server behind it; a relative path is born next to the docker-compose.yml of the instance.',
   'new.volumeContainer': 'in the container',
   'new.volumeHost': 'on the server',
+  'new.configFields': 'Configuration fields',
   'picker.title': 'Pick a folder on the server',
   'picker.willBeCreated': 'will be created',
   'picker.empty': 'nothing here',
