@@ -43,9 +43,11 @@ h2 { margin: 0; font: 600 var(--fs-2xl) var(--sans); }
 .steps span.on { background: var(--accent-bg); color: var(--accent); }
 .steps .arrow { background: none; color: #3a3f49; padding: 0; }
 
+/* the gutter is always reserved, or the bar shifts the form when it shows up */
 .body {
-  padding: 20px 22px;
+  padding: 20px 12px 20px 22px;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
