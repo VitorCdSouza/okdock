@@ -49,7 +49,8 @@ section { display: flex; flex-direction: column; gap: 12px; }
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 9px;
+  height: var(--field-h);
+  padding: 0 9px;
   border: 1px dashed var(--line-strong);
   border-radius: var(--r-sm);
   font-size: var(--fs-md);
@@ -58,8 +59,8 @@ section { display: flex; flex-direction: column; gap: 12px; }
 /* the plus of a section sits right next to its title */
 .section-title { display: flex; align-items: center; gap: 8px; }
 .add, .drop {
-  width: 30px;
-  height: 30px;
+  width: var(--field-h);
+  height: var(--field-h);
   flex: none;
   display: grid;
   place-items: center;
@@ -92,8 +93,6 @@ section { display: flex; flex-direction: column; gap: 12px; }
 .check input { accent-color: var(--accent); }
 
 
-.hint { display: flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--fg-dim); }
-.actions { display: flex; gap: 8px; }
 
 .category-title {
   font: 600 var(--fs-xs) var(--sans);

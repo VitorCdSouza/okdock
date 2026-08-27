@@ -45,6 +45,10 @@
   --r: 4px;
   --r-lg: 6px;
 
+  /* the height of anything that sits on a row of the form: field, button,
+     dashed box, the square of a plus */
+  --field-h: 32px;
+
   --sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
@@ -90,6 +94,11 @@ input, select, textarea {
   border-radius: var(--r-sm);
   padding: 7px 9px;
   width: 100%;
+}
+/* the field gives the height, and everything beside it copies this number */
+input:not([type='checkbox']), select {
+  height: var(--field-h);
+  padding: 0 9px;
 }
 input:focus, select:focus, textarea:focus {
   outline: none;
@@ -179,6 +188,15 @@ select {
   border-top: 1px solid var(--line);
   background: var(--bg-sunken);
 }
+.dialog > footer .hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  color: var(--fg-dim);
+}
+.dialog > footer .actions { display: flex; gap: 8px; }
+
 /* the small one carries no bar: its header and footer are just rows */
 .dialog.ask > header, .dialog.ask > footer {
   padding: 0;
@@ -216,7 +234,8 @@ select {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 13px;
+  height: var(--field-h);
+  padding: 0 13px;
   border-radius: var(--r);
   border: 1px solid var(--line-strong);
   font-weight: 600;
@@ -235,7 +254,8 @@ select {
 .btn-danger:hover:not(:disabled) { border-color: var(--bad); color: var(--bad); }
 .btn-go { background: var(--ok-bg); border-color: var(--ok-line); color: var(--ok); }
 .btn-go:hover:not(:disabled) { border-color: var(--ok); color: var(--ok); }
-.btn-sm { padding: 4px 9px; font-size: var(--fs-xs); }
+/* the compact one, for a header or a card, never beside a field */
+.btn-sm { height: 26px; padding: 0 9px; font-size: var(--fs-xs); }
 
 .field { display: flex; flex-direction: column; gap: 5px; }
 .field > label {

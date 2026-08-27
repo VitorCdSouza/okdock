@@ -8,7 +8,8 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 7px 9px;
+  height: var(--field-h);
+  padding: 0 9px;
   background: var(--bg-input);
   border: 1px solid var(--line-strong);
   border-radius: var(--r-sm);

@@ -175,8 +175,10 @@ const TAG_LIST_MIN = 260;
     .entry input:disabled { opacity: .5; cursor: not-allowed; }
     /* the same dashed box the fixed side of a port or volume draws */
     .entry .text {
-      display: block;
-      padding: 7px 9px;
+      display: flex;
+      align-items: center;
+      height: var(--field-h);
+      padding: 0 9px;
       border: 1px dashed var(--line-strong);
       border-radius: var(--r-sm);
       font-size: var(--fs-md);

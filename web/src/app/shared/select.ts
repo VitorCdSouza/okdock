@@ -74,7 +74,8 @@ interface Box {
       justify-content: space-between;
       gap: 8px;
       width: 100%;
-      padding: 7px 9px;
+      height: var(--field-h);
+      padding: 0 9px;
       font-size: var(--fs-md);
       color: var(--fg);
       background: var(--bg-input);

@@ -148,14 +148,17 @@
   border-radius: var(--r-sm);
   color: var(--fg);
   font-size: var(--fs-sm);
-  padding: 7px 9px;
+  padding: 0 9px;
 }
 .dns-row input:focus { outline: none; border-color: var(--accent-line); }
 
 .dns-input { flex: 1; display: flex; align-items: center; min-width: 200px; }
 .dns-input input { border-radius: var(--r-sm) 0 0 var(--r-sm); }
 .dns-input .suffix {
-  padding: 7px 9px;
+  display: flex;
+  align-items: center;
+  height: var(--field-h);
+  padding: 0 9px;
   font-size: var(--fs-sm);
   color: var(--fg-dim);
   background: var(--bg-chip);
@@ -167,9 +170,10 @@
 .dns-addr {
   flex: 1;
   min-width: 200px;
+  height: var(--field-h);
   text-align: left;
   cursor: pointer;
-  padding: 7px 9px;
+  padding: 0 9px;
   font-size: var(--fs-md);
   color: var(--ok);
   background: var(--ok-bg);
