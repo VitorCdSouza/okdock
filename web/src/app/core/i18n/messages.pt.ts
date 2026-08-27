@@ -297,18 +297,21 @@ export const pt = {
   'templates.editHint': 'editar um template de fábrica grava uma cópia; apagar a cópia devolve o original',
 
   'settings.title': 'Configurações',
+  'settings.unsaved': 'há alterações por salvar',
+  'settings.saved': 'tudo salvo',
   'settings.rootTitle': 'PASTA DOS CONTAINERS',
   'settings.rootTip':
     'Caminho absoluto onde cada container vira um diretório, com o compose dentro e uma pasta por volume da imagem. Só aparece o que está montado no painel, porque pasta que ele não abre também não dá para entregar ao docker. O que já existe não se move: os containers da pasta antiga continuam de pé onde estão e voltam à lista se ela voltar. Dentro do container do painel, só vale caminho montado lá com o mesmo nome de fora.',
-  'settings.rootSaved': 'pasta nova em uso',
   'settings.templatesTitle': 'PASTA DOS TEMPLATES',
   'settings.templatesTip':
     'Caminho absoluto onde ficam os templates escritos no painel, um .json por template. Sem escolher nada, é a pasta que o painel recebeu ao subir, /templates dentro do container. Trocar não move arquivo: o que estava na pasta antiga fica lá e volta a aparecer se ela voltar. Template de fábrica vem no binário e aparece de qualquer jeito.',
-  'settings.templatesSaved': 'pasta nova em uso',
   'settings.duckdnsTitle': 'DUCKDNS',
   'settings.tokenPlaceholder': 'token da sua conta no duckdns.org',
-  'settings.changeToken': 'Trocar',
-  'settings.validating': 'Validando…',
+  'settings.tokenButton': 'Token',
+  'settings.tokenTitle': 'Token do duckdns',
+  'settings.tokenSet': 'Já há um token gravado. Salvar troca pelo que você escrever aqui.',
+  'settings.tokenMissing': 'Nenhum token gravado ainda. Ele está na página inicial do duckdns.org, depois de entrar na conta.',
+  'settings.tokenRefused': 'O duckdns recusou estes nomes:',
   'settings.tokenTip':
     'O token vale para o painel inteiro e fica num arquivo 0600, fora de qualquer docker-compose.yml. É ele que prova cada nome da lista abaixo: a API do duckdns só responde OK para um nome que já existe naquela conta.',
   'settings.tokenSavedChecking': 'token gravado; conferindo os nomes da lista…',
@@ -317,9 +320,8 @@ export const pt = {
   'settings.notMatching': 'não confere',
   'settings.noIpYet': 'sem IP ainda',
   'settings.removeAria': 'Remover {name}',
-  'settings.verify': 'Verificar',
-  'settings.discardAria': 'Descartar',
-  'settings.addName': 'Adicionar nome',
+  'settings.newName': 'nome novo',
+  'settings.addDomain': 'Adicionar domínio',
   'settings.checkAll': 'Conferir todos agora',
   'settings.noNames':
     'Nenhum nome ainda. O subdomínio nasce no site do duckdns.org: aqui ele é conferido e mantido com o IP em dia.',

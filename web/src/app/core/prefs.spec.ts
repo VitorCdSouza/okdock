@@ -21,7 +21,7 @@ describe('Prefs', () => {
   it('saves what was turned off', () => {
     const p = prefs();
 
-    p.toggle('disk');
+    p.setMetrics({ ...p.metrics(), disk: false });
     TestBed.tick();
 
     expect(p.metrics().disk).toBeFalse();

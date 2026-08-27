@@ -5,6 +5,7 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { Settings } from './settings';
 import { Store } from '../../core/state';
 import { I18n } from '../../core/i18n/i18n';
+import { Prefs } from '../../core/prefs';
 import { DnsStatus, SystemInfo } from '../../core/models';
 
 const dns: DnsStatus = {
@@ -21,6 +22,7 @@ describe('Settings', () => {
 
   beforeEach(() => {
     localStorage.removeItem('okdock.locale');
+    localStorage.removeItem('okdock.metrics');
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
@@ -31,10 +33,14 @@ describe('Settings', () => {
     store.dns.set(dns);
   });
 
-  afterEach(() => localStorage.removeItem('okdock.locale'));
+  afterEach(() => {
+    localStorage.removeItem('okdock.locale');
+    localStorage.removeItem('okdock.metrics');
+  });
 
   it('renaming adds the new name and only then drops the old one', () => {
-    settings.rename('smp', 'novo');
+    settings.setName(0, 'novo');
+    settings.save();
 
     const add = http.expectOne('/api/v1/dns/domains');
     expect(add.request.method).toBe('POST');
@@ -46,11 +52,12 @@ describe('Settings', () => {
     drop.flush(null);
 
     http.expectOne('/api/v1/dns').flush(dns);
-    expect(settings.busyDomain()).withContext('the row stayed stuck').toBeNull();
+    expect(settings.busy()).withContext('the screen stayed stuck').toBeFalse();
   });
 
   it('a rejected new name does not erase what already worked', () => {
-    settings.rename('smp', 'taken');
+    settings.setName(0, 'taken');
+    settings.save();
 
     http.expectOne('/api/v1/dns/domains').flush(
       { error: 'dns_rejected', message: 'duckdns said KO' },
@@ -64,18 +71,43 @@ describe('Settings', () => {
     http.expectOne('/api/v1/dns').flush(dns);
   });
 
-  it('a new token with names on the list checks every one of them', () => {
+  it('a token saved in its own dialog is checked against the names on the list', () => {
+    settings.openToken();
     settings.tokenDraft.set('token-novo');
 
     settings.saveToken();
     const save = http.expectOne((r) => r.method === 'PUT' && r.url === '/api/v1/dns');
     expect(save.request.body).toEqual({ token: 'token-novo' });
-    save.flush(dns);
-    http.expectOne((r) => r.method === 'GET' && r.url === '/api/v1/dns').flush(dns);
-    http.expectOne('/api/v1/dns/sync').flush(null);
+    save.flush({ ...dns, token: 'token-novo' });
 
+    expect(settings.tokenOpen()).withContext('the dialog should have closed').toBeFalse();
     expect(settings.tokenNote()).toBe('token gravado; conferindo os nomes da lista…');
-    expect(settings.tokenHidden()).withContext('the token should go back to hidden').toBeTrue();
+
+    http.expectOne('/api/v1/dns/sync').flush(null);
+    http.expectOne((r) => r.method === 'GET' && r.url === '/api/v1/dns').flush({
+      ...dns,
+      domains: [{ domain: 'smp', hostname: 'smp.duckdns.org', lastError: 'duckdns said KO' }],
+    });
+
+    expect(settings.tokenNote()).toBeNull();
+    expect(settings.refused().map((d) => d.hostname)).toEqual(['smp.duckdns.org']);
+  });
+
+  it('a token with no name on the list has nothing to be checked against', () => {
+    store.dns.set({ ...dns, links: [], domains: [] });
+    settings.openToken();
+    settings.tokenDraft.set('token-novo');
+
+    settings.saveToken();
+    http.expectOne((r) => r.method === 'PUT' && r.url === '/api/v1/dns').flush({
+      ...dns,
+      token: 'token-novo',
+      links: [],
+      domains: [],
+    });
+
+    http.expectNone('/api/v1/dns/sync');
+    expect(settings.tokenNote()).toBe('token gravado; será conferido no primeiro nome da lista');
   });
 
   it('says who owns a name that is already linked', () => {
@@ -93,15 +125,53 @@ describe('Settings', () => {
     expect(settings.rootChanged()).toBeTrue();
   });
 
-  it('a folder taken from the picker is saved without a second click', () => {
+  it('a folder taken from the picker waits for the save button', () => {
     store.system.set({ root: '/containers' } as SystemInfo);
 
     settings.pickFolder('root', '/home/vitorcds/containers');
+    http.expectNone((r) => r.url === '/api/v1/system/root');
+    expect(settings.dirty()).withContext('the button should be offering it').toBeTrue();
 
+    settings.save();
     const save = http.expectOne((r) => r.method === 'PUT' && r.url === '/api/v1/system/root');
     expect(save.request.body).toEqual({ root: '/home/vitorcds/containers' });
     save.flush({ root: '/home/vitorcds/containers' } as SystemInfo);
     http.expectOne('/api/v1/instances').flush({ instances: [] });
+  });
+
+  it('one save writes the folder, the name and what is only local', () => {
+    store.system.set({ root: '/containers' } as SystemInfo);
+    settings.rootDraft.set('/mnt/jogos');
+    settings.addName();
+    settings.setName(1, 'outro');
+    settings.setLanguage('en');
+    settings.toggleMetric('disk');
+
+    settings.save();
+
+    const root = http.expectOne((r) => r.method === 'PUT' && r.url === '/api/v1/system/root');
+    expect(root.request.body).toEqual({ root: '/mnt/jogos' });
+    root.flush({ root: '/mnt/jogos' } as SystemInfo);
+
+    const add = http.expectOne('/api/v1/dns/domains');
+    expect(add.request.body).toEqual({ domain: 'outro' });
+    add.flush({ domain: 'outro', hostname: 'outro.duckdns.org' });
+
+    http.expectOne('/api/v1/instances').flush({ instances: [] });
+    http.expectOne((r) => r.method === 'GET' && r.url === '/api/v1/dns').flush(dns);
+
+    expect(TestBed.inject(I18n).pref()).toBe('en');
+    expect(TestBed.inject(Prefs).metrics().disk).toBeFalse();
+    expect(settings.dirty()).withContext('nothing left to save').toBeFalse();
+  });
+
+  it('nothing to save keeps the button quiet', () => {
+    store.system.set({ root: '/containers' } as SystemInfo);
+    settings.rootDraft.set('/containers');
+
+    expect(settings.dirty()).toBeFalse();
+    settings.save();
+    http.expectNone(() => true);
   });
 
   it('shows the docker version, or that it did not answer', () => {

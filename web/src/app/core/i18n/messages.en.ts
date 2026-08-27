@@ -303,18 +303,21 @@ export const en: Record<MessageKey, string> = {
   'templates.editHint': 'editing a built-in template saves a copy; deleting the copy restores the original',
 
   'settings.title': 'Settings',
+  'settings.unsaved': 'unsaved changes',
+  'settings.saved': 'everything saved',
   'settings.rootTitle': 'CONTAINERS FOLDER',
   'settings.rootTip':
     'Absolute path where each container becomes a directory, with the compose file inside it and one folder per volume of the image. It only lists what is mounted into the panel, because a folder it cannot open it also cannot hand to docker. What already exists is not moved: containers under the old folder stay up where they are and come back to the list if it comes back. Inside the panel container, only a path mounted there under the same name works.',
-  'settings.rootSaved': 'new folder in use',
   'settings.templatesTitle': 'TEMPLATES FOLDER',
   'settings.templatesTip':
     'Absolute path where the templates written in the panel live, one .json each. With nothing chosen it is the folder the panel was started with, /templates inside the container. Changing it moves no file: what was on the old folder stays there and shows up again if it comes back. A template that ships with the panel is in the binary and shows up either way.',
-  'settings.templatesSaved': 'new folder in use',
   'settings.duckdnsTitle': 'DUCKDNS',
   'settings.tokenPlaceholder': 'token from your duckdns.org account',
-  'settings.changeToken': 'Change',
-  'settings.validating': 'Validating…',
+  'settings.tokenButton': 'Token',
+  'settings.tokenTitle': 'Duckdns token',
+  'settings.tokenSet': 'A token is already saved. Saving replaces it with what you write here.',
+  'settings.tokenMissing': 'No token saved yet. It is on the duckdns.org home page, once you are signed in.',
+  'settings.tokenRefused': 'Duckdns refused these names:',
   'settings.tokenTip':
     'The token is for the whole panel and lives in a 0600 file, outside any docker-compose.yml. It is what proves each name in the list below: the duckdns API only answers OK for a name that already exists in that account.',
   'settings.tokenSavedChecking': 'token saved; checking the names in the list…',
@@ -323,9 +326,8 @@ export const en: Record<MessageKey, string> = {
   'settings.notMatching': 'does not check out',
   'settings.noIpYet': 'no IP yet',
   'settings.removeAria': 'Remove {name}',
-  'settings.verify': 'Check',
-  'settings.discardAria': 'Discard',
-  'settings.addName': 'Add name',
+  'settings.newName': 'new name',
+  'settings.addDomain': 'Add domain',
   'settings.checkAll': 'Check all now',
   'settings.noNames':
     'No names yet. The subdomain is born on the duckdns.org site: here it is checked and kept with the IP up to date.',

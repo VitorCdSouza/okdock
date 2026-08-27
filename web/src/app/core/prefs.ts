@@ -25,8 +25,8 @@ export class Prefs {
     });
   }
 
-  toggle(key: keyof MetricPrefs): void {
-    this.metrics.update((m) => ({ ...m, [key]: !m[key] }));
+  setMetrics(metrics: MetricPrefs): void {
+    this.metrics.set({ ...metrics });
   }
 }
 

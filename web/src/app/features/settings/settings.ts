@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { EMPTY, Observable, catchError, concat, defer, of, tap } from 'rxjs';
 
 import { Api, OkDockError } from '../../core/api';
 import { Store } from '../../core/state';
 import { MetricPrefs, Prefs } from '../../core/prefs';
-import { I18n } from '../../core/i18n/i18n';
+import { InstanceDNS } from '../../core/models';
+import { I18n, LocalePref } from '../../core/i18n/i18n';
 import { Select } from '../../shared/select';
 import { MessageKey } from '../../core/i18n/messages.pt';
 import { InfoDot } from '../../shared/info-dot';
@@ -16,7 +18,7 @@ import { PickDir } from '../../shared/pick-dir';
   templateUrl: './settings.html',
   styleUrl: './settings.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(document:keydown.escape)': 'close.emit()' },
+  host: { '(document:keydown.escape)': 'onEscape()' },
 })
 export class Settings {
   private readonly api = inject(Api);
@@ -47,11 +49,11 @@ export class Settings {
   readonly hasToken = computed(() => !!this.store.dns()?.token);
   readonly suffix = computed(() => this.store.dns()?.suffix ?? '.duckdns.org');
 
+  readonly busy = signal(false);
+  readonly saved = signal(false);
 
   readonly rootDraft = signal('');
-  readonly rootBusy = signal(false);
   readonly rootError = signal<string | null>(null);
-  readonly rootSaved = signal(false);
 
   readonly rootChanged = computed(() => {
     const draft = this.rootDraft().trim();
@@ -59,24 +61,57 @@ export class Settings {
   });
 
   readonly templatesDraft = signal('');
-  readonly templatesBusy = signal(false);
   readonly templatesError = signal<string | null>(null);
-  readonly templatesSaved = signal(false);
 
   readonly templatesChanged = computed(() => {
     const draft = this.templatesDraft().trim();
     return !!draft && draft !== this.system()?.templatesRoot;
   });
 
+  // the token is written from its own dialog, and the panel never shows the saved one back
+  readonly tokenOpen = signal(false);
   readonly tokenDraft = signal('');
-  readonly tokenHidden = signal(false);
   readonly tokenBusy = signal(false);
   readonly tokenError = signal<string | null>(null);
   readonly tokenNote = signal<string | null>(null);
 
-  readonly drafts = signal<string[]>([]);
-  readonly busyDomain = signal<string | null>(null);
+  // a name duckdns refused is what a wrong token looks like from here
+  readonly refused = computed(() => this.domains().filter((d) => !!d.lastError));
+
+  // a draft is null while nothing was touched, so the screen keeps following the server
+  readonly nameDraft = signal<string[] | null>(null);
   readonly domainError = signal<string | null>(null);
+
+  readonly serverNames = computed(() => this.domains().map((d) => d.domain));
+  readonly names = computed(() => this.nameDraft() ?? this.serverNames());
+
+  readonly toAdd = computed(() => {
+    const known = this.serverNames();
+    return this.names()
+      .map((name) => name.trim())
+      .filter((name) => !!name && !known.includes(name));
+  });
+
+  readonly toRemove = computed(() => {
+    const kept = this.names().map((name) => name.trim());
+    return this.serverNames().filter((name) => !kept.includes(name));
+  });
+
+  readonly metricDraft = signal<MetricPrefs | null>(null);
+  readonly metrics = computed(() => this.metricDraft() ?? this.prefs.metrics());
+
+  readonly languageDraft = signal<LocalePref | null>(null);
+  readonly language = computed(() => this.languageDraft() ?? this.i18n.pref());
+
+  readonly dirty = computed(
+    () =>
+      this.rootChanged() ||
+      this.templatesChanged() ||
+      !!this.toAdd().length ||
+      !!this.toRemove().length ||
+      this.metricOptions.some((m) => this.metrics()[m.key] !== this.prefs.metrics()[m.key]) ||
+      this.language() !== this.i18n.pref(),
+  );
 
   readonly dockerLabel = computed(() => {
     const s = this.system();
@@ -97,74 +132,36 @@ export class Settings {
       const dir = this.system()?.templatesRoot;
       if (dir && !this.templatesDraft()) this.templatesDraft.set(dir);
     });
-    effect(() => {
-      const token = this.store.dns()?.token;
-      if (token && !this.tokenDraft()) {
-        this.tokenDraft.set(token);
-        this.tokenHidden.set(true);
-      }
-    });
   }
 
-  // the picker already asked which folder, so the choice goes in as soon as it closes
+  // the picker already asked which folder, and the save button writes it
   pickFolder(which: 'root' | 'templates', path: string): void {
     if (which === 'root') {
       this.rootDraft.set(path);
-      this.saveRoot();
       return;
     }
     this.templatesDraft.set(path);
-    this.saveTemplates();
   }
 
-  saveTemplates(): void {
-    const dir = this.templatesDraft().trim();
-    if (!dir || this.templatesBusy()) return;
-    this.templatesBusy.set(true);
-    this.templatesError.set(null);
-    this.templatesSaved.set(false);
-    this.api.setTemplatesRoot(dir).subscribe({
-      next: (info) => {
-        this.store.system.set(info);
-        this.templatesBusy.set(false);
-        this.templatesSaved.set(true);
-        this.store.reload();
-      },
-      error: (err: OkDockError) => {
-        this.templatesError.set(err.message);
-        this.templatesBusy.set(false);
-      },
-    });
+  onEscape(): void {
+    if (this.tokenOpen()) {
+      this.closeToken();
+      return;
+    }
+    this.close.emit();
   }
 
-  saveRoot(): void {
-    const root = this.rootDraft().trim();
-    if (!root || this.rootBusy()) return;
-    this.rootBusy.set(true);
-    this.rootError.set(null);
-    this.rootSaved.set(false);
-    this.api.setRoot(root).subscribe({
-      next: (info) => {
-        this.store.system.set(info);
-        this.rootBusy.set(false);
-        this.rootSaved.set(true);
-        this.store.reload();
-      },
-      error: (err: OkDockError) => {
-        this.rootError.set(err.message);
-        this.rootBusy.set(false);
-      },
-    });
-  }
-
-  onTokenInput(value: string): void {
-    this.tokenDraft.set(value);
+  openToken(): void {
+    this.tokenDraft.set('');
+    this.tokenError.set(null);
     this.tokenNote.set(null);
+    this.tokenOpen.set(true);
   }
 
-  editToken(): void {
-    this.tokenHidden.set(false);
-    this.tokenNote.set(null);
+  closeToken(): void {
+    this.tokenOpen.set(false);
+    this.tokenDraft.set('');
+    this.tokenError.set(null);
   }
 
   saveToken(): void {
@@ -174,16 +171,12 @@ export class Settings {
     this.tokenError.set(null);
     this.tokenNote.set(null);
     this.api.saveDnsToken(token).subscribe({
-      next: () => {
+      next: (status) => {
+        this.store.dns.set(status);
         this.tokenBusy.set(false);
-        this.tokenHidden.set(true);
-        this.store.reloadDns();
-        if (this.domains().length) {
-          this.api.syncDns().subscribe({ error: () => {} });
-          this.tokenNote.set(this.t('settings.tokenSavedChecking'));
-        } else {
-          this.tokenNote.set(this.t('settings.tokenSavedPending'));
-        }
+        this.tokenOpen.set(false);
+        this.tokenDraft.set('');
+        this.checkToken();
       },
       error: (err: OkDockError) => {
         this.tokenError.set(err.message);
@@ -192,86 +185,135 @@ export class Settings {
     });
   }
 
-  draftKey(index: number): string {
-    return `draft:${index}`;
+  // duckdns only answers about a name that exists, so the names on the list are the check
+  private checkToken(): void {
+    if (!this.serverNames().length) {
+      this.tokenNote.set(this.t('settings.tokenSavedPending'));
+      return;
+    }
+    this.tokenNote.set(this.t('settings.tokenSavedChecking'));
+    this.api.syncDns().subscribe({
+      next: () => {
+        this.tokenNote.set(null);
+        this.store.reloadDns();
+      },
+      error: (err: OkDockError) => {
+        this.tokenNote.set(null);
+        this.tokenError.set(err.message);
+      },
+    });
   }
 
   instanceFor(domain: string): string {
     return this.links().find((l) => l.domain === domain)?.instance ?? '';
   }
 
-  addDraft(): void {
-    this.drafts.update((d) => [...d, '']);
+  statusFor(domain: string): InstanceDNS | undefined {
+    return this.domains().find((d) => d.domain === domain);
+  }
+
+  addName(): void {
+    this.nameDraft.set([...this.names(), '']);
     this.domainError.set(null);
   }
 
-  setDraft(index: number, value: string): void {
-    this.drafts.update((d) => d.map((cur, i) => (i === index ? value : cur)));
+  setName(index: number, value: string): void {
+    this.nameDraft.set(this.names().map((name, i) => (i === index ? value : name)));
   }
 
-  dropDraft(index: number): void {
-    this.drafts.update((d) => d.filter((_, i) => i !== index));
+  dropName(index: number): void {
+    this.nameDraft.set(this.names().filter((_, i) => i !== index));
     this.domainError.set(null);
   }
 
-  saveDraft(index: number, value: string): void {
-    const domain = value.trim();
-    if (!domain || this.busyDomain()) return;
-    this.busyDomain.set(this.draftKey(index));
-    this.domainError.set(null);
-    this.api.addDnsDomain(domain).subscribe({
-      next: () => {
-        this.busyDomain.set(null);
-        this.dropDraft(index);
-        this.store.reloadDns();
-      },
-      error: (err: OkDockError) => {
-        this.domainError.set(err.message);
-        this.busyDomain.set(null);
-      },
-    });
+  toggleMetric(key: keyof MetricPrefs): void {
+    this.metricDraft.set({ ...this.metrics(), [key]: !this.metrics()[key] });
   }
 
-  rename(current: string, value: string): void {
-    const domain = value.trim();
-    if (!domain || domain === current || this.busyDomain()) return;
-    this.busyDomain.set(current);
-    this.domainError.set(null);
-    this.api.addDnsDomain(domain).subscribe({
-      next: () => {
-        this.api.removeDnsDomain(current).subscribe({
-          next: () => {
-            this.busyDomain.set(null);
-            this.store.reloadDns();
-          },
-          error: () => {
-            this.busyDomain.set(null);
-            this.store.reloadDns();
-          },
-        });
-      },
-      error: (err: OkDockError) => {
-        this.domainError.set(err.message);
-        this.busyDomain.set(null);
-        this.store.reloadDns();
-      },
-    });
+  setLanguage(pref: LocalePref): void {
+    this.languageDraft.set(pref);
   }
 
-  removeDomain(domain: string): void {
-    if (this.busyDomain()) return;
-    this.busyDomain.set(domain);
+  save(): void {
+    if (this.busy() || !this.dirty()) return;
+    this.busy.set(true);
+    this.saved.set(false);
+    this.rootError.set(null);
+    this.templatesError.set(null);
     this.domainError.set(null);
-    this.api.removeDnsDomain(domain).subscribe({
-      next: () => {
-        this.busyDomain.set(null);
-        this.store.reloadDns();
-      },
-      error: (err: OkDockError) => {
-        this.domainError.set(err.message);
-        this.busyDomain.set(null);
-      },
-    });
+
+    const folders = this.rootChanged() || this.templatesChanged();
+    const dns = !!this.toAdd().length || !!this.toRemove().length;
+    let addOk = true;
+
+    const steps: Observable<unknown>[] = [];
+
+    if (this.rootChanged()) {
+      steps.push(
+        this.api.setRoot(this.rootDraft().trim()).pipe(
+          tap((info) => this.store.system.set(info)),
+          catchError((err: OkDockError) => {
+            this.rootError.set(err.message);
+            return of(null);
+          }),
+        ),
+      );
+    }
+
+    if (this.templatesChanged()) {
+      steps.push(
+        this.api.setTemplatesRoot(this.templatesDraft().trim()).pipe(
+          tap((info) => this.store.system.set(info)),
+          catchError((err: OkDockError) => {
+            this.templatesError.set(err.message);
+            return of(null);
+          }),
+        ),
+      );
+    }
+
+    for (const name of this.toAdd()) {
+      steps.push(
+        this.api.addDnsDomain(name).pipe(
+          catchError((err: OkDockError) => {
+            addOk = false;
+            this.domainError.set(err.message);
+            return of(null);
+          }),
+        ),
+      );
+    }
+
+    // a refused name leaves the old one standing, or a typo would erase the address
+    for (const name of this.toRemove()) {
+      steps.push(
+        defer(() =>
+          addOk
+            ? this.api.removeDnsDomain(name).pipe(
+                catchError((err: OkDockError) => {
+                  this.domainError.set(err.message);
+                  return of(null);
+                }),
+              )
+            : EMPTY,
+        ),
+      );
+    }
+
+    concat(...steps).subscribe({ complete: () => this.done(folders, dns) });
+  }
+
+  private done(folders: boolean, dns: boolean): void {
+    this.prefs.setMetrics(this.metrics());
+    this.i18n.setPref(this.language());
+    this.metricDraft.set(null);
+    this.languageDraft.set(null);
+    this.nameDraft.set(null);
+    this.busy.set(false);
+    this.saved.set(true);
+
+    if (folders) this.store.reload();
+    if (dns) this.store.reloadDns();
   }
 
   sync(): void {

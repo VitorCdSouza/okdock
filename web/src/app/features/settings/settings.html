@@ -9,97 +9,72 @@
   <div class="body pane">
     <section>
       <div class="section-title">{{ t('settings.rootTitle') }}</div>
-      <div class="grid4">
+      <div class="grid picker">
+        <ok-pick-dir [start]="rootDraft()" (picked)="pickFolder('root', $event)" />
         <input class="mono" spellcheck="false" placeholder="/home/you/containers"
                [ngModel]="rootDraft()" (ngModelChange)="rootDraft.set($event)"
-               (keydown.enter)="saveRoot()">
-        <ok-pick-dir [start]="rootDraft()" (picked)="pickFolder('root', $event)" />
-        <button class="btn btn-sm btn-go" (click)="saveRoot()"
-                [disabled]="rootBusy() || !rootChanged()">
-          {{ rootBusy() ? t('common.saving') : t('common.save') }}
-        </button>
+               (keydown.enter)="save()">
         <ok-info [text]="t('settings.rootTip')" />
       </div>
       @if (rootError(); as e) { <div class="alert bad">{{ e }}</div> }
-      @if (rootSaved()) { <div class="ok-note">{{ t('settings.rootSaved') }}</div> }
     </section>
 
     <section>
       <div class="section-title">{{ t('settings.templatesTitle') }}</div>
-      <div class="grid4">
+      <div class="grid picker">
+        <ok-pick-dir [start]="templatesDraft()" (picked)="pickFolder('templates', $event)" />
         <input class="mono" spellcheck="false" placeholder="/templates"
                [ngModel]="templatesDraft()" (ngModelChange)="templatesDraft.set($event)"
-               (keydown.enter)="saveTemplates()">
-        <ok-pick-dir [start]="templatesDraft()" (picked)="pickFolder('templates', $event)" />
-        <button class="btn btn-sm btn-go" (click)="saveTemplates()"
-                [disabled]="templatesBusy() || !templatesChanged()">
-          {{ templatesBusy() ? t('common.saving') : t('common.save') }}
-        </button>
+               (keydown.enter)="save()">
         <ok-info [text]="t('settings.templatesTip')" />
       </div>
       @if (templatesError(); as e) { <div class="alert bad">{{ e }}</div> }
-      @if (templatesSaved()) { <div class="ok-note">{{ t('settings.templatesSaved') }}</div> }
     </section>
 
     <section>
-      <div class="section-title">{{ t('settings.duckdnsTitle') }}</div>
-      <div class="grid3">
-        <input class="mono" [type]="tokenHidden() ? 'password' : 'text'"
-               autocomplete="off" spellcheck="false"
-               [placeholder]="t('settings.tokenPlaceholder')"
-               [ngModel]="tokenDraft()" (ngModelChange)="onTokenInput($event)"
-               (keydown.enter)="saveToken()">
-        @if (tokenHidden()) {
-          <button class="btn btn-sm" (click)="editToken()">{{ t('settings.changeToken') }}</button>
-        } @else {
-          <button class="btn btn-sm btn-go" (click)="saveToken()"
-                  [disabled]="tokenBusy() || !tokenDraft().trim()">
-            {{ tokenBusy() ? t('settings.validating') : t('common.save') }}
-          </button>
-        }
+      <div class="section-title">
+        {{ t('settings.duckdnsTitle') }}
+        <button class="btn btn-sm" (click)="openToken()">{{ t('settings.tokenButton') }}</button>
+        <button class="btn btn-sm" (click)="addName()" [disabled]="!hasToken()">
+          ＋ {{ t('settings.addDomain') }}
+        </button>
         <ok-info [text]="t('settings.tokenTip')" />
+      </div>
 
-        @for (d of domains(); track d.domain) {
+      @if (refused().length) {
+        <div class="alert bad">
+          <strong>{{ t('settings.tokenRefused') }}</strong>
+          <ul>
+            @for (d of refused(); track d.domain) {
+              <li class="mono">{{ d.hostname }}: {{ d.lastError }}</li>
+            }
+          </ul>
+        </div>
+      }
+
+      <div class="grid">
+        @for (name of names(); track $index) {
           <div class="name-input"
-               [title]="instanceFor(d.domain) ? t('settings.inUseBy', { instance: instanceFor(d.domain) }) : ''">
-            <input class="mono" spellcheck="false" [value]="d.domain"
-                   [disabled]="busyDomain() === d.domain"
-                   (keydown.enter)="rename(d.domain, $any($event.target).value)"
-                   (blur)="rename(d.domain, $any($event.target).value)">
+               [title]="instanceFor(name) ? t('settings.inUseBy', { instance: instanceFor(name) }) : ''">
+            <input class="mono" spellcheck="false" placeholder="smp"
+                   [value]="name" (input)="setName($index, $any($event.target).value)"
+                   (keydown.enter)="save()">
             <span class="suffix mono">{{ suffix() }}</span>
           </div>
 
-          <span class="status" [class.bad]="!!d.lastError" [class.unknown]="!d.lastError && !d.lastIp"
-                [title]="d.lastError || ''">
-            <span class="dot"></span>
-            {{ d.lastError ? t('settings.notMatching') : (d.lastIp || t('settings.noIpYet')) }}
-          </span>
+          @if (statusFor(name); as d) {
+            <span class="status" [class.bad]="!!d.lastError" [class.unknown]="!d.lastError && !d.lastIp"
+                  [title]="d.lastError || ''">
+              <span class="dot"></span>
+              {{ d.lastError ? t('settings.notMatching') : (d.lastIp || t('settings.noIpYet')) }}
+            </span>
+          } @else {
+            <span class="status new">{{ t('settings.newName') }}</span>
+          }
 
-          <button class="icon" (click)="removeDomain(d.domain)"
-                  [disabled]="busyDomain() === d.domain"
-                  [attr.aria-label]="t('settings.removeAria', { name: d.hostname })">✕</button>
+          <button class="icon" (click)="dropName($index)"
+                  [attr.aria-label]="t('settings.removeAria', { name: name + suffix() })">✕</button>
         }
-
-        @for (draft of drafts(); track $index) {
-          <div class="name-input">
-            <input class="mono" spellcheck="false" placeholder="smp" autofocus
-                   [value]="draft" [disabled]="busyDomain() === draftKey($index)"
-                   (keydown.enter)="saveDraft($index, $any($event.target).value)"
-                   (input)="setDraft($index, $any($event.target).value)">
-            <span class="suffix mono">{{ suffix() }}</span>
-          </div>
-
-          <button class="btn btn-sm btn-go" (click)="saveDraft($index, draft)"
-                  [disabled]="!draft.trim() || busyDomain() === draftKey($index)">
-            {{ busyDomain() === draftKey($index) ? t('common.checking') : t('settings.verify') }}
-          </button>
-
-          <button class="icon" (click)="dropDraft($index)"
-                  [attr.aria-label]="t('settings.discardAria')">✕</button>
-        }
-
-        <button class="add" (click)="addDraft()" [disabled]="!hasToken()"
-                [title]="t('settings.addName')" [attr.aria-label]="t('settings.addName')">＋</button>
       </div>
 
       @if (tokenError(); as e) { <div class="alert bad">{{ e }}</div> }
@@ -120,8 +95,7 @@
       <div class="checks">
         @for (m of metricOptions; track m.key) {
           <label class="check">
-            <input type="checkbox" [checked]="prefs.metrics()[m.key]"
-                   (change)="prefs.toggle(m.key)">
+            <input type="checkbox" [checked]="metrics()[m.key]" (change)="toggleMetric(m.key)">
             <span>{{ t(m.label) }}</span>
           </label>
         }
@@ -130,10 +104,11 @@
 
     <section>
       <div class="section-title">{{ t('settings.languageTitle') }}</div>
-      <div class="row">
-        <ok-select [value]="i18n.pref()" [options]="languageOptions()"
+      <div class="grid">
+        <ok-select [value]="language()" [options]="languageOptions()"
                    [ariaLabel]="t('settings.languageTitle')"
-                   (valueChange)="i18n.setPref($any($event))" />
+                   (valueChange)="setLanguage($any($event))" />
+        <span></span>
         <ok-info [text]="t('settings.languageTip')" />
       </div>
     </section>
@@ -146,4 +121,48 @@
       </div>
     </section>
   </div>
+
+  <footer>
+    <span class="hint mono">
+      @if (busy()) { {{ t('common.saving') }} }
+      @else if (dirty()) { {{ t('settings.unsaved') }} }
+      @else if (saved()) { {{ t('settings.saved') }} }
+    </span>
+    <div class="actions">
+      <button class="btn btn-primary" (click)="save()" [disabled]="!dirty() || busy()">
+        {{ t('common.save') }}
+      </button>
+    </div>
+  </footer>
 </div>
+
+@if (tokenOpen()) {
+  <div class="backdrop over" (click)="closeToken()"></div>
+
+  <div class="dialog ask" role="dialog" [attr.aria-label]="t('settings.tokenTitle')">
+    <header>
+      <h3>{{ t('settings.tokenTitle') }}</h3>
+      <button class="btn btn-sm" (click)="closeToken()" [attr.aria-label]="t('common.close')">✕</button>
+    </header>
+
+    <p>{{ hasToken() ? t('settings.tokenSet') : t('settings.tokenMissing') }}</p>
+
+    <input class="mono" type="text" autocomplete="off" spellcheck="false" autofocus
+           [placeholder]="t('settings.tokenPlaceholder')"
+           [ngModel]="tokenDraft()" (ngModelChange)="tokenDraft.set($event)"
+           (keydown.enter)="saveToken()">
+
+    @if (tokenError(); as e) { <div class="alert bad">{{ e }}</div> }
+
+    <footer>
+      <ok-info [text]="t('settings.tokenTip')" />
+      <div class="actions">
+        <button class="btn" (click)="closeToken()" [disabled]="tokenBusy()">{{ t('common.cancel') }}</button>
+        <button class="btn btn-primary" (click)="saveToken()"
+                [disabled]="tokenBusy() || !tokenDraft().trim()">
+          {{ tokenBusy() ? t('common.saving') : t('common.save') }}
+        </button>
+      </div>
+    </footer>
+  </div>
+}
