@@ -293,6 +293,22 @@ describe('Kanban: dragging a card into a column', () => {
     expect(grow.get('stopped')).toBe(1);
   });
 
+  it('filtering a column down to one card does not resize it', () => {
+    store.states.set(['running', 'stopped']);
+    store.instances.set([
+      instance({ name: 'smp', category: 'games' }),
+      instance({ name: 'router', category: 'network' }),
+    ]);
+
+    const wide = kanban.columns().find((c) => c.state === 'running')!.grow;
+    store.categoryFilter.set('network');
+    const narrowed = kanban.columns().find((c) => c.state === 'running')!;
+
+    expect(wide).toBe(2);
+    expect(narrowed.cards.length).withContext('the filter did hide a card').toBe(1);
+    expect(narrowed.grow).withContext('one card left, the column keeps the width of two').toBe(wide);
+  });
+
   it('confirming fires the right call and closes the dialog', () => {
     store.instances.set([instance()]);
     store.dragging.set('smp');

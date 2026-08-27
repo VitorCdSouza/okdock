@@ -98,8 +98,19 @@ export class Kanban {
     this.openGroups.set(new Set());
   }
 
+  // width comes from every container the column holds, so a filter never resizes it
+  private readonly held = computed(() => {
+    const counts = new Map<State, number>();
+    for (const instance of this.store.instances()) {
+      const column = COLUMN_OF[instance.state];
+      counts.set(column, (counts.get(column) ?? 0) + 1);
+    }
+    return counts;
+  });
+
   readonly columns = computed(() => {
     const opened = this.openGroups();
+    const held = this.held();
     return this.store
       .states()
       .filter((state) => COLUMN_OF[state] === state)
@@ -111,8 +122,7 @@ export class Kanban {
           title: this.t(STATE_KEY[state]),
           cards,
           items: this.pack(state, cards, opened),
-          // width comes from what the column holds, not from what is open: opening a group cannot resize it
-          grow: Math.min(2, Math.max(1, cards.length)),
+          grow: Math.min(2, Math.max(1, held.get(state) ?? 0)),
         };
       });
   });
