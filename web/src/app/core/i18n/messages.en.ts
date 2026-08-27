@@ -4,10 +4,10 @@ export const en: Record<MessageKey, string> = {
   'common.close': 'Close',
   'common.cancel': 'Cancel',
   'common.save': 'Save',
-  'common.saving': 'saving…',
+  'common.saving': 'Saving…',
   'common.discard': 'Discard',
-  'common.loading': 'loading…',
-  'common.checking': 'checking…',
+  'common.loading': 'Loading…',
+  'common.checking': 'Checking…',
   'common.copied': 'copied: {text}',
   'common.pick': 'Pick',
 
@@ -131,7 +131,7 @@ export const en: Record<MessageKey, string> = {
 
   'detail.aria': 'Instance {name}',
   'detail.stats': '{cpu}% CPU · {used} of {total}',
-  'detail.clearError': 'clear error',
+  'detail.clearError': 'Clear error',
   'detail.restore': 'Restore',
   'detail.restart': '↻ Restart',
   'detail.tab.config': 'Settings',
@@ -211,9 +211,9 @@ export const en: Record<MessageKey, string> = {
   'picker.willBeCreated': 'will be created',
   'picker.empty': 'nothing here',
   'picker.newFolder': 'name of the new folder',
-  'picker.create': 'create',
-  'picker.ok': 'use this folder',
-  'picker.new': 'new',
+  'picker.create': 'Create',
+  'picker.ok': 'Use this folder',
+  'picker.new': 'New',
   'picker.nothingPicked': 'no folder picked',
   'picker.expand': 'expand',
   'picker.collapse': 'collapse',
@@ -233,7 +233,7 @@ export const en: Record<MessageKey, string> = {
   'new.footerTip':
     'Passwords never enter docker-compose.yml: secret fields go to an .env next to it, with 0600 permissions and out of version control. The generated file shows up in the compose.yml tab of the instance.',
   'new.back': 'Back',
-  'new.wait': 'please wait…',
+  'new.wait': 'Please wait…',
   'new.create': 'Create instance',
   'new.continue': 'Continue →',
 
@@ -260,7 +260,7 @@ export const en: Record<MessageKey, string> = {
   'templates.stopGrace': 'Stop grace (s)',
   'templates.stopGraceTip':
     'How long docker waits before SIGKILL. A game that saves the world on shutdown needs room here, or the save corrupts.',
-  'templates.suggest': 'suggest from the image',
+  'templates.suggest': 'Suggest from the image',
   'templates.suggestPortsTip':
     'Reads the ports the image exposes. Picking the image from the list already fills these in; the button is for a reference typed whole, or for a second look after changing the version. It leaves what you filled in alone and only adds what is missing.',
   'templates.suggestVolumesTip':
@@ -285,12 +285,12 @@ export const en: Record<MessageKey, string> = {
   'templates.fieldOptions': 'enum options',
   'templates.fieldOptionsPlaceholder': 'value=Label, other=Other',
   'templates.add': '+ add',
-  'templates.remove': 'remove',
+  'templates.remove': 'Remove',
   'templates.delete': 'Delete',
   'templates.newCategory': '+ Category',
   'templates.newCategoryTip': 'A category is born with the first template saved in it; with no template it is gone on the next load.',
   'templates.categoryPlaceholder': 'category name',
-  'templates.categoryConfirm': 'create',
+  'templates.categoryConfirm': 'Create',
   'templates.emptyCategory': 'No template in this category.',
   'templates.newHint': 'writes a new file in the templates folder of the settings',
   'templates.editHint': 'editing a built-in template saves a copy; deleting the copy restores the original',
@@ -307,7 +307,7 @@ export const en: Record<MessageKey, string> = {
   'settings.duckdnsTitle': 'DUCKDNS',
   'settings.tokenPlaceholder': 'token from your duckdns.org account',
   'settings.changeToken': 'Change',
-  'settings.validating': 'validating…',
+  'settings.validating': 'Validating…',
   'settings.tokenTip':
     'The token is for the whole panel and lives in a 0600 file, outside any docker-compose.yml. It is what proves each name in the list below: the duckdns API only answers OK for a name that already exists in that account.',
   'settings.tokenSavedChecking': 'token saved; checking the names in the list…',

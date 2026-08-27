@@ -2,10 +2,10 @@ export const pt = {
   'common.close': 'Fechar',
   'common.cancel': 'Cancelar',
   'common.save': 'Salvar',
-  'common.saving': 'salvando…',
+  'common.saving': 'Salvando…',
   'common.discard': 'Descartar',
-  'common.loading': 'carregando…',
-  'common.checking': 'verificando…',
+  'common.loading': 'Carregando…',
+  'common.checking': 'Verificando…',
   'common.copied': 'copiado: {text}',
   'common.pick': 'Escolher',
 
@@ -128,7 +128,7 @@ export const pt = {
 
   'detail.aria': 'Instância {name}',
   'detail.stats': '{cpu}% CPU · {used} de {total}',
-  'detail.clearError': 'limpar erro',
+  'detail.clearError': 'Limpar erro',
   'detail.restore': 'Restaurar',
   'detail.restart': '↻ Reiniciar',
   'detail.tab.config': 'Configurações',
@@ -205,9 +205,9 @@ export const pt = {
   'picker.willBeCreated': 'vai ser criada',
   'picker.empty': 'nada aqui',
   'picker.newFolder': 'nome da pasta nova',
-  'picker.create': 'criar',
-  'picker.ok': 'usar esta pasta',
-  'picker.new': 'nova',
+  'picker.create': 'Criar',
+  'picker.ok': 'Usar esta pasta',
+  'picker.new': 'Nova',
   'picker.nothingPicked': 'nenhuma pasta escolhida',
   'picker.expand': 'abrir',
   'picker.collapse': 'fechar',
@@ -227,7 +227,7 @@ export const pt = {
   'new.footerTip':
     'Senhas não entram no docker-compose.yml: os campos secretos vão para um .env ao lado, com permissão 0600 e fora do controle de versão. O arquivo gerado aparece na aba compose.yml da instância.',
   'new.back': 'Voltar',
-  'new.wait': 'aguarde…',
+  'new.wait': 'Aguarde…',
   'new.create': 'Criar instância',
   'new.continue': 'Continuar →',
 
@@ -254,7 +254,7 @@ export const pt = {
   'templates.stopGrace': 'Espera ao parar (s)',
   'templates.stopGraceTip':
     'Quanto o docker espera antes do SIGKILL. Jogo que grava mundo ao desligar precisa de folga aqui, senão o save corrompe.',
-  'templates.suggest': 'sugerir da imagem',
+  'templates.suggest': 'Sugerir da imagem',
   'templates.suggestPortsTip':
     'Lê as portas que a imagem expõe. Escolher a imagem na lista já preenche isto; o botão serve para uma imagem digitada inteira, ou para olhar de novo depois de trocar a versão. Não mexe no que você já preencheu, só acrescenta o que falta.',
   'templates.suggestVolumesTip':
@@ -279,12 +279,12 @@ export const pt = {
   'templates.fieldOptions': 'opções do enum',
   'templates.fieldOptionsPlaceholder': 'valor=Rótulo, outro=Outro',
   'templates.add': '+ adicionar',
-  'templates.remove': 'remover',
+  'templates.remove': 'Remover',
   'templates.delete': 'Apagar',
   'templates.newCategory': '+ Categoria',
   'templates.newCategoryTip': 'A categoria nasce junto com o primeiro template gravado nela; sem template ela some no próximo carregamento.',
   'templates.categoryPlaceholder': 'nome da categoria',
-  'templates.categoryConfirm': 'criar',
+  'templates.categoryConfirm': 'Criar',
   'templates.emptyCategory': 'Nenhum template nesta categoria.',
   'templates.newHint': 'grava um arquivo novo na pasta de templates das configurações',
   'templates.editHint': 'editar um template de fábrica grava uma cópia; apagar a cópia devolve o original',
@@ -301,7 +301,7 @@ export const pt = {
   'settings.duckdnsTitle': 'DUCKDNS',
   'settings.tokenPlaceholder': 'token da sua conta no duckdns.org',
   'settings.changeToken': 'Trocar',
-  'settings.validating': 'validando…',
+  'settings.validating': 'Validando…',
   'settings.tokenTip':
     'O token vale para o painel inteiro e fica num arquivo 0600, fora de qualquer docker-compose.yml. É ele que prova cada nome da lista abaixo: a API do duckdns só responde OK para um nome que já existe naquela conta.',
   'settings.tokenSavedChecking': 'token gravado; conferindo os nomes da lista…',
