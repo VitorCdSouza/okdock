@@ -38,7 +38,7 @@ header { display: flex; gap: 9px; align-items: flex-start; }
 }
 .sub {
   font-size: var(--fs-xs);
-  color: var(--fg-dim);
+  color: var(--fg-muted);
   margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
@@ -52,7 +52,7 @@ header { display: flex; gap: 9px; align-items: flex-start; }
   margin: 0;
   font-size: var(--fs-xs);
 }
-.specs dt { color: var(--fg-dim); }
+.specs dt { color: var(--fg-muted); }
 .specs dd { margin: 0; color: var(--fg-soft); }
 
 .usage { border-top: 1px dashed var(--line); padding-top: 8px; }
@@ -65,7 +65,7 @@ header { display: flex; gap: 9px; align-items: flex-start; }
 }
 
 .panel {
-  background: #0f1116;
+  background: var(--bg-sunken);
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
   padding: 8px;
@@ -80,7 +80,7 @@ header { display: flex; gap: 9px; align-items: flex-start; }
 .log {
   font-size: var(--fs-2xs);
   line-height: 1.65;
-  color: #7d828d;
+  color: var(--fg-muted);
   white-space: pre-wrap;
   word-break: break-word;
   max-height: 5.5em;
@@ -162,7 +162,7 @@ footer {
   white-space: nowrap;
 }
 .addr:hover { border-color: var(--ok); }
-.addr .copy { color: var(--fg-dim); margin-left: 6px; }
+.addr .copy { color: var(--fg-muted); margin-left: 6px; }
 .addr.stale { color: var(--fg-muted); background: var(--bg-chip); border-color: var(--line-strong); }
 
 .ext {
@@ -177,6 +177,6 @@ footer {
   border-radius: var(--r-xs);
   font-size: var(--fs-2xs);
   font-weight: 500;
-  color: var(--fg-dim);
+  color: var(--fg-muted);
   line-height: 1.5;
 }

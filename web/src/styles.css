@@ -1,3 +1,37 @@
+/* the panel serves its own fonts: it runs on a lan and may have no route out */
+@font-face {
+  font-family: 'Red Hat Text';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/red-hat-text-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Red Hat Text';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/red-hat-text-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Red Hat Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/red-hat-mono-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Red Hat Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/red-hat-mono-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 :root {
   --bg: #0b0c10;
   --bg-raised: #101218;
@@ -8,6 +42,9 @@
   --bg-code: #08090c;
   --bg-chip: #1e222b;
   --bg-toggle: #1b1e26;
+  /* a row under the pointer, and a row that is the chosen one */
+  --bg-hover: #12151c;
+  --bg-selected: #141b26;
 
   --line: #22252d;
   --line-strong: #2a2e38;
@@ -31,10 +68,12 @@
   --warn: #e5b567;
   --warn-bg: #241f10;
   --warn-line: #4a3d18;
+  --warn-fg: #c9b98c;
 
   --bad: #f08a8a;
   --bad-bg: #2a1618;
   --bad-line: #5a2b2b;
+  --bad-fg: #f3b3b3;
 
   --busy: #9b8cf5;
   --busy-bg: #1e1b33;
@@ -49,16 +88,18 @@
      dashed box, the square of a plus */
   --field-h: 32px;
 
-  --sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
-  --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --sans: 'Red Hat Text', system-ui, -apple-system, sans-serif;
+  --mono: 'Red Hat Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
+  /* the small end is packed because labels and tags live there, the top end
+     jumps, so a title reads as a title without needing a colour */
   --fs-2xs: 0.6875rem;
   --fs-xs: 0.75rem;
   --fs-sm: 0.8125rem;
   --fs-md: 0.875rem;
   --fs-lg: 0.9375rem;
-  --fs-xl: 1rem;
-  --fs-2xl: 1.0625rem;
+  --fs-xl: 1.1875rem;
+  --fs-2xl: 1.5rem;
 }
 
 * { box-sizing: border-box; }
@@ -70,6 +111,8 @@ html, body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--sans);
+  /* a port, a memory limit and a column count have to line up in a column */
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
 }
 body { font-size: var(--fs-lg); }
@@ -102,7 +145,7 @@ input:not([type='checkbox']), select {
 }
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: var(--accent-line);
+  border-color: var(--accent);
 }
 input[type='checkbox'] { width: auto; }
 /* the same caret the image and version boxes draw, so a select does not look
@@ -223,8 +266,8 @@ select {
   border-radius: var(--r-sm);
   font: 400 var(--fs-sm)/1.55 var(--sans);
 }
-.alert.bad { background: var(--bad-bg); border: 1px solid var(--bad-line); color: #f3b3b3; }
-.alert.warn { background: var(--warn-bg); border: 1px solid var(--warn-line); color: #c9b98c; }
+.alert.bad { background: var(--bad-bg); border: 1px solid var(--bad-line); color: var(--bad-fg); }
+.alert.warn { background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn-fg); }
 .alert ul { margin: 8px 0 0; padding-left: 18px; }
 .alert li { font-size: var(--fs-xs); }
 
@@ -278,7 +321,7 @@ select {
   border-radius: var(--r-xs);
   background: var(--bg-chip);
   font: 500 var(--fs-2xs) var(--mono);
-  color: #9297a3;
+  color: var(--fg-muted);
 }
 
 .empty {

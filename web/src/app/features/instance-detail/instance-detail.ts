@@ -28,11 +28,11 @@ type Tab = 'config' | 'console' | 'compose' | 'recursos';
 const STATE_CHIP: Record<State, { bg: string; line: string; fg: string }> = {
   running: { bg: 'var(--ok-bg)', line: 'var(--ok-line)', fg: 'var(--ok)' },
   starting: { bg: 'var(--warn-bg)', line: 'var(--warn-line)', fg: 'var(--warn)' },
-  provisioning: { bg: '#111b2b', line: '#2c3a4f', fg: 'var(--accent)' },
+  provisioning: { bg: 'var(--accent-bg)', line: 'var(--accent-line)', fg: 'var(--accent)' },
   updating: { bg: 'var(--busy-bg)', line: 'var(--busy-line)', fg: 'var(--busy)' },
-  stopped: { bg: '#1a1d24', line: 'var(--line-strong)', fg: 'var(--fg-muted)' },
+  stopped: { bg: 'var(--bg-toggle)', line: 'var(--line-strong)', fg: 'var(--fg-muted)' },
   error: { bg: 'var(--bad-bg)', line: 'var(--bad-line)', fg: 'var(--bad)' },
-  archived: { bg: '#141519', line: 'var(--line)', fg: 'var(--fg-faint)' },
+  archived: { bg: 'var(--bg-sunken)', line: 'var(--line)', fg: 'var(--fg-faint)' },
 };
 
 @Component({

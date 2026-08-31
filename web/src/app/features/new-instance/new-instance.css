@@ -2,11 +2,11 @@
 .steps span {
   padding: 3px 8px;
   border-radius: var(--r-xs);
-  background: #1f2531;
+  background: var(--bg-chip);
   color: var(--fg-dim);
 }
 .steps span.on { background: var(--accent-bg); color: var(--accent); }
-.steps .arrow { background: none; color: #3a3f49; padding: 0; }
+.steps .arrow { background: none; color: var(--fg-faint); padding: 0; }
 
 .templates {
   display: grid;
@@ -23,7 +23,7 @@
   gap: 6px;
 }
 .template:hover { border-color: var(--line-hover); }
-.template.on { border-color: var(--accent-line); background: #141b26; }
+.template.on { border-color: var(--accent-line); background: var(--bg-selected); }
 .template .head { display: flex; align-items: center; gap: 8px; }
 .template .short {
   width: 26px; height: 26px;

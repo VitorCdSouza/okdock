@@ -66,7 +66,7 @@
   padding: 9px 22px;
   background: var(--bad-bg);
   border-bottom: 1px solid var(--bad-line);
-  color: #f3b3b3;
+  color: var(--bad-fg);
   font-size: var(--fs-sm);
   flex: none;
 }
@@ -92,7 +92,7 @@
   color: var(--fg-muted);
 }
 .chip:hover { border-color: var(--line-hover); color: var(--fg-soft); }
-.chip.on { border-color: var(--accent-line); background: #1f2531; color: var(--fg); }
+.chip.on { border-color: var(--accent-line); background: var(--bg-selected); color: var(--fg); }
 
 /* the gutter stays reserved: a group opening cannot make the scrollbar appear and shift the board sideways */
 main { flex: 1; min-height: 0; overflow: auto; scrollbar-gutter: stable; }
@@ -117,4 +117,4 @@ main { flex: 1; min-height: 0; overflow: auto; scrollbar-gutter: stable; }
   font-size: var(--fs-sm);
   color: var(--fg-soft);
 }
-.toast.bad { border-color: var(--bad-line); color: #f3b3b3; }
+.toast.bad { border-color: var(--bad-line); color: var(--bad-fg); }

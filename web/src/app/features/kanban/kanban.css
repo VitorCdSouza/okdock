@@ -1,8 +1,9 @@
 .board-wrap { position: relative; }
 
+/* the column bleeds 6px on each side, so the gap pays 12 before any air shows */
 .board {
   display: flex;
-  gap: 12px;
+  gap: 26px;
   padding: 16px 20px 26px;
   align-items: start;
   overflow-x: auto;
@@ -117,7 +118,7 @@
 .peek .chev { font-size: var(--fs-xl); line-height: 1; }
 .peek .title, .peek .count { color: inherit; }
 .column.droppable { border-color: var(--line-strong); }
-.column.drop-over { border-color: var(--accent); border-style: solid; background: #111722; }
+.column.drop-over { border-color: var(--accent); border-style: solid; background: var(--accent-bg); }
 
 .drop-hint {
   padding: 12px 8px;
@@ -161,7 +162,7 @@
   align-items: center;
   gap: 9px;
   font-size: var(--fs-sm);
-  color: #f3b3b3;
+  color: var(--bad-fg);
   cursor: pointer;
 }
 .dialog.ask .check input { accent-color: var(--bad); }

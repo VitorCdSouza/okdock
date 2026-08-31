@@ -18,8 +18,8 @@
   color: var(--fg-muted);
   text-transform: capitalize;
 }
-.tab:hover { color: var(--fg); background: #12151c; }
-.tab.on { color: var(--fg); border-color: var(--accent-line); background: #141b26; }
+.tab:hover { color: var(--fg); background: var(--bg-hover); }
+.tab.on { color: var(--fg); border-color: var(--accent-line); background: var(--bg-selected); }
 .tab .count { font-size: var(--fs-2xs); color: var(--fg-faint); }
 .tab.add { text-transform: none; border-style: dashed; }
 .tab-new { display: flex; align-items: center; gap: 6px; }
@@ -33,9 +33,9 @@
   padding: 14px;
   gap: 4px;
   border-right: 1px solid var(--line);
-  background: #0b0d11;
-  --scroll-bg: #0b0d11;
-  scrollbar-color: var(--line-strong) #0b0d11;
+  background: var(--bg);
+  --scroll-bg: var(--bg);
+  scrollbar-color: var(--line-strong) var(--bg);
 }
 /* not .add: the category tab is a .tab.add and this would swallow it */
 .add-template {
@@ -60,8 +60,8 @@
   text-align: left;
   width: 100%;
 }
-.row:hover { background: #12151c; }
-.row.on { border-color: var(--accent-line); background: #141b26; }
+.row:hover { background: var(--bg-hover); }
+.row.on { border-color: var(--accent-line); background: var(--bg-selected); }
 .row .badge { width: 26px; height: 26px; flex: none; border-radius: var(--r-xs); }
 .row .ident { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .row .name { font: 500 var(--fs-sm) var(--sans); color: var(--fg); }

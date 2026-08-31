@@ -44,9 +44,9 @@
 .body {
   display: grid;
   grid-template-columns: 1fr;
-  background: #0d0f14;
-  --scroll-bg: #0d0f14;
-  scrollbar-color: var(--line-strong) #0d0f14;
+  background: var(--bg-sunken);
+  --scroll-bg: var(--bg-sunken);
+  scrollbar-color: var(--line-strong) var(--bg-sunken);
 }
 
 .main { min-width: 0; }
@@ -65,7 +65,7 @@
 
 .code {
   margin: 0;
-  background: var(--bg-code);
+  background: var(--bg-sunken);
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
   padding: 12px;
@@ -82,8 +82,8 @@
   margin-left: 8px;
   padding: 2px 7px;
   border-radius: var(--r-xs);
-  background: #1b2330;
-  border: 1px solid #2c3a4f;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-line);
   font: 500 var(--fs-2xs) var(--mono);
   color: var(--accent);
 }
@@ -104,7 +104,7 @@
 .mounts .arrow { color: var(--fg-faint); }
 
 .console {
-  background: var(--bg-code);
+  background: var(--bg-sunken);
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
   padding: 12px;
@@ -143,7 +143,7 @@
 .dns-row input {
   flex: 1;
   min-width: 140px;
-  background: var(--bg-code);
+  background: var(--bg-sunken);
   border: 1px solid var(--line-strong);
   border-radius: var(--r-sm);
   color: var(--fg);

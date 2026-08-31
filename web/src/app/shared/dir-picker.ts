@@ -123,7 +123,7 @@ export const OPEN_FOLDER =
       color: var(--fg-soft);
       white-space: nowrap;
     }
-    .node:hover { background: #171d27; }
+    .node:hover { background: var(--bg-hover); }
     .node.on { background: var(--accent-bg); color: var(--accent); }
     .node.ghost .name { font-style: italic; color: var(--fg-dim); }
     .twist {
