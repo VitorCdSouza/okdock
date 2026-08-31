@@ -16,7 +16,7 @@ import { Api, OkDockError } from '../../core/api';
 import { Store } from '../../core/state';
 import { COLUMN_OF, Instance, STATE_DOT, STATE_KEY, State } from '../../core/models';
 import { I18n } from '../../core/i18n/i18n';
-import { GameIcon, templateColors } from '../../shared/game-icon';
+import { TemplateIcon, templateColors } from '../../shared/template-icon';
 import { ActionVerb, InstanceCard } from './instance-card';
 
 type HiddenColumn = { title: string; count: number };
@@ -35,7 +35,7 @@ type Item = CardItem | GroupItem;
 
 @Component({
   selector: 'ok-kanban',
-  imports: [GameIcon, InstanceCard],
+  imports: [TemplateIcon, InstanceCard],
   templateUrl: './kanban.html',
   styleUrl: './kanban.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -12,7 +12,7 @@ import {
   TemplateVolume,
 } from '../../core/models';
 import { I18n } from '../../core/i18n/i18n';
-import { GameIcon } from '../../shared/game-icon';
+import { TemplateIcon } from '../../shared/template-icon';
 import { InfoDot } from '../../shared/info-dot';
 import { ImageSearch } from '../../shared/image-search';
 import { Select } from '../../shared/select';
@@ -53,7 +53,7 @@ function blank(): Template {
 
 @Component({
   selector: 'ok-templates',
-  imports: [FormsModule, GameIcon, InfoDot, ImageSearch, Select],
+  imports: [FormsModule, TemplateIcon, InfoDot, ImageSearch, Select],
   templateUrl: './templates.html',
   styleUrl: './templates.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -89,7 +89,7 @@ export class Templates {
     this.categories().map((c) => ({ value: c, label: this.categoryName(c) })),
   );
 
-  readonly active = computed<Category>(() => this.picked() ?? this.categories()[0] ?? 'games');
+  readonly active = computed<Category>(() => this.picked() ?? this.categories()[0] ?? 'other');
 
   // the custom image is a hole to fill in the new instance, there is nothing to register here
   private readonly listed = computed(() =>

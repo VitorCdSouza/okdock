@@ -154,7 +154,7 @@ export const pt = {
   'detail.ramLimit': 'Limite de RAM',
   'detail.ramLimitTip': 'Teto do container. O heap da JVM vai nos campos do template.',
   'detail.hostPort': 'Porta host ({label})',
-  'detail.portFallbackLabel': 'jogo',
+  'detail.portFallbackLabel': 'serviço',
   'detail.inContainer': 'Dentro do container: {port}/{protocol}',
   'detail.volumes': 'VOLUMES',
   'detail.inviteTitle': 'ENDEREÇO PARA CONVIDAR',
@@ -260,7 +260,7 @@ export const pt = {
   'templates.defaultCpus': 'CPUs',
   'templates.stopGrace': 'Espera ao parar (s)',
   'templates.stopGraceTip':
-    'Quanto o docker espera antes do SIGKILL. Jogo que grava mundo ao desligar precisa de folga aqui, senão o save corrompe.',
+    'Quanto o docker espera antes do SIGKILL. Servidor que grava estado ao desligar precisa de folga aqui, senão a gravação corrompe.',
   'templates.suggest': 'Sugerir da imagem',
   'templates.suggestPortsTip':
     'Lê as portas que a imagem expõe. Escolher a imagem na lista já preenche isto; o botão serve para uma imagem digitada inteira, ou para olhar de novo depois de trocar a versão. Não mexe no que você já preencheu, só acrescenta o que falta.',

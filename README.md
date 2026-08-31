@@ -1,6 +1,6 @@
 # OkDock
 
-Panel to create and run game servers in Docker on a home server. Every instance
+Panel to create and run containers in Docker on a home server. Every instance
 becomes a directory with its own `docker-compose.yml`, and the panel runs
 `docker compose` on top of it. Nothing is created through the Docker SDK, and
 that is on purpose: if the panel goes down, everything stays manageable from the

@@ -33,7 +33,7 @@
             @for (p of group.templates; track p.id) {
               <button class="template" [class.on]="template()?.id === p.id" (click)="pick(p)">
                 <div class="head">
-                  <ok-game-icon class="short" [template]="p.id" [fallback]="p.short" />
+                  <ok-template-icon class="short" [template]="p.id" [fallback]="p.short" />
                   <span class="name">{{ p.name }}</span>
                 </div>
                 <div class="id mono">{{ p.image || p.id }}</div>

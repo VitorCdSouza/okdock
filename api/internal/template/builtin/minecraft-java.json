@@ -103,7 +103,7 @@
     },
     {
       "key": "MODE",
-      "label": "Modo de jogo",
+      "label": "Game mode",
       "type": "enum",
       "default": "survival",
       "options": [

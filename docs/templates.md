@@ -71,7 +71,7 @@ same world folder.
 The game images use a version tag, never `:latest`. A moving tag changes the
 server version on its own at the next recreate, and the symptom shows up far
 from the cause: the player is the one who finds out, by failing to join.
-`TestGameImagesArePinned` fails if anyone reintroduces one.
+`TestBuiltinImagesArePinned` fails if anyone reintroduces one.
 
 Updating a version means changing the **Image** field of the instance in the
 panel and saving; the world in the volumes is preserved.

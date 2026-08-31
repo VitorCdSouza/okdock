@@ -157,7 +157,7 @@ export const en: Record<MessageKey, string> = {
   'detail.ramLimit': 'RAM limit',
   'detail.ramLimitTip': 'The container ceiling. The JVM heap goes in the template fields.',
   'detail.hostPort': 'Host port ({label})',
-  'detail.portFallbackLabel': 'game',
+  'detail.portFallbackLabel': 'service',
   'detail.inContainer': 'Inside the container: {port}/{protocol}',
   'detail.volumes': 'VOLUMES',
   'detail.inviteTitle': 'ADDRESS TO INVITE PEOPLE',
@@ -266,7 +266,7 @@ export const en: Record<MessageKey, string> = {
   'templates.defaultCpus': 'CPUs',
   'templates.stopGrace': 'Stop grace (s)',
   'templates.stopGraceTip':
-    'How long docker waits before SIGKILL. A game that saves the world on shutdown needs room here, or the save corrupts.',
+    'How long docker waits before SIGKILL. A server that saves state on shutdown needs room here, or the save corrupts.',
   'templates.suggest': 'Suggest from the image',
   'templates.suggestPortsTip':
     'Reads the ports the image exposes. Picking the image from the list already fills these in; the button is for a reference typed whole, or for a second look after changing the version. It leaves what you filled in alone and only adds what is missing.',

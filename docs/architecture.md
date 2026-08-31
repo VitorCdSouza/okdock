@@ -202,7 +202,7 @@ the API on the same origin: one container, one port, no CORS. In development
 
   Dynamic DNS does not change that by itself, since a name opens no port and
   only the forwarded ones answer, but from then on there is a public name
-  pointing at the house. Forwarding 8080 along with the game port would hand
+  pointing at the house. Forwarding 8080 along with an instance port would hand
   `docker.sock` to the whole internet.
 - **World upload and file browser**: the tab exists in the design.
 - **Backups**: the tab exists in the design.

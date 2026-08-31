@@ -3,7 +3,7 @@
 @if (instance(); as inst) {
   <div class="dialog wide" role="dialog" [attr.aria-label]="t('detail.aria', { name: inst.name })">
     <header>
-      <ok-game-icon class="badge" [template]="instance()?.templateId ?? ''" [fallback]="template()?.short ?? '··'"
+      <ok-template-icon class="badge" [template]="instance()?.templateId ?? ''" [fallback]="template()?.short ?? '··'"
                   [style.background]="colors().bg" [style.color]="colors().fg" />
 
       <div class="ident">

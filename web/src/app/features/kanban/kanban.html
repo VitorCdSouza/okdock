@@ -53,7 +53,7 @@
                             : t('kanban.group.open', { name: item.name })">
                     <span class="stack" aria-hidden="true">
                       @for (icon of item.icons; track icon.name) {
-                        <ok-game-icon class="mini" [template]="icon.templateId" [fallback]="icon.short"
+                        <ok-template-icon class="mini" [template]="icon.templateId" [fallback]="icon.short"
                                       [style.background]="icon.bg" [style.color]="icon.fg" />
                       }
                     </span>

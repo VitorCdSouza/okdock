@@ -4,14 +4,14 @@ import { Instance, STATE_DOT } from '../../core/models';
 import { I18n } from '../../core/i18n/i18n';
 import { bytes } from '../../core/format';
 import { copyText } from '../../core/clipboard';
-import { GameIcon, templateColors } from '../../shared/game-icon';
+import { TemplateIcon, templateColors } from '../../shared/template-icon';
 
 type Action = { label: string; kind: 'go' | 'bad' | 'flat'; verb: ActionVerb };
 export type ActionVerb = 'start' | 'stop' | 'restart' | 'logs' | 'fix' | 'unarchive' | 'cancel';
 
 @Component({
   selector: 'ok-instance-card',
-  imports: [GameIcon],
+  imports: [TemplateIcon],
   templateUrl: './instance-card.html',
   styleUrl: './instance-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

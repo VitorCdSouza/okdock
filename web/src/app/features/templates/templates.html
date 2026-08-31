@@ -38,7 +38,7 @@
     <aside class="list pane">
       @for (tmpl of shown(); track tmpl.id) {
         <button class="row" [class.on]="draft()?.id === tmpl.id && !isNew()" (click)="edit(tmpl)">
-          <ok-game-icon class="badge" [template]="tmpl.id" [fallback]="tmpl.short" />
+          <ok-template-icon class="badge" [template]="tmpl.id" [fallback]="tmpl.short" />
           <span class="ident">
             <span class="name">{{ tmpl.name }}</span>
             <span class="image mono">{{ tmpl.image || t('templates.noImage') }}</span>

@@ -6,7 +6,7 @@ import { Store } from '../../core/state';
 import { Category, SpecRequest, Template } from '../../core/models';
 import { I18n } from '../../core/i18n/i18n';
 import { TemplateForm } from '../../shared/template-form';
-import { GameIcon } from '../../shared/game-icon';
+import { TemplateIcon } from '../../shared/template-icon';
 import { InfoDot } from '../../shared/info-dot';
 import { ImageSearch } from '../../shared/image-search';
 import { GhostDir } from '../../shared/dir-picker';
@@ -39,7 +39,7 @@ interface ExtraField {
 
 @Component({
   selector: 'ok-new-instance',
-  imports: [FormsModule, TemplateForm, GameIcon, InfoDot, ImageSearch, PickDir, Select],
+  imports: [FormsModule, TemplateForm, TemplateIcon, InfoDot, ImageSearch, PickDir, Select],
   templateUrl: './new-instance.html',
   styleUrl: './new-instance.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

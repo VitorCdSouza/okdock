@@ -18,7 +18,7 @@ import { Store } from '../../core/state';
 import { Instance, STATE_KEY, SpecRequest, State } from '../../core/models';
 import { I18n } from '../../core/i18n/i18n';
 import { TemplateForm } from '../../shared/template-form';
-import { GameIcon, templateColors } from '../../shared/game-icon';
+import { TemplateIcon, templateColors } from '../../shared/template-icon';
 import { InfoDot } from '../../shared/info-dot';
 import { bytes } from '../../core/format';
 import { copyText } from '../../core/clipboard';
@@ -37,7 +37,7 @@ const STATE_CHIP: Record<State, { bg: string; line: string; fg: string }> = {
 
 @Component({
   selector: 'ok-instance-detail',
-  imports: [FormsModule, TemplateForm, GameIcon, InfoDot],
+  imports: [FormsModule, TemplateForm, TemplateIcon, InfoDot],
   templateUrl: './instance-detail.html',
   styleUrl: './instance-detail.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

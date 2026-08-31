@@ -257,7 +257,7 @@ func TestTerrariaVanillaKeepsWorldOutOfEnvironment(t *testing.T) {
 	}
 }
 
-func TestGameImagesArePinned(t *testing.T) {
+func TestBuiltinImagesArePinned(t *testing.T) {
 	for _, p := range testCatalog(t).All() {
 		if p.ID == CustomID {
 			continue

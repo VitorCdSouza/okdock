@@ -405,7 +405,7 @@ Same body, writes nothing:
 ### `DELETE /instances/{name}?keepData=false`
 
 `keepData` is `true` by default: it deletes the generated files and keeps the
-world directories. Deleting game data is irreversible and has to be asked for on
+data directories. Deleting instance data is irreversible and has to be asked for on
 purpose. `204`.
 
 ### Actions

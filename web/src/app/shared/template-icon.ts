@@ -11,7 +11,7 @@ const CATEGORY_COLORS: Record<string, { bg: string; fg: string }> = {
   other: { bg: '#1e222b', fg: '#9297a3' },
 };
 
-const GAME_COLORS: Record<string, { bg: string; fg: string }> = {
+const FAMILY_COLORS: Record<string, { bg: string; fg: string }> = {
   minecraft: { bg: '#1c3323', fg: '#4fd99b' },
   terraria: { bg: '#33261c', fg: '#e5b567' },
   palworld: { bg: '#1e2f43', fg: '#6aa6f5' },
@@ -28,14 +28,14 @@ export function templateFamily(templateId: string): string {
 
 export function templateColors(templateId: string, category = 'other'): { bg: string; fg: string } {
   return (
-    GAME_COLORS[templateFamily(templateId)] ??
+    FAMILY_COLORS[templateFamily(templateId)] ??
     CATEGORY_COLORS[category] ??
     CATEGORY_COLORS['other']
   );
 }
 
 @Component({
-  selector: 'ok-game-icon',
+  selector: 'ok-template-icon',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host { display: grid; place-items: center; line-height: 0; }
@@ -110,7 +110,7 @@ export function templateColors(templateId: string, category = 'other'): { bg: st
     }
   `,
 })
-export class GameIcon {
+export class TemplateIcon {
   readonly template = input.required<string>();
   readonly fallback = input('··');
 
