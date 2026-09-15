@@ -70,6 +70,7 @@ type Runner interface {
 	ContainerLogs(ctx context.Context, name string, tail int, follow bool) (io.ReadCloser, error)
 	Stats(ctx context.Context, names []string) ([]Stats, error)
 	ImageID(ctx context.Context, ref string) (string, error)
+	ContainerImageID(ctx context.Context, name string) (string, error)
 	SearchImages(ctx context.Context, term string, limit int) ([]ImageHit, error)
 	ImageConfig(ctx context.Context, ref string) (ImageInfo, error)
 	ContainerVolumes(ctx context.Context, image string) ([]string, error)

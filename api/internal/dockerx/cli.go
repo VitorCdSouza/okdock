@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os/exec"
@@ -298,6 +299,27 @@ func (c CLI) ImageID(ctx context.Context, ref string) (string, error) {
 		return "", nil
 	}
 	return strings.TrimSpace(string(out)), nil
+}
+
+// the image the container was created from, which a tag moved by a local build no longer names
+func (c CLI) ContainerImageID(ctx context.Context, name string) (string, error) {
+	out, err := c.run(ctx, shortTimeout, "container", "inspect", name, "--format", "{{.Image}}")
+	if err != nil {
+		return "", nil
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
+// a pull that had no registry to go to, told apart from one that failed on the way
+func NotInRegistry(err error) bool {
+	var de *Error
+	if !errors.As(err, &de) {
+		return false
+	}
+	s := strings.ToLower(de.Stderr)
+	return strings.Contains(s, "pull access denied") ||
+		strings.Contains(s, "repository does not exist") ||
+		strings.Contains(s, "manifest unknown")
 }
 
 // the daemon reaches the registry, so the panel needs no outbound route of its own

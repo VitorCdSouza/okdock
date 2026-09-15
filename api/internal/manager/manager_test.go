@@ -608,6 +608,50 @@ func TestUpdateImagePublishesWhatHappened(t *testing.T) {
 	}
 }
 
+func TestUpdateImageBuiltOnTheHost(t *testing.T) {
+	denied := &dockerx.Error{Stderr: "Error response from daemon: pull access denied for promo-radar, repository does not exist or may require 'docker login'"}
+	image := "itzg/minecraft-server:java21"
+
+	for _, tc := range []struct {
+		name      string
+		running   string
+		pullErr   error
+		recreated bool
+		failed    bool
+	}{
+		{name: "rebuilt tag", running: "sha256:old", pullErr: denied, recreated: true},
+		{name: "same build", running: "sha256:new", pullErr: denied},
+		{name: "registry down", running: "sha256:old", pullErr: &dockerx.Error{Stderr: "dial tcp: lookup registry-1.docker.io: no such host"}, failed: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			m, fake := newManager(t, 16*gb)
+			if _, err := m.Create(t.Context(), req("smp", "4g")); err != nil {
+				t.Fatalf("Create: %v", err)
+			}
+			fake.ImageIDs[image] = "sha256:new"
+			fake.RunningImages["smp"] = tc.running
+			fake.FailPull[m.Store().Dir("smp")] = tc.pullErr
+			before := len(fake.Calls)
+
+			if err := m.UpdateImage(t.Context(), "smp"); err != nil {
+				t.Fatalf("UpdateImage: %v", err)
+			}
+			waitFor(t, "the operation to finish", func() bool {
+				op := m.operation("smp")
+				return op == nil || op.Error != ""
+			})
+
+			if failed := m.operation("smp") != nil; failed != tc.failed {
+				t.Errorf("failed = %v, want %v", failed, tc.failed)
+			}
+			recreated := slices.ContainsFunc(fake.Calls[before:], func(c string) bool { return strings.HasPrefix(c, "up:") })
+			if recreated != tc.recreated {
+				t.Errorf("recreated = %v, want %v, calls: %v", recreated, tc.recreated, fake.Calls[before:])
+			}
+		})
+	}
+}
+
 func hostContainer(name, project string) dockerx.HostContainer {
 	return dockerx.HostContainer{
 		Name:    name,

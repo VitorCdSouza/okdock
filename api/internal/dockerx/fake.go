@@ -22,6 +22,7 @@ type Fake struct {
 	ServerVersion  string
 	ImageIDs       map[string]string
 	PulledImageIDs map[string]string
+	RunningImages  map[string]string
 	SearchHits     map[string][]ImageHit
 	FailSearch     error
 	ImageConfigs   map[string]ImageInfo
@@ -44,6 +45,7 @@ func NewFake() *Fake {
 		FailAction:     map[string]error{},
 		ImageIDs:       map[string]string{},
 		PulledImageIDs: map[string]string{},
+		RunningImages:  map[string]string{},
 		ServerVersion:  "27.1.0",
 	}
 }
@@ -137,6 +139,12 @@ func (f *Fake) ImageID(_ context.Context, ref string) (string, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.ImageIDs[ref], nil
+}
+
+func (f *Fake) ContainerImageID(_ context.Context, name string) (string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.RunningImages[name], nil
 }
 
 func (f *Fake) SearchImages(_ context.Context, term string, limit int) ([]ImageHit, error) {

@@ -1292,23 +1292,34 @@ func (m *Manager) UpdateImage(ctx context.Context, name string) error {
 	return nil
 }
 
+// fetchImage pulls the image and says whether the container runs something other than what the tag names now
+func (m *Manager) fetchImage(ctx context.Context, name, image, dir string, services ...string) (bool, error) {
+	before, _ := m.docker.ImageID(ctx, image)
+	err := m.docker.Pull(ctx, dir, func(line string) {
+		m.progress(name, "", line, nil)
+	}, services...)
+	// an image built on this host has no registry to come from, and its tag already moved
+	if err != nil && (before == "" || !dockerx.NotInRegistry(err)) {
+		return false, err
+	}
+	after, _ := m.docker.ImageID(ctx, image)
+	if running, _ := m.docker.ContainerImageID(ctx, name); running != "" {
+		return running != after, nil
+	}
+	return before == "" || before != after, nil
+}
+
 func (m *Manager) pullAndRecreate(name string, spec instance.Spec) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
 
 	dir := m.store.Dir(name)
-	before, _ := m.docker.ImageID(ctx, spec.Image)
-
-	err := m.docker.Pull(ctx, dir, func(line string) {
-		m.progress(name, "", line, nil)
-	})
+	changed, err := m.fetchImage(ctx, name, spec.Image, dir)
 	if err != nil {
 		m.endOp(name, err)
 		return
 	}
-
-	after, _ := m.docker.ImageID(ctx, spec.Image)
-	if before != "" && before == after {
+	if !changed {
 		m.endOp(name, nil)
 		m.hub.Publish(Event{
 			Type:     "instance.uptodate",

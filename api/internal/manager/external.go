@@ -137,17 +137,12 @@ func (m *Manager) pullExternal(inst instance.Instance) {
 	defer cancel()
 
 	dir, service := filepath.Dir(inst.ComposeFile), inst.Service
-	before, _ := m.docker.ImageID(ctx, inst.Image)
-
-	err := m.docker.Pull(ctx, dir, func(line string) {
-		m.progress(inst.Name, "", line, nil)
-	}, service)
+	changed, err := m.fetchImage(ctx, inst.Name, inst.Image, dir, service)
 	if err != nil {
 		m.endOp(inst.Name, err)
 		return
 	}
-	after, _ := m.docker.ImageID(ctx, inst.Image)
-	if before != "" && before == after {
+	if !changed {
 		m.progress(inst.Name, "already_up_to_date", "", nil)
 		m.endOp(inst.Name, nil)
 		return

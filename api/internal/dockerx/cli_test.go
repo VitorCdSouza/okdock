@@ -1,6 +1,9 @@
 package dockerx
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 func TestParsePSAcceptsBothComposeFormats(t *testing.T) {
 	lines := []byte(`{"Name":"smp","Service":"smp","State":"running","Status":"Up 2 hours","Health":"healthy","ExitCode":0}
@@ -50,6 +53,21 @@ func TestErrorCarriesStderr(t *testing.T) {
 	e := &Error{Args: []string{"compose", "up"}, Stderr: "port is already allocated"}
 	if got := e.Error(); got == "" || !contains(got, "already allocated") {
 		t.Errorf("Error() = %q", got)
+	}
+}
+
+func TestNotInRegistry(t *testing.T) {
+	for stderr, want := range map[string]bool{
+		"Error response from daemon: pull access denied for promo-radar, repository does not exist or may require 'docker login'":   true,
+		"Error response from daemon: manifest for nginx:nope not found: manifest unknown":                                           true,
+		"Error response from daemon: Get \"https://registry-1.docker.io/v2/\": dial tcp: lookup registry-1.docker.io: no such host": false,
+	} {
+		if got := NotInRegistry(&Error{Stderr: stderr}); got != want {
+			t.Errorf("NotInRegistry(%q) = %v, want %v", stderr, got, want)
+		}
+	}
+	if NotInRegistry(errors.New("pull access denied")) {
+		t.Error("an error that did not come out of docker counts as not in a registry")
 	}
 }
 
