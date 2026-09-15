@@ -40,7 +40,7 @@ func (m *Manager) updateExternal(ctx context.Context, inst instance.Instance, re
 	go func() {
 		c, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
 		defer cancel()
-		m.endOp(inst.Name, m.docker.Up(c, dir, service))
+		m.endOp(inst.Name, m.upService(c, inst, dir, service))
 	}()
 	return spec, nil
 }
@@ -148,5 +148,5 @@ func (m *Manager) pullExternal(inst instance.Instance) {
 		return
 	}
 	m.progress(inst.Name, "starting_new_config", "", nil)
-	m.endOp(inst.Name, m.docker.Up(ctx, dir, service))
+	m.endOp(inst.Name, m.upService(ctx, inst, dir, service))
 }

@@ -228,6 +228,13 @@ func (f *Fake) ContainerAction(_ context.Context, name, verb string) error {
 	return fmt.Errorf("container %q does not exist", name)
 }
 
+func (f *Fake) Helper(_ context.Context, image, dir string, args ...string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.record("helper", image+" "+strings.Join(args, " "))
+	return nil
+}
+
 func (f *Fake) ContainerLogs(_ context.Context, name string, _ int, _ bool) (io.ReadCloser, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()

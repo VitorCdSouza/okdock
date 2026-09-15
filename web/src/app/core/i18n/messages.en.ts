@@ -79,6 +79,9 @@ export const en: Record<MessageKey, string> = {
   'kanban.stopBody':
     'Tears down the container. The volumes stay, so the data is preserved and it can come back up later.',
   'kanban.doStop': 'Stop',
+  'kanban.selfStopWarn':
+    'This is the panel itself. Once stopped the page goes away, and it only comes back from the terminal, with docker start or docker compose up.',
+  'kanban.selfRecreateWarn': 'This is the panel itself: it goes down for a few seconds and the page reconnects on its own.',
   'kanban.startTitle': 'Start {name}?',
   'kanban.startBody':
     'Brings the container up with the compose file on disk. If the free RAM does not cover the instance limit, the panel refuses.',
@@ -97,6 +100,9 @@ export const en: Record<MessageKey, string> = {
   'card.external': 'external',
   'card.externalTip':
     'Container that already existed on the server, outside OkDock. When the panel finds its compose file, it edits and updates that service in the original file; deleting stays in the terminal.',
+  'card.self': 'this panel',
+  'card.selfTip':
+    'The container OkDock itself runs in. Restarting, updating or editing it takes the panel down for a few seconds and the page reconnects on its own; once stopped, it only comes back from the terminal.',
   'card.optionsAria': 'Options for {name}',
   'card.edit': 'Edit',
   'card.delete': 'Delete',
@@ -119,6 +125,7 @@ export const en: Record<MessageKey, string> = {
   'detail.aria': 'Instance {name}',
   'detail.stats': '{cpu}% CPU · {used} of {total}',
   'detail.clearError': 'Clear error',
+  'detail.confirmStopSelf': 'Stop the panel?',
   'detail.restart': '↻ Restart',
   'detail.tab.config': 'Settings',
   'detail.tab.console': 'Console',
@@ -278,6 +285,10 @@ export const en: Record<MessageKey, string> = {
   'settings.languageAuto': 'Automatic (system)',
   'settings.languageTip':
     'Applies to this browser only, like the numbers in the bar: with no login, a choice saved on the server would apply to everyone in the house. What docker itself writes (log lines and container status) shows up as it came.',
+  'settings.boardTitle': 'BOARD',
+  'settings.showSelf': 'Show OkDock itself on the board',
+  'settings.showSelfTip':
+    'The card of the panel takes the same actions as the others. A helper container is what stops, restarts or recreates the panel, because a command running inside it would die with it. Applies to this browser only.',
   'settings.dockerTitle': 'DOCKER',
   'settings.dockerVersion': 'version {version}',
   'settings.dockerSilent': 'did not answer',
@@ -306,6 +317,8 @@ export const en: Record<MessageKey, string> = {
   'error.docker_failed': 'docker refused the command: {detail}',
   'error.external_instance':
     '{name} is an external container and the panel found no compose file it can write: it starts, stops and shows the console, the rest stays in the terminal.',
+  'error.self_instance':
+    '{name} is the panel itself, and the panel does not delete itself. That is a job for the terminal.',
   'error.invalid_fields': 'some fields did not pass the template validation',
   'error.bad_request': 'the request was malformed',
   'error.internal': 'internal panel error',

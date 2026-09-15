@@ -43,6 +43,7 @@ func writeError(w http.ResponseWriter, err error) {
 		tmplBuiltin *template.BuiltinError
 		budget      *manager.ErrBudget
 		external    *manager.ExternalError
+		self        *manager.SelfError
 		port        *manager.ErrPortTaken
 		dockerErr   *dockerx.Error
 	)
@@ -103,6 +104,12 @@ func writeError(w http.ResponseWriter, err error) {
 			Error:   "external_instance",
 			Message: err.Error(),
 			Params:  map[string]any{"name": external.Name},
+		})
+	case errors.As(err, &self):
+		writeJSON(w, http.StatusConflict, apiError{
+			Error:   "self_instance",
+			Message: err.Error(),
+			Params:  map[string]any{"name": self.Name},
 		})
 	case errors.As(err, &budget):
 		writeJSON(w, http.StatusConflict, apiError{

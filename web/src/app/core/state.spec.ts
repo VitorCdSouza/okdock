@@ -6,6 +6,7 @@ import { Subject } from 'rxjs';
 import { Store } from './state';
 import { Events } from './events';
 import { I18n } from './i18n/i18n';
+import { Prefs } from './prefs';
 import { Instance, ServerEvent, Template } from './models';
 
 function instance(over: Partial<Instance> = {}): Instance {
@@ -49,7 +50,22 @@ describe('Store', () => {
     TestBed.inject(I18n).setPref('pt');
   });
 
-  afterEach(() => localStorage.removeItem('okdock.locale'));
+  afterEach(() => {
+    localStorage.removeItem('okdock.locale');
+    localStorage.removeItem('okdock.showSelf');
+  });
+
+  it('leaves the panel own card off the board until the settings ask for it', () => {
+    const prefs = TestBed.inject(Prefs);
+    prefs.showSelf.set(false);
+    store.instances.set([instance(), instance({ name: 'okdock', category: 'other', self: true, external: true })]);
+
+    expect(store.filtered().map((i) => i.name)).toEqual(['smp']);
+    expect(store.categoryCounts().map((c) => c.category)).not.toContain('other');
+
+    prefs.showSelf.set(true);
+    expect(store.filtered().map((i) => i.name)).toEqual(['smp', 'okdock']);
+  });
 
   it('filters by name, port and image', () => {
     store.instances.set([instance(), instance({ name: 'terra', templateId: 'terraria-tshock', ports: [] })]);

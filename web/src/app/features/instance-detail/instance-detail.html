@@ -31,7 +31,7 @@
             {{ t('detail.restart') }}
           </button>
           <button class="btn btn-sm btn-danger" (click)="stop()" [disabled]="busy()">
-            {{ t('card.action.stop') }}
+            {{ stopArmed() ? t('detail.confirmStopSelf') : t('card.action.stop') }}
           </button>
         } @else {
           <button class="btn btn-sm btn-go" (click)="start()" [disabled]="busy()">

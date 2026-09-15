@@ -70,12 +70,16 @@ export class Settings {
   readonly languageDraft = signal<LocalePref | null>(null);
   readonly language = computed(() => this.languageDraft() ?? this.i18n.pref());
 
+  readonly showSelfDraft = signal<boolean | null>(null);
+  readonly showSelf = computed(() => this.showSelfDraft() ?? this.prefs.showSelf());
+
   readonly dirty = computed(
     () =>
       this.rootChanged() ||
       this.templatesChanged() ||
       this.metricOptions.some((m) => this.metrics()[m.key] !== this.prefs.metrics()[m.key]) ||
-      this.language() !== this.i18n.pref(),
+      this.language() !== this.i18n.pref() ||
+      this.showSelf() !== this.prefs.showSelf(),
   );
 
   readonly dockerLabel = computed(() => {
@@ -161,7 +165,9 @@ export class Settings {
   private done(folders: boolean): void {
     this.prefs.setMetrics(this.metrics());
     this.i18n.setPref(this.language());
+    this.prefs.showSelf.set(this.showSelf());
     this.metricDraft.set(null);
+    this.showSelfDraft.set(null);
     this.languageDraft.set(null);
     this.busy.set(false);
     this.saved.set(true);

@@ -3,6 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Api } from './api';
 import { Events } from './events';
 import { I18n } from './i18n/i18n';
+import { Prefs } from './prefs';
 import {
   COLUMN_OF,
   Category,
@@ -17,6 +18,7 @@ export class Store {
   private readonly api = inject(Api);
   private readonly events = inject(Events);
   private readonly i18n = inject(I18n);
+  private readonly prefs = inject(Prefs);
 
   readonly instances = signal<Instance[]>([]);
   readonly states = signal<State[]>([]);
@@ -50,10 +52,15 @@ export class Store {
     this.toastTimer = setTimeout(() => this.toast.set(null), 6000);
   }
 
+  // what the board draws, the panel own card only when the settings screen asked for it
+  readonly visible = computed(() =>
+    this.prefs.showSelf() ? this.instances() : this.instances().filter((i) => !i.self),
+  );
+
   readonly filtered = computed(() => {
     const term = this.search().trim().toLowerCase();
     const category = this.categoryFilter();
-    return this.instances().filter((i) => {
+    return this.visible().filter((i) => {
       if (category && i.category !== category) return false;
       if (!term) return true;
       const haystack = [
@@ -70,7 +77,7 @@ export class Store {
 
   readonly categoryCounts = computed(() => {
     const counts = new Map<Category, number>();
-    for (const i of this.instances()) {
+    for (const i of this.visible()) {
       counts.set(i.category, (counts.get(i.category) ?? 0) + 1);
     }
     return this.categories()

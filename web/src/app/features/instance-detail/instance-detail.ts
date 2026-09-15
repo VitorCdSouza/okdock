@@ -229,7 +229,19 @@ export class InstanceDetail {
     this.run(this.api.start(this.name()));
   }
 
+  // stopping the panel from itself leaves nothing to start it again, so the button asks twice
+  readonly stopArmed = signal(false);
+  private disarm?: ReturnType<typeof setTimeout>;
+
   stop(): void {
+    if (this.instance()?.self && !this.stopArmed()) {
+      this.stopArmed.set(true);
+      clearTimeout(this.disarm);
+      this.disarm = setTimeout(() => this.stopArmed.set(false), 4000);
+      return;
+    }
+    clearTimeout(this.disarm);
+    this.stopArmed.set(false);
     this.run(this.api.stop(this.name()));
   }
 

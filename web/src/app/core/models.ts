@@ -150,6 +150,7 @@ export interface Instance {
   editable?: boolean;
   composeFile?: string;
   readOnly?: string;
+  self?: boolean;
 }
 
 export interface InstancesResponse {

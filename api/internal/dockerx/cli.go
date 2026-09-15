@@ -588,6 +588,22 @@ func (c CLI) ContainerAction(ctx context.Context, name, verb string) error {
 	return err
 }
 
+// the label of the throwaway container that acts on the panel, so the board does not list it
+const HelperLabel = "okdock.helper"
+
+// one docker command in a throwaway container, for what has to outlive the panel container
+func (c CLI) Helper(ctx context.Context, image, dir string, args ...string) error {
+	run := []string{"run", "-d", "--rm", "--label", HelperLabel + "=true",
+		"-v", "/var/run/docker.sock:/var/run/docker.sock"}
+	if dir != "" {
+		// the panel compose file reads ${PWD}, which the deploy points at this folder
+		run = append(run, "-v", dir+":"+dir, "-w", dir, "-e", "PWD="+dir)
+	}
+	run = append(run, "--entrypoint", "docker", image)
+	_, err := c.run(ctx, shortTimeout, append(run, args...)...)
+	return err
+}
+
 func (c CLI) ContainerLogs(ctx context.Context, name string, tail int, follow bool) (io.ReadCloser, error) {
 	args := []string{"logs", "--tail", strconv.Itoa(tail)}
 	if follow {

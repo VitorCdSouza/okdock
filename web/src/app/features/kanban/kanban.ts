@@ -292,6 +292,10 @@ export class Kanban {
     return instances.some((inst) => inst.state === 'running');
   }
 
+  hasSelf(instances: Instance[]): boolean {
+    return instances.some((inst) => inst.self);
+  }
+
   memberNames(instances: Instance[]): string {
     return instances.map((inst) => inst.name).join(', ');
   }
@@ -365,6 +369,11 @@ export class Kanban {
         break;
       case 'stop':
       case 'cancel':
+        // the panel stopped by itself only comes back from the terminal, so it asks first
+        if (instance.self) {
+          this.pendingAction.set({ name: instance.name, instances: [instance], target: 'stopped' });
+          break;
+        }
         this.fire(this.api.stop(instance.name));
         break;
       case 'restart':

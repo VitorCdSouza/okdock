@@ -55,6 +55,7 @@ Some errors refine the reason inside `params.reason`: `invalid_root` uses
 | `port_taken` | 409 | port already used by another instance |
 | `docker_failed` | 409 | `docker compose` failed, `params.detail` carries the stderr |
 | `external_instance` | 409 | the action does not apply to a container the panel does not own, `params.name` says which |
+| `self_instance` | 409 | delete on the container the panel itself runs in, `params.name` says which |
 | `bad_request` | 400 | malformed body or unknown field |
 | `invalid_root` | 422 | the requested root does not work, the reason comes in `params.reason` |
 | `internal` | 500 | any unforeseen error |
@@ -417,6 +418,16 @@ by container name, in the background as well, and a docker failure becomes an
 operation with an error, visible on the card. The other actions answer
 `409 external_instance`, a refusal on purpose and not a failure: editing,
 updating and deleting belong to the original compose.
+
+The panel lists its own container too, with `self: true`, and the settings
+screen decides whether the board shows it. It takes the actions of any outside
+container, but whatever would take the panel down runs in a helper: a
+throwaway container of the panel image, labelled `okdock.helper`, with
+`docker.sock` and the compose folder mounted, which runs `docker stop`,
+`docker restart` or `docker compose up -d --no-deps` and removes itself. A
+command run inside the panel would die with it halfway. The pull of an update
+still runs in the panel, so the progress shows. Delete answers
+`409 self_instance`.
 
 ### `GET /instances/{name}/compose`
 

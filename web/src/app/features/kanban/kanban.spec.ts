@@ -193,6 +193,17 @@ describe('Kanban: dragging a card into a column', () => {
     http.expectOne('/api/v1/system').flush({});
   });
 
+  it('the stop button of the panel itself asks before calling anything', () => {
+    const inst = instance({ name: 'okdock', self: true, external: true, project: 'okdock' });
+    store.instances.set([inst]);
+
+    kanban.onAction({ instance: inst, verb: 'stop' });
+
+    http.expectNone('/api/v1/instances/okdock/stop');
+    expect(kanban.pendingAction()?.target).toBe('stopped');
+    expect(kanban.hasSelf(kanban.pendingAction()!.instances)).toBeTrue();
+  });
+
   it('the card button warns when the call is refused', () => {
     const inst = instance({ external: true, project: 'media' });
     store.instances.set([inst]);

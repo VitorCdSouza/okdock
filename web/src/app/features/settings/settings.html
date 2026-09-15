@@ -55,6 +55,18 @@
     </section>
 
     <section>
+      <div class="section-title">{{ t('settings.boardTitle') }}</div>
+      <div class="grid">
+        <label class="check">
+          <input type="checkbox" [checked]="showSelf()" (change)="showSelfDraft.set(!showSelf())">
+          <span>{{ t('settings.showSelf') }}</span>
+        </label>
+        <span></span>
+        <ok-info [text]="t('settings.showSelfTip')" />
+      </div>
+    </section>
+
+    <section>
       <div class="section-title">{{ t('settings.dockerTitle') }}</div>
       <div class="docker" [class.bad]="!system()?.dockerVersion">
         {{ dockerLabel() }}

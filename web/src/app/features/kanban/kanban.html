@@ -1,6 +1,6 @@
 @if (store.loading()) {
   <div class="empty">{{ t('kanban.loading') }}</div>
-} @else if (store.instances().length === 0) {
+} @else if (store.visible().length === 0) {
   <div class="empty">
     @if (store.system() && !store.system()!.root) {
       <p>{{ t('kanban.noRoot') }}</p>
@@ -159,6 +159,10 @@
     } @else {
       <h3>{{ t('kanban.stopTitle', { name: pending.name }) }}</h3>
       <p>{{ t('kanban.stopBody') }}</p>
+    }
+
+    @if (hasSelf(pending.instances)) {
+      <p class="warn">{{ pending.target === 'stopped' ? t('kanban.selfStopWarn') : t('kanban.selfRecreateWarn') }}</p>
     }
 
     @if (pending.instances.length > 1) {

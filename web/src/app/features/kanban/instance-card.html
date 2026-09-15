@@ -8,7 +8,9 @@
     <div class="ident">
       <div class="name">
         <span class="text">{{ instance().name }}</span>
-        @if (showProject()) {
+        @if (instance().self) {
+          <span class="ext mono" [title]="t('card.selfTip')">{{ t('card.self') }}</span>
+        } @else if (showProject()) {
           <span class="ext mono" [title]="t('card.externalTip')">
             {{ instance().project || t('card.external') }}
           </span>

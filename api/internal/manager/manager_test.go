@@ -742,7 +742,7 @@ func TestListDoesNotDuplicateAPanelInstance(t *testing.T) {
 	}
 }
 
-func TestListHidesThePanelItself(t *testing.T) {
+func TestListMarksThePanelItself(t *testing.T) {
 	m, fake := newManager(t, 16*gb)
 	self, err := os.Hostname()
 	if err != nil {
@@ -751,19 +751,92 @@ func TestListHidesThePanelItself(t *testing.T) {
 	fake.HostList = []dockerx.HostContainer{
 		{ID: self + "abc123", Name: "okdock", Image: "okdock:local", State: "running"},
 		hostContainer("jellyfin", "media"),
+		{ID: "f00", Name: "brave_hopper", Image: "okdock:local", State: "running", Labels: map[string]string{dockerx.HelperLabel: "true"}},
 	}
 
 	list, err := m.List(t.Context())
 	if err != nil {
 		t.Fatalf("List: %v", err)
 	}
+	if len(list) != 2 {
+		t.Fatalf("expected okdock and jellyfin, and never the helper: %+v", list)
+	}
 	for _, inst := range list {
-		if inst.Name == "okdock" {
-			t.Fatal("the panel must not show up on its own board with a stop button")
+		if inst.Self != (inst.Name == "okdock") {
+			t.Errorf("%s: self = %v", inst.Name, inst.Self)
 		}
 	}
-	if len(list) != 1 {
-		t.Errorf("expected only jellyfin: %+v", list)
+	managesItselfThroughAHelper(t, m, fake, "okdock", "okdock:local")
+}
+
+// a docker command run from inside the panel would die with it, so a helper container runs it
+func managesItselfThroughAHelper(t *testing.T, m *Manager, fake *dockerx.Fake, name, image string) {
+	t.Helper()
+	ctx := t.Context()
+	for _, tc := range []struct {
+		verb string
+		act  func(context.Context, string) error
+		want string
+	}{
+		{"stop", m.Stop, "helper:" + image + " stop " + name},
+		{"restart", m.Restart, "helper:" + image + " restart " + name},
+		{"start", m.Start, "container-start:" + name},
+	} {
+		before := len(fake.Calls)
+		if err := tc.act(ctx, name); err != nil {
+			t.Fatalf("%s on the panel itself: %v", tc.verb, err)
+		}
+		waitFor(t, tc.verb+" to finish", func() bool { return m.operation(name) == nil })
+		calls := fake.Calls[before:]
+		if !slices.Contains(calls, tc.want) {
+			t.Errorf("%s: %q is not among the calls: %v", tc.verb, tc.want, calls)
+		}
+		for _, c := range calls {
+			inside := strings.HasPrefix(c, "down:") || strings.HasPrefix(c, "up:")
+			if tc.verb != "start" && c == "container-"+tc.verb+":"+name {
+				inside = true
+			}
+			if inside {
+				t.Errorf("%s ran from inside the panel: %v", tc.verb, calls)
+			}
+		}
+	}
+	if err := m.Delete(ctx, name, true); !errors.Is(err, ErrSelf) {
+		t.Errorf("delete on the panel itself: err = %v, want the self error", err)
+	}
+}
+
+func TestThePanelUpdatesAndEditsItselfThroughAHelper(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	self, err := os.Hostname()
+	if err != nil || self == "" {
+		t.Skip("no hostname to answer for the panel own container")
+	}
+	dir, c := outsideStack(t)
+	c.ID = self + "abc"
+	fake.HostList = []dockerx.HostContainer{c}
+	fake.ImageIDs["nextcloud:apache"] = "sha256:old"
+	fake.PulledImageIDs = map[string]string{"nextcloud:apache": "sha256:new"}
+	recreate := "helper:nextcloud:apache compose --project-directory " + dir + " up -d --no-deps app"
+
+	if err := m.UpdateImage(t.Context(), "nextcloud"); err != nil {
+		t.Fatalf("UpdateImage: %v", err)
+	}
+	waitFor(t, "the update to finish", func() bool { return m.operation("nextcloud") == nil })
+	if !slices.Contains(fake.Calls, "pull:"+dir+"#app") || !slices.Contains(fake.Calls, recreate) {
+		t.Errorf("the pull runs in the panel and the recreate in a helper, calls = %v", fake.Calls)
+	}
+
+	before := len(fake.Calls)
+	if _, err := m.Update(t.Context(), "nextcloud", SpecRequest{MemoryLimit: "1g"}); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	waitFor(t, "the edit to finish", func() bool { return m.operation("nextcloud") == nil })
+	if !slices.Contains(fake.Calls[before:], recreate) {
+		t.Errorf("an edit of the panel recreates it through a helper, calls = %v", fake.Calls[before:])
+	}
+	if slices.Contains(fake.Calls, "up:"+dir+"#app") {
+		t.Errorf("compose up ran from inside the panel, calls = %v", fake.Calls)
 	}
 }
 
@@ -1212,7 +1285,7 @@ func TestMountsForKeepsTwoVolumesOutOfTheSameFolder(t *testing.T) {
 	}
 }
 
-func TestListLeavesThePanelOwnFolderOut(t *testing.T) {
+func TestThePanelOwnFolderIsNoInstance(t *testing.T) {
 	m, fake := newManager(t, 16*gb)
 	root := m.store.Root()
 	self, err := os.Hostname()
@@ -1240,8 +1313,12 @@ func TestListLeavesThePanelOwnFolderOut(t *testing.T) {
 	if err != nil {
 		t.Fatalf("List: %v", err)
 	}
-	if len(list) != 0 {
-		t.Errorf("the panel listed itself: %+v", list)
+	if len(list) != 1 || !list[0].Self || !list[0].External {
+		t.Fatalf("the panel folder is listed once, as the panel and not as an instance: %+v", list)
+	}
+	managesItselfThroughAHelper(t, m, fake, "okdock", "ghcr.io/vitorcdsouza/okdock:latest")
+	if _, err := os.Stat(filepath.Join(root, "okdock")); err != nil {
+		t.Errorf("the panel folder is gone: %v", err)
 	}
 }
 

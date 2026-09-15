@@ -66,6 +66,7 @@ type Runner interface {
 	PS(ctx context.Context, dir string) ([]Container, error)
 	PSAll(ctx context.Context) ([]HostContainer, error)
 	ContainerAction(ctx context.Context, name, verb string) error
+	Helper(ctx context.Context, image, dir string, args ...string) error
 	Logs(ctx context.Context, dir string, tail int, follow bool) (io.ReadCloser, error)
 	ContainerLogs(ctx context.Context, name string, tail int, follow bool) (io.ReadCloser, error)
 	Stats(ctx context.Context, names []string) ([]Stats, error)

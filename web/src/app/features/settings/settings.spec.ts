@@ -28,6 +28,20 @@ describe('Settings', () => {
   afterEach(() => {
     localStorage.removeItem('okdock.locale');
     localStorage.removeItem('okdock.metrics');
+    localStorage.removeItem('okdock.showSelf');
+  });
+
+  it('showing the panel itself waits for the save button too', () => {
+    const prefs = TestBed.inject(Prefs);
+    prefs.showSelf.set(false);
+
+    settings.showSelfDraft.set(true);
+    expect(settings.dirty()).toBeTrue();
+    expect(prefs.showSelf()).withContext('not before saving').toBeFalse();
+
+    settings.save();
+    expect(prefs.showSelf()).toBeTrue();
+    expect(settings.dirty()).toBeFalse();
   });
 
   it('only offers to save the root once it changed', () => {

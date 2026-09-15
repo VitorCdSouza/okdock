@@ -76,6 +76,9 @@ export const pt = {
   'kanban.stopBody':
     'Derruba o container. Os volumes ficam, então os dados são preservados e ela pode subir de novo depois.',
   'kanban.doStop': 'Parar',
+  'kanban.selfStopWarn':
+    'Este é o próprio painel. Parado, a página cai e ele só volta pelo terminal, com docker start ou docker compose up.',
+  'kanban.selfRecreateWarn': 'Este é o próprio painel: ele cai por alguns segundos e a página reconecta sozinha.',
   'kanban.startTitle': 'Iniciar {name}?',
   'kanban.startBody':
     'Sobe o container com o compose que está no disco. Se a RAM livre não cobrir o limite da instância, o painel recusa.',
@@ -94,6 +97,9 @@ export const pt = {
   'card.external': 'externo',
   'card.externalTip':
     'Container que já existia no servidor, fora do OkDock. Quando o painel acha o compose dele, edita e atualiza esse serviço no arquivo original; excluir continua no terminal.',
+  'card.self': 'este painel',
+  'card.selfTip':
+    'O container onde o próprio OkDock roda. Reiniciar, atualizar ou editar derruba o painel por alguns segundos e a página reconecta sozinha; parado, ele só volta pelo terminal.',
   'card.optionsAria': 'Opções de {name}',
   'card.edit': 'Editar',
   'card.delete': 'Excluir',
@@ -116,6 +122,7 @@ export const pt = {
   'detail.aria': 'Instância {name}',
   'detail.stats': '{cpu}% CPU · {used} de {total}',
   'detail.clearError': 'Limpar erro',
+  'detail.confirmStopSelf': 'Parar o painel?',
   'detail.restart': '↻ Reiniciar',
   'detail.tab.config': 'Configurações',
   'detail.tab.console': 'Console',
@@ -272,6 +279,10 @@ export const pt = {
   'settings.languageAuto': 'Automático (do sistema)',
   'settings.languageTip':
     'Vale só para este navegador, como os números da barra: sem login, uma escolha gravada no servidor valeria para todo mundo da casa. O que o docker escreve (linha de log e status do container) aparece como veio.',
+  'settings.boardTitle': 'QUADRO',
+  'settings.showSelf': 'Mostrar o próprio OkDock no quadro',
+  'settings.showSelfTip':
+    'O card do painel tem as mesmas ações dos outros. Quem para, reinicia ou recria o painel é um container auxiliar, porque o comando rodando dentro dele morreria junto. Vale só para este navegador.',
   'settings.dockerTitle': 'DOCKER',
   'settings.dockerVersion': 'versão {version}',
   'settings.dockerSilent': 'não respondeu',
@@ -301,6 +312,8 @@ export const pt = {
   'error.docker_failed': 'o docker recusou o comando: {detail}',
   'error.external_instance':
     '{name} é um container externo e o painel não achou um compose que saiba escrever: sobe, para e mostra o console, o resto continua no terminal.',
+  'error.self_instance':
+    '{name} é o próprio painel, e o painel não exclui a si mesmo. Isso é no terminal.',
   'error.invalid_fields': 'alguns campos não passaram na validação do template',
   'error.bad_request': 'a requisição veio malformada',
   'error.internal': 'erro interno no painel',

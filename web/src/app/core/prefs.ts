@@ -11,15 +11,24 @@ export interface MetricPrefs {
 
 const DEFAULTS: MetricPrefs = { cpu: true, memory: true, disk: true, budget: true };
 const KEY = 'okdock.metrics';
+const SELF_KEY = 'okdock.showSelf';
 
 @Injectable({ providedIn: 'root' })
 export class Prefs {
   readonly metrics = signal<MetricPrefs>(load());
+  // the panel card is off by default, it takes no action and only takes room
+  readonly showSelf = signal(readSetting(SELF_KEY) === 'true');
 
   constructor() {
     effect(() => {
       try {
         localStorage.setItem(KEY, JSON.stringify(this.metrics()));
+      } catch {
+      }
+    });
+    effect(() => {
+      try {
+        localStorage.setItem(SELF_KEY, String(this.showSelf()));
       } catch {
       }
     });

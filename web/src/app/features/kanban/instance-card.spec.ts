@@ -152,6 +152,19 @@ describe('InstanceCard', () => {
     expect(c.portList()).toBe('25565, 19132/udp');
   });
 
+  it('the panel own card says so and keeps its actions', () => {
+    const fixture = TestBed.createComponent(InstanceCard);
+    fixture.componentRef.setInput(
+      'instance',
+      instance({ name: 'okdock', self: true, external: true, editable: true, project: 'okdock', state: 'running' }),
+    );
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+
+    expect(el.querySelector('.ext')?.textContent?.trim()).toBe('este painel');
+    expect(el.querySelector('footer button')?.textContent?.trim()).toBe('■ Parar');
+  });
+
   it('the error block copies the whole text, not only what fits in the card', () => {
     const status = "pull access denied for promo-radar, repository does not exist or may require 'docker login'";
     const fixture = TestBed.createComponent(InstanceCard);

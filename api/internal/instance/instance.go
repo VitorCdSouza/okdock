@@ -109,6 +109,9 @@ type Instance struct {
 	ComposeFile string `json:"composeFile,omitempty"`
 	// why it is not editable: no_compose, not_visible, unreadable or unsupported
 	ReadOnly string `json:"readOnly,omitempty"`
+
+	// the container the panel itself runs in, which a helper container stops and recreates
+	Self bool `json:"self,omitempty"`
 }
 
 type Operation struct {

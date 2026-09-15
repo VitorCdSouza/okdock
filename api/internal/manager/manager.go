@@ -115,20 +115,28 @@ func (m *Manager) List(ctx context.Context) ([]instance.Instance, error) {
 	return out, nil
 }
 
-// the panel folder can sit inside the instance folder, and the panel is no instance of itself
-func dropSelf(specs []instance.Spec, root string, containers []dockerx.HostContainer) []instance.Spec {
+// inside the container the hostname is the container own short id
+func selfContainer(containers []dockerx.HostContainer) (dockerx.HostContainer, bool) {
 	self, _ := os.Hostname()
-	if self == "" || root == "" {
-		return specs
+	if self == "" {
+		return dockerx.HostContainer{}, false
 	}
-	dir := ""
 	for _, c := range containers {
 		if strings.HasPrefix(c.ID, self) {
-			dir = filepath.Clean(c.WorkDir)
-			break
+			return c, true
 		}
 	}
-	if dir == "" || filepath.Dir(dir) != filepath.Clean(root) {
+	return dockerx.HostContainer{}, false
+}
+
+// the panel folder can sit inside the instance folder, and the panel is no instance of itself
+func dropSelf(specs []instance.Spec, root string, containers []dockerx.HostContainer) []instance.Spec {
+	c, ok := selfContainer(containers)
+	if !ok || root == "" || c.WorkDir == "" {
+		return specs
+	}
+	dir := filepath.Clean(c.WorkDir)
+	if filepath.Dir(dir) != filepath.Clean(root) {
 		return specs
 	}
 	name := filepath.Base(dir)
@@ -153,8 +161,7 @@ func attachNetworks(list []instance.Instance, containers []dockerx.HostContainer
 }
 
 func (m *Manager) listExternal(managed []instance.Instance, containers []dockerx.HostContainer) (list []instance.Instance, running []string) {
-	// inside the container the hostname is the container own short id
-	self, _ := os.Hostname()
+	self, hasSelf := selfContainer(containers)
 
 	ours := make(map[string]bool, len(managed)*2)
 	for _, inst := range managed {
@@ -164,13 +171,14 @@ func (m *Manager) listExternal(managed []instance.Instance, containers []dockerx
 
 	now := m.now()
 	for _, c := range containers {
-		if self != "" && strings.HasPrefix(c.ID, self) {
+		if c.Labels[dockerx.HelperLabel] != "" {
 			continue
 		}
-		if c.WorkDir != "" && ours[filepath.Clean(c.WorkDir)] {
+		isSelf := hasSelf && c.ID == self.ID
+		if !isSelf && c.WorkDir != "" && ours[filepath.Clean(c.WorkDir)] {
 			continue
 		}
-		if ours["name:"+c.Name] {
+		if !isSelf && ours["name:"+c.Name] {
 			continue
 		}
 
@@ -199,6 +207,7 @@ func (m *Manager) listExternal(managed []instance.Instance, containers []dockerx
 			})
 		}
 		readExternalCompose(&inst, c)
+		inst.Self = isSelf
 		inst.Operation = m.operation(c.Name)
 		inst.State = externalState(c)
 		if inst.State == instance.StateError && c.ExitCode != 0 {
@@ -1020,6 +1029,49 @@ var ErrExternal = errors.New("external container")
 
 func (e *ExternalError) Is(target error) bool { return target == ErrExternal }
 
+type SelfError struct{ Name string }
+
+func (e *SelfError) Error() string {
+	return fmt.Sprintf("%q is the panel itself, and the panel does not delete itself", e.Name)
+}
+
+var ErrSelf = errors.New("the panel itself")
+
+func (e *SelfError) Is(target error) bool { return target == ErrSelf }
+
+// the panel folder can be an instance folder too, so the store alone would treat the panel as one
+func (m *Manager) selfNamed(ctx context.Context, name string) (instance.Instance, bool) {
+	containers, err := m.docker.PSAll(ctx)
+	if err != nil {
+		return instance.Instance{}, false
+	}
+	if c, ok := selfContainer(containers); !ok || c.Name != name {
+		return instance.Instance{}, false
+	}
+	return m.external(ctx, name)
+}
+
+// a docker command from inside the panel dies with the panel, one from a helper container finishes
+func (m *Manager) selfAction(inst instance.Instance, kind, code string, args ...string) error {
+	if err := m.beginOp(inst.Name, kind, code); err != nil {
+		return err
+	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+		m.endOp(inst.Name, m.docker.Helper(ctx, inst.Image, "", args...))
+	}()
+	return nil
+}
+
+// the image the panel runs carries the docker CLI, so the helper borrows it
+func (m *Manager) upService(ctx context.Context, inst instance.Instance, dir, service string) error {
+	if !inst.Self {
+		return m.docker.Up(ctx, dir, service)
+	}
+	return m.docker.Helper(ctx, inst.Image, dir, "compose", "--project-directory", dir, "up", "-d", "--no-deps", service)
+}
+
 func (m *Manager) notManaged(ctx context.Context, name string, err error) error {
 	if _, ok := m.external(ctx, name); ok {
 		return &ExternalError{Name: name}
@@ -1028,6 +1080,9 @@ func (m *Manager) notManaged(ctx context.Context, name string, err error) error 
 }
 
 func (m *Manager) Update(ctx context.Context, name string, req SpecRequest) (instance.Spec, error) {
+	if inst, ok := m.selfNamed(ctx, name); ok {
+		return m.updateExternal(ctx, inst, req)
+	}
 	old, err := m.store.Get(name)
 	if err != nil {
 		if inst, ok := m.external(ctx, name); ok {
@@ -1234,6 +1289,10 @@ func RecreateFields(old, new instance.Spec) []string {
 }
 
 func (m *Manager) Start(ctx context.Context, name string) error {
+	// compose up from inside the panel could recreate the panel halfway, docker start on it changes nothing
+	if _, ok := m.selfNamed(ctx, name); ok {
+		return m.externalAction(name, "start", OpStart, "starting")
+	}
 	spec, err := m.store.Get(name)
 	if err != nil {
 		if _, ok := m.external(ctx, name); ok {
@@ -1269,26 +1328,33 @@ func (m *Manager) externalAction(name, verb, kind, code string) error {
 }
 
 func (m *Manager) UpdateImage(ctx context.Context, name string) error {
+	if inst, ok := m.selfNamed(ctx, name); ok {
+		return m.updateImageExternal(inst)
+	}
 	spec, err := m.store.Get(name)
 	if err != nil {
 		inst, ok := m.external(ctx, name)
 		if !ok {
 			return err
 		}
-		// the compose CLI runs inside the panel, so it needs the file, not only the reported path
-		if !inst.Editable {
-			return &ExternalError{Name: name}
-		}
-		if err := m.beginOp(name, OpUpdate, "checking_update"); err != nil {
-			return err
-		}
-		go m.pullExternal(inst)
-		return nil
+		return m.updateImageExternal(inst)
 	}
 	if err := m.beginOp(name, OpUpdate, "checking_update"); err != nil {
 		return err
 	}
 	go m.pullAndRecreate(name, spec)
+	return nil
+}
+
+// the compose CLI runs inside the panel, so it needs the file, not only the reported path
+func (m *Manager) updateImageExternal(inst instance.Instance) error {
+	if !inst.Editable {
+		return &ExternalError{Name: inst.Name}
+	}
+	if err := m.beginOp(inst.Name, OpUpdate, "checking_update"); err != nil {
+		return err
+	}
+	go m.pullExternal(inst)
 	return nil
 }
 
@@ -1342,6 +1408,9 @@ func (m *Manager) pullAndRecreate(name string, spec instance.Spec) {
 }
 
 func (m *Manager) Stop(ctx context.Context, name string) error {
+	if inst, ok := m.selfNamed(ctx, name); ok {
+		return m.selfAction(inst, OpStop, "stopping", "stop", name)
+	}
 	if _, err := m.store.Get(name); err != nil {
 		if _, ok := m.external(ctx, name); ok {
 			return m.externalAction(name, "stop", OpStop, "stopping")
@@ -1360,6 +1429,9 @@ func (m *Manager) Stop(ctx context.Context, name string) error {
 }
 
 func (m *Manager) Restart(ctx context.Context, name string) error {
+	if inst, ok := m.selfNamed(ctx, name); ok {
+		return m.selfAction(inst, OpStart, "restarting", "restart", name)
+	}
 	if _, err := m.store.Get(name); err != nil {
 		if _, ok := m.external(ctx, name); ok {
 			return m.externalAction(name, "restart", OpStart, "restarting")
@@ -1378,6 +1450,9 @@ func (m *Manager) Restart(ctx context.Context, name string) error {
 }
 
 func (m *Manager) Delete(ctx context.Context, name string, keepData bool) error {
+	if _, ok := m.selfNamed(ctx, name); ok {
+		return &SelfError{Name: name}
+	}
 	if _, err := m.store.Get(name); err != nil {
 		return m.notManaged(ctx, name, err)
 	}
