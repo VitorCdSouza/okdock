@@ -44,7 +44,9 @@
   background: var(--bg-card);
   border: 1px solid var(--line);
   border-radius: var(--r);
+  cursor: grab;
 }
+.tile:active { cursor: grabbing; }
 .tile:hover { border-color: var(--line-hover); }
 .group.open .tile { border-color: var(--accent-line); }
 
@@ -170,3 +172,7 @@
 .confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
 
 .dialog.ask .warn { color: var(--warn); }
+
+/* the dialog names every container the drop reaches, so a stack is never a surprise */
+.dialog.ask .stack-note { color: var(--fg-dim); font-size: var(--fs-sm); }
+.dialog.ask .stack-note .mono { display: block; color: var(--fg-muted); }

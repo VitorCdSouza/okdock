@@ -1,0 +1,53 @@
+:host { display: flex; flex-direction: column; gap: 16px; }
+:host([hidden]) { display: none; }
+
+section { display: flex; flex-direction: column; gap: 12px; }
+/* image, version and RAM limit in three of the same, the search taking two of them */
+.image-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: end; }
+.image-row ok-image-search { grid-column: span 2; }
+
+/* what the template fixed on the left, what the server gives it on the right */
+.map-line { display: grid; grid-template-columns: 1fr 20px 1fr; gap: 12px; align-items: end; }
+.map-line .to { color: var(--fg-faint); text-align: center; padding-bottom: 9px; }
+/* the same box an input draws, dashed and with no field behind it */
+.map-line .fixed, .image-row .fixed, .field.name .fixed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--field-h);
+  padding: 0 9px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-md);
+  color: var(--fg-soft);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* the plus of a section sits right next to its title */
+.section-title { display: flex; align-items: center; gap: 8px; }
+.add, .drop {
+  width: var(--field-h);
+  height: var(--field-h);
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-md);
+  line-height: 1;
+  color: var(--fg-muted);
+}
+.add:hover, .drop:hover { border-color: var(--accent-line); color: var(--accent); }
+.drop:hover { border-color: var(--bad-line); color: var(--bad); }
+/* the container port and its protocol share the column the template side has */
+.pair { display: flex; gap: 6px; align-items: center; }
+.pair input { flex: 1; min-width: 0; }
+.pair ok-select { width: 82px; flex: none; }
+
+.with-button { display: flex; gap: 6px; align-items: center; }
+.with-button input { flex: 1; min-width: 0; }
+
+.alias { font-size: var(--fs-xs); color: var(--fg-faint); }
+.has-error input { border-color: var(--bad-line); }
+.err { font: 400 var(--fs-xs)/1.4 var(--sans); color: var(--bad); }

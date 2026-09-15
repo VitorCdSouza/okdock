@@ -1,0 +1,171 @@
+<section>
+  <div class="field name" [class.has-error]="!!nameError()">
+    <label for="inst-name">
+      {{ t('new.name') }} <span class="req">*</span>
+      <ok-info [text]="editing() ? t('new.renameTip') : t('new.nameTip')" />
+    </label>
+    @if (lockName()) {
+      <div class="fixed mono">{{ name() }}</div>
+    } @else {
+      <input id="inst-name" class="mono" [ngModel]="name()"
+             (ngModelChange)="name.set($event)" placeholder="smp-familia">
+    }
+    @if (nameError()) {
+      <span class="err">{{ nameError() }}</span>
+    }
+  </div>
+
+  <div class="image-row">
+    @if (editing()) {
+      <div class="field">
+        <label>{{ t('new.image') }}</label>
+        <div class="fixed mono">{{ image() }}</div>
+      </div>
+    } @else {
+      <ok-image-search fieldId="inst-image" [(image)]="image"
+                       [lockRepo]="template().id !== 'custom'"
+                       [label]="t('new.image')"
+                       placeholder="repositorio/imagem" />
+    }
+
+    <div class="field">
+      <label for="inst-mem">
+        {{ t('new.memoryLimit') }}
+        <ok-info [text]="t('new.memoryTip', { memory: template().minMemory })" />
+      </label>
+      <input id="inst-mem" class="mono" [ngModel]="memoryLimit()"
+             (ngModelChange)="memoryLimit.set($event)" placeholder="4g">
+    </div>
+
+    @if (editing()) {
+      <div class="field">
+        <label for="inst-cpus">CPUs</label>
+        <input id="inst-cpus" type="number" step="0.5" min="0.5" class="mono" [ngModel]="cpus()"
+               (ngModelChange)="cpus.set($event)">
+      </div>
+    }
+  </div>
+</section>
+
+<section>
+  <div class="section-title">
+    {{ t('new.ports') }}
+    <ok-info [text]="t('new.portsTip')" />
+    <button class="add" (click)="addPort()"
+            [title]="t('new.addPort')" [attr.aria-label]="t('new.addPort')">＋</button>
+  </div>
+  @for (port of ports(); track port.id; let first = $first) {
+    <div class="map-line">
+      <div class="field">
+        @if (first) { <label [attr.for]="'inst-port-' + port.id">{{ t('new.portContainer') }}</label> }
+        @if (port.fixed) {
+          <div class="fixed mono">
+            {{ port.container }}/{{ port.protocol }}
+            @if (portLabel(port.label); as label) { <span class="alias">{{ label }}</span> }
+          </div>
+        } @else {
+          <div class="pair">
+            <input type="number" class="mono" [attr.id]="'inst-port-' + port.id"
+                   [attr.aria-label]="t('new.portContainer')"
+                   [value]="port.container"
+                   (input)="setPortContainer(port.id, $any($event.target).value)">
+            <ok-select [value]="port.protocol" [options]="protocols"
+                       [ariaLabel]="t('new.portContainer')"
+                       (valueChange)="setPortProtocol(port.id, $event)" />
+          </div>
+        }
+      </div>
+      <span class="to" aria-hidden="true">→</span>
+      <div class="field">
+        @if (first) { <label [attr.for]="'inst-porth-' + port.id">{{ t('new.portHost') }}</label> }
+        <div class="with-button">
+          <input type="number" class="mono" [attr.id]="'inst-porth-' + port.id"
+                 [attr.aria-label]="t('new.portHost')"
+                 [value]="port.host"
+                 (input)="setPortHost(port.id, $any($event.target).value)">
+          @if (!port.fixed) {
+            <button class="drop" (click)="dropPort(port.id)"
+                    [title]="t('new.remove')" [attr.aria-label]="t('new.remove')">✕</button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</section>
+
+<section>
+  <div class="section-title">
+    {{ t('new.volumes') }}
+    <ok-info [text]="t('new.volumesTip')" />
+    <button class="add" (click)="addVolume()"
+            [title]="t('new.addVolume')" [attr.aria-label]="t('new.addVolume')">＋</button>
+  </div>
+  @for (volume of volumes(); track volume.id; let first = $first) {
+    <div class="map-line">
+      <div class="field">
+        @if (first) { <label [attr.for]="'inst-vol-' + volume.id">{{ t('new.volumeContainer') }}</label> }
+        @if (volume.fixed) {
+          <div class="fixed mono">{{ volume.container }}</div>
+        } @else {
+          <input class="mono" [attr.id]="'inst-vol-' + volume.id" placeholder="/data"
+                 [attr.aria-label]="t('new.volumeContainer')"
+                 [value]="volume.container"
+                 (input)="setVolumeContainer(volume.id, $any($event.target).value)">
+        }
+      </div>
+      <span class="to" aria-hidden="true">→</span>
+      <div class="field">
+        @if (first) { <label [attr.for]="'inst-volh-' + volume.id">{{ t('new.volumeHost') }}</label> }
+        <div class="with-button">
+          <input class="mono" [attr.id]="'inst-volh-' + volume.id"
+                 [attr.aria-label]="t('new.volumeHost')"
+                 [value]="volume.host"
+                 (input)="setVolumeHost(volume.id, $any($event.target).value)">
+          <ok-pick-dir [start]="pickerStart()" [ghosts]="ghostDirs()"
+                       (picked)="volumePicked(volume.id, $event)" />
+          @if (!volume.fixed) {
+            <button class="drop" (click)="dropVolume(volume.id)"
+                    [title]="t('new.remove')" [attr.aria-label]="t('new.remove')">✕</button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</section>
+
+@if (budgetWarning()) {
+  <div class="alert warn">{{ budgetWarning() }}</div>
+}
+
+<section>
+  <div class="section-title">
+    {{ t('new.configFields') }}
+    <button class="add" (click)="addField()"
+            [title]="t('new.addField')" [attr.aria-label]="t('new.addField')">＋</button>
+  </div>
+  <ok-template-form [template]="template()" [(values)]="values" [problems]="problems()" />
+  @for (field of fields(); track field.id) {
+    <div class="map-line">
+      <div class="field" [class.has-error]="!!fieldError(field.key)">
+        <label [attr.for]="'inst-key-' + field.id">{{ t('new.fieldKey') }}</label>
+        <input class="mono" [attr.id]="'inst-key-' + field.id" placeholder="TZ"
+               [value]="field.key"
+               (input)="setFieldKey(field.id, $any($event.target).value)">
+        @if (fieldError(field.key); as message) {
+          <span class="err">{{ message }}</span>
+        }
+      </div>
+      <span class="to" aria-hidden="true">=</span>
+      <div class="field">
+        <label [attr.for]="'inst-val-' + field.id">{{ t('new.fieldValue') }}</label>
+        <div class="with-button">
+          <input class="mono" [attr.id]="'inst-val-' + field.id"
+                 [value]="field.value"
+                 (input)="setFieldValue(field.id, $any($event.target).value)">
+          <button class="drop" (click)="dropField(field.id)"
+                  [title]="t('new.remove')" [attr.aria-label]="t('new.remove')">✕</button>
+        </div>
+      </div>
+    </div>
+  }
+</section>

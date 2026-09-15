@@ -7,11 +7,9 @@ import {
   ApiProblem,
   ComposePreview,
   DirListing,
-  DnsStatus,
   ImageHit,
   ImageSuggestion,
   Instance,
-  InstanceDNS,
   InstancesResponse,
   Template,
   TemplatesResponse,
@@ -108,8 +106,10 @@ export class Api {
     );
   }
 
-  previewCompose(req: SpecRequest): Observable<ComposePreview> {
-    return this.post<ComposePreview>(`${BASE}/instances/preview-compose`, req);
+  // current is the name the instance answers by today, which is not req.name while it is being renamed
+  previewCompose(req: SpecRequest, current = ''): Observable<ComposePreview> {
+    const q = current ? `?current=${encodeURIComponent(current)}` : '';
+    return this.post<ComposePreview>(`${BASE}/instances/preview-compose${q}`, req);
   }
 
   compose(name: string): Observable<string> {
@@ -136,14 +136,6 @@ export class Api {
     return this.action(name, 'update-image');
   }
 
-  archive(name: string) {
-    return this.action(name, 'archive');
-  }
-
-  unarchive(name: string) {
-    return this.action(name, 'unarchive');
-  }
-
   clearError(name: string) {
     return this.action(name, 'clear-error');
   }
@@ -159,38 +151,6 @@ export class Api {
 
   setTemplatesRoot(templates: string): Observable<SystemInfo> {
     return this.wrap(this.http.put<SystemInfo>(`${BASE}/system/templates`, { templates }));
-  }
-
-  dns(): Observable<DnsStatus> {
-    return this.get<DnsStatus>(`${BASE}/dns`);
-  }
-
-  saveDnsToken(token: string): Observable<DnsStatus> {
-    return this.wrap(this.http.put<DnsStatus>(`${BASE}/dns`, { token }));
-  }
-
-  addDnsDomain(domain: string): Observable<InstanceDNS> {
-    return this.post<InstanceDNS>(`${BASE}/dns/domains`, { domain });
-  }
-
-  removeDnsDomain(domain: string): Observable<void> {
-    return this.wrap(
-      this.http.delete<void>(`${BASE}/dns/domains/${encodeURIComponent(domain)}`),
-    );
-  }
-
-  linkDns(name: string, domain: string): Observable<InstanceDNS> {
-    return this.wrap(
-      this.http.put<InstanceDNS>(`${BASE}/instances/${encodeURIComponent(name)}/dns`, { domain }),
-    );
-  }
-
-  unlinkDns(name: string): Observable<void> {
-    return this.wrap(this.http.delete<void>(`${BASE}/instances/${encodeURIComponent(name)}/dns`));
-  }
-
-  syncDns(): Observable<void> {
-    return this.post<void>(`${BASE}/dns/sync`, {});
   }
 
   private action(name: string, verb: string): Observable<void> {

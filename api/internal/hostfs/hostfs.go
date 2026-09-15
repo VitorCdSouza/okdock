@@ -126,7 +126,16 @@ func (b *Browser) allowed() []string {
 		out = append(out, clean)
 	}
 	sort.Strings(out)
-	return out
+
+	// a root inside another root is the same tree twice, the parent already reaches it
+	kept := out[:0]
+	for _, root := range out {
+		if under(root, kept) {
+			continue
+		}
+		kept = append(kept, root)
+	}
+	return kept
 }
 
 func inside(dir string, roots []string) bool {

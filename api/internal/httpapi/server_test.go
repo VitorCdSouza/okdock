@@ -256,7 +256,7 @@ func TestCreateAndListInstance(t *testing.T) {
 	if len(resp.Instances) != 1 || resp.Instances[0].Name != "smp" {
 		t.Fatalf("instances = %+v", resp.Instances)
 	}
-	if len(resp.States) != 7 {
+	if len(resp.States) != 6 {
 		t.Errorf("states = %v", resp.States)
 	}
 }

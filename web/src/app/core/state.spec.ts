@@ -114,10 +114,9 @@ describe('Store', () => {
     http.expectOne('/api/v1/templates').flush({ templates: [], categories: [] });
     http.expectOne('/api/v1/instances').flush({ instances: [], states: [] });
     http.expectOne('/api/v1/system').flush({});
-    http.expectOne('/api/v1/dns').flush({ token: '', suffix: '.duckdns.org', links: [], domains: [] });
 
     events.next({ type: 'instance.updated', instance: 'smp', message: 'texto da API' });
 
-    expect(store.toast()).toBe('smp foi atualizada; o mundo nos volumes foi preservado');
+    expect(store.toast()).toBe('smp foi atualizada; os dados nos volumes foram preservados');
   });
 });

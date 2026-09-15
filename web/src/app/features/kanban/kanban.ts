@@ -10,7 +10,7 @@ import {
   viewChild,
   viewChildren,
 } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, concat } from 'rxjs';
 
 import { Api, OkDockError } from '../../core/api';
 import { Store } from '../../core/state';
@@ -32,6 +32,8 @@ type GroupItem = {
   open: boolean;
 };
 type Item = CardItem | GroupItem;
+type DragGroup = { name: string; members: Instance[] };
+type Pending = { name: string; instances: Instance[]; target: State };
 
 @Component({
   selector: 'ok-kanban',
@@ -98,19 +100,11 @@ export class Kanban {
     this.openGroups.set(new Set());
   }
 
-  // width comes from every container the column holds, so a filter never resizes it
-  private readonly held = computed(() => {
-    const counts = new Map<State, number>();
-    for (const instance of this.store.instances()) {
-      const column = COLUMN_OF[instance.state];
-      counts.set(column, (counts.get(column) ?? 0) + 1);
-    }
-    return counts;
-  });
+  // the two columns that hold the day to day are twice as wide, whatever they have in them
+  private static readonly WIDE: ReadonlySet<State> = new Set<State>(['stopped', 'running']);
 
   readonly columns = computed(() => {
     const opened = this.openGroups();
-    const held = this.held();
     return this.store
       .states()
       .filter((state) => COLUMN_OF[state] === state)
@@ -122,7 +116,7 @@ export class Kanban {
           title: this.t(STATE_KEY[state]),
           cards,
           items: this.pack(state, cards, opened),
-          grow: Math.min(2, Math.max(1, held.get(state) ?? 0)),
+          grow: Kanban.WIDE.has(state) ? 2 : 1,
         };
       });
   });
@@ -212,8 +206,10 @@ export class Kanban {
   readonly total = computed(() => this.store.filtered().length);
 
   readonly dropTarget = signal<State | null>(null);
-  readonly pendingAction = signal<{ instance: Instance; target: State } | null>(null);
+  readonly pendingAction = signal<Pending | null>(null);
   readonly acting = signal(false);
+
+  readonly draggingGroup = signal<DragGroup | null>(null);
 
   private readonly dragged = computed(() => {
     const name = this.store.dragging();
@@ -221,28 +217,30 @@ export class Kanban {
   });
 
   allows(inst: Instance, target: State): boolean {
-    if (inst.external) {
-      // archiving is a panel concept, and updating needs the compose file
-      if (target === 'archived') return false;
-      if (target === 'updating' && !inst.editable) return false;
-    }
+    // updating needs the compose file the panel can write
+    if (inst.external && target === 'updating' && !inst.editable) return false;
     switch (target) {
       case 'updating':
-        return !inst.archived && inst.state !== 'updating';
+        return inst.state !== 'updating';
       case 'stopped':
         return this.isUp(inst.state);
       case 'running':
         return inst.state === 'stopped' || inst.state === 'error';
-      case 'archived':
-        return !inst.archived;
       default:
         return false;
     }
   }
 
   canDrop(target: State): boolean {
+    return this.moving(target).length > 0;
+  }
+
+  // a stack drops as a whole, minus the members the column refuses
+  private moving(target: State): Instance[] {
+    const group = this.draggingGroup();
+    if (group) return group.members.filter((inst) => this.allows(inst, target));
     const inst = this.dragged();
-    return !!inst && this.allows(inst, target);
+    return inst && this.allows(inst, target) ? [inst] : [];
   }
 
   private isUp(state: State): boolean {
@@ -252,6 +250,18 @@ export class Kanban {
   onDragChange(name: string | null): void {
     this.store.dragging.set(name);
     if (!name) this.dropTarget.set(null);
+  }
+
+  onGroupDragStart(event: DragEvent, item: GroupItem): void {
+    event.dataTransfer?.setData('text/plain', item.name);
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+    this.store.dragging.set(null);
+    this.draggingGroup.set({ name: item.name, members: item.members });
+  }
+
+  onGroupDragEnd(): void {
+    this.draggingGroup.set(null);
+    this.dropTarget.set(null);
   }
 
   onDragOver(event: DragEvent, target: State): void {
@@ -269,12 +279,21 @@ export class Kanban {
     event.preventDefault();
     this.dropTarget.set(null);
 
-    const inst = this.dragged();
-    const allowed = !!inst && this.allows(inst, target);
+    const moving = this.moving(target);
+    const name = this.draggingGroup()?.name ?? moving[0]?.name ?? '';
 
     this.store.dragging.set(null);
-    if (!inst || !allowed) return;
-    this.pendingAction.set({ instance: inst, target });
+    this.draggingGroup.set(null);
+    if (!moving.length) return;
+    this.pendingAction.set({ name, instances: moving, target });
+  }
+
+  anyRunning(instances: Instance[]): boolean {
+    return instances.some((inst) => inst.state === 'running');
+  }
+
+  memberNames(instances: Instance[]): string {
+    return instances.map((inst) => inst.name).join(', ');
   }
 
   cancelAction(): void {
@@ -285,8 +304,10 @@ export class Kanban {
     const pending = this.pendingAction();
     if (!pending) return;
     this.acting.set(true);
-    this.call(pending.target, pending.instance.name).subscribe({
-      next: () => {
+    // one at a time, because the budget of an instance is checked against what is already up
+    const calls = pending.instances.map((inst) => this.call(pending.target, inst.name));
+    concat(...calls).subscribe({
+      complete: () => {
         this.acting.set(false);
         this.pendingAction.set(null);
         this.store.reload();
@@ -295,6 +316,7 @@ export class Kanban {
         this.acting.set(false);
         this.pendingAction.set(null);
         this.store.notifyError(err.message);
+        this.store.reload();
       },
     });
   }
@@ -305,8 +327,6 @@ export class Kanban {
         return this.t('kanban.dropToUpdate');
       case 'running':
         return this.t('kanban.dropToStart');
-      case 'archived':
-        return this.t('kanban.dropToArchive');
       default:
         return this.t('kanban.dropToStop');
     }
@@ -318,8 +338,6 @@ export class Kanban {
         return this.t('kanban.doUpdate');
       case 'running':
         return this.t('kanban.doStart');
-      case 'archived':
-        return this.t('kanban.doArchive');
       default:
         return this.t('kanban.doStop');
     }
@@ -331,8 +349,6 @@ export class Kanban {
         return this.api.updateImage(name);
       case 'running':
         return this.api.start(name);
-      case 'archived':
-        return this.api.archive(name);
       default:
         return this.api.stop(name);
     }
@@ -353,9 +369,6 @@ export class Kanban {
         break;
       case 'restart':
         this.fire(this.api.restart(instance.name));
-        break;
-      case 'unarchive':
-        this.fire(this.api.unarchive(instance.name));
         break;
       case 'fix':
       case 'logs':

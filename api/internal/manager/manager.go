@@ -17,7 +17,6 @@ import (
 
 	"github.com/VitorCdSouza/okdock/api/internal/compose"
 	"github.com/VitorCdSouza/okdock/api/internal/dockerx"
-	"github.com/VitorCdSouza/okdock/api/internal/duckdns"
 	"github.com/VitorCdSouza/okdock/api/internal/hostfs"
 	"github.com/VitorCdSouza/okdock/api/internal/instance"
 	"github.com/VitorCdSouza/okdock/api/internal/registry"
@@ -31,7 +30,6 @@ type Options struct {
 	Templates     *template.Catalog
 	Docker        dockerx.Runner
 	System        system.Reader
-	DNS           duckdns.Client
 	Registry      registry.Client
 	MemoryReserve int64
 	// the folders bound into the panel, hostfs.BindMounts when the caller says nothing
@@ -53,12 +51,7 @@ type Manager struct {
 	mu  sync.Mutex
 	ops map[string]*instance.Operation
 
-	dns      duckdns.Client
 	registry registry.Client
-
-	dnsMu  sync.Mutex
-	dnsCfg store.DNSConfig
-	dnsBg  sync.WaitGroup
 
 	hub *Hub
 }
@@ -76,11 +69,6 @@ func New(o Options) *Manager {
 	if mounts == nil {
 		mounts = hostfs.BindMounts
 	}
-	dnsCfg, err := o.Store.LoadDNS()
-	if err != nil {
-		slog.Warn("could not read the DNS config", "file", o.Store.DNSPath(), "err", err)
-	}
-
 	return &Manager{
 		store:     o.Store,
 		templates: o.Templates,
@@ -90,9 +78,7 @@ func New(o Options) *Manager {
 		mounts:    mounts,
 		now:       now,
 		ops:       map[string]*instance.Operation{},
-		dns:       o.DNS,
 		registry:  o.Registry,
-		dnsCfg:    dnsCfg,
 		hub:       NewHub(),
 	}
 }
@@ -373,7 +359,6 @@ func (m *Manager) hydrate(ctx context.Context, spec instance.Spec) instance.Inst
 	inst := instance.Instance{Spec: spec, Dir: m.store.Dir(spec.Name), Editable: true}
 	inst.ComposeFile = m.store.ComposePath(spec.Name)
 	inst.Operation = m.operation(spec.Name)
-	inst.DNS = m.dnsFor(spec.Name)
 
 	// a compose file nobody can parse still has a folder and containers, so it goes to the board
 	if spec.Unreadable != "" {
@@ -407,9 +392,6 @@ func deriveState(spec instance.Spec, containers []dockerx.Container, op *instanc
 		case OpStart:
 			return instance.StateStarting, op.Message, "", nil
 		}
-	}
-	if spec.Archived {
-		return instance.StateArchived, "", "", nil
 	}
 	if len(containers) == 0 {
 		return instance.StateStopped, "", "", nil
@@ -745,21 +727,22 @@ func (m *Manager) checkBudget(ctx context.Context, spec instance.Spec) error {
 	return nil
 }
 
-func (m *Manager) checkPorts(ctx context.Context, spec instance.Spec) error {
+// self is the name the instance answers by today, which is not spec.Name while it is being renamed
+func (m *Manager) checkPorts(ctx context.Context, spec instance.Spec, self string) error {
 	specs, err := m.store.List()
 	if err != nil {
 		return err
 	}
 	taken := map[string]string{}
 	for _, other := range specs {
-		if other.Name == spec.Name {
+		if other.Name == spec.Name || other.Name == self {
 			continue
 		}
 		for _, p := range other.Ports {
 			taken[fmt.Sprintf("%d/%s", p.Host, p.Protocol)] = other.Name
 		}
 	}
-	for port, name := range m.portsHeldOutside(ctx, spec.Name) {
+	for port, name := range m.portsHeldOutside(ctx, self) {
 		if _, ok := taken[port]; !ok {
 			taken[port] = name
 		}
@@ -990,7 +973,7 @@ func (m *Manager) Create(ctx context.Context, req SpecRequest) (instance.Spec, e
 	if m.store.Exists(spec.Name) {
 		return instance.Spec{}, fmt.Errorf("%q: %w", spec.Name, store.ErrExists)
 	}
-	if err := m.checkPorts(ctx, spec); err != nil {
+	if err := m.checkPorts(ctx, spec, spec.Name); err != nil {
 		return instance.Spec{}, err
 	}
 	if req.Start {
@@ -1052,7 +1035,14 @@ func (m *Manager) Update(ctx context.Context, name string, req SpecRequest) (ins
 		}
 		return instance.Spec{}, err
 	}
-	req.Name = name
+	// the screen can send another name, and then the folder, the project and the container all move with it
+	renamed := strings.TrimSpace(req.Name)
+	if renamed == name {
+		renamed = ""
+	}
+	if renamed == "" {
+		req.Name = name
+	}
 	if req.TemplateID == "" {
 		req.TemplateID = old.TemplateID
 	}
@@ -1067,8 +1057,7 @@ func (m *Manager) Update(ctx context.Context, name string, req SpecRequest) (ins
 	if err != nil {
 		return instance.Spec{}, err
 	}
-	spec.Archived = old.Archived
-	if err := m.checkPorts(ctx, spec); err != nil {
+	if err := m.checkPorts(ctx, spec, name); err != nil {
 		return instance.Spec{}, err
 	}
 
@@ -1081,6 +1070,9 @@ func (m *Manager) Update(ctx context.Context, name string, req SpecRequest) (ins
 		if err := m.checkBudget(ctx, spec); err != nil {
 			return instance.Spec{}, err
 		}
+	}
+	if renamed != "" {
+		return m.startRename(name, spec, wasUp)
 	}
 	if err := m.store.Update(spec); err != nil {
 		return instance.Spec{}, err
@@ -1109,6 +1101,52 @@ func (m *Manager) recreate(name string) {
 		err = m.docker.Up(ctx, dir)
 	}
 	m.endOp(name, err)
+}
+
+// a rename runs like a recreate, and nothing on disk moves before the container is down under the old project
+func (m *Manager) startRename(old string, spec instance.Spec, wasUp bool) (instance.Spec, error) {
+	if m.store.Exists(spec.Name) {
+		return instance.Spec{}, &store.ExistsError{Name: spec.Name}
+	}
+	if err := m.beginOp(old, OpUpdate, "renaming"); err != nil {
+		return instance.Spec{}, err
+	}
+	go m.moveTo(old, spec, wasUp)
+	return spec, nil
+}
+
+func (m *Manager) moveTo(old string, spec instance.Spec, wasUp bool) {
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
+	defer cancel()
+
+	m.progress(old, "renaming", "", nil)
+	if err := m.docker.Down(ctx, m.store.Dir(old)); err != nil {
+		m.endOp(old, err)
+		return
+	}
+	if err := m.store.Rename(old, spec.Name); err != nil {
+		m.endOp(old, err)
+		return
+	}
+	m.carryOp(old, spec.Name)
+	m.hub.Publish(Event{Type: "instance.changed", Instance: old})
+
+	err := m.store.Update(spec)
+	if err == nil && wasUp {
+		m.progress(spec.Name, "starting_new_config", "", nil)
+		err = m.docker.Up(ctx, m.store.Dir(spec.Name))
+	}
+	m.endOp(spec.Name, err)
+}
+
+// the operation is keyed by name, and the card showing it is the one with the new name from here on
+func (m *Manager) carryOp(old, name string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if op, ok := m.ops[old]; ok {
+		m.ops[name] = op
+		delete(m.ops, old)
+	}
 }
 
 func NeedsRecreate(old, new instance.Spec) bool {
@@ -1156,6 +1194,9 @@ func NeedsRecreate(old, new instance.Spec) bool {
 
 func RecreateFields(old, new instance.Spec) []string {
 	var out []string
+	if old.Name != new.Name {
+		out = append(out, "name")
+	}
 	if old.Image != new.Image {
 		out = append(out, "image")
 	}
@@ -1199,9 +1240,6 @@ func (m *Manager) Start(ctx context.Context, name string) error {
 			return m.externalAction(name, "start", OpStart, "starting")
 		}
 		return err
-	}
-	if spec.Archived {
-		return fmt.Errorf("%q is archived, restore it before starting", name)
 	}
 	if err := m.checkBudget(ctx, spec); err != nil {
 		return err
@@ -1247,9 +1285,6 @@ func (m *Manager) UpdateImage(ctx context.Context, name string) error {
 		go m.pullExternal(inst)
 		return nil
 	}
-	if spec.Archived {
-		return fmt.Errorf("%q is archived, restore it before updating", name)
-	}
 	if err := m.beginOp(name, OpUpdate, "checking_update"); err != nil {
 		return err
 	}
@@ -1290,7 +1325,7 @@ func (m *Manager) pullAndRecreate(name string, spec instance.Spec) {
 		m.hub.Publish(Event{
 			Type:     "instance.updated",
 			Instance: name,
-			Message:  fmt.Sprintf("%s was updated, the world in the volumes was kept", name),
+			Message:  fmt.Sprintf("%s was updated, the data in the volumes was kept", name),
 		})
 	}
 }
@@ -1331,24 +1366,6 @@ func (m *Manager) Restart(ctx context.Context, name string) error {
 	return nil
 }
 
-func (m *Manager) SetArchived(ctx context.Context, name string, archived bool) error {
-	spec, err := m.store.Get(name)
-	if err != nil {
-		return m.notManaged(ctx, name, err)
-	}
-	if archived {
-		if err := m.docker.Down(ctx, m.store.Dir(name)); err != nil {
-			return err
-		}
-	}
-	spec.Archived = archived
-	if err := m.store.Update(spec); err != nil {
-		return err
-	}
-	m.hub.Publish(Event{Type: "instance.changed", Instance: name})
-	return nil
-}
-
 func (m *Manager) Delete(ctx context.Context, name string, keepData bool) error {
 	if _, err := m.store.Get(name); err != nil {
 		return m.notManaged(ctx, name, err)
@@ -1365,7 +1382,6 @@ func (m *Manager) Delete(ctx context.Context, name string, keepData bool) error 
 	m.mu.Lock()
 	delete(m.ops, name)
 	m.mu.Unlock()
-	m.forgetDNS(name)
 	m.hub.Publish(Event{Type: "instance.deleted", Instance: name})
 	return nil
 }

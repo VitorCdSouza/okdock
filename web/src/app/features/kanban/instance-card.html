@@ -45,13 +45,6 @@
     }
   </dl>
 
-  @if (address(); as addr) {
-    <button class="addr mono" (click)="copyAddress($event)"
-            [title]="t('card.copyAddress', { address: addr })"
-            [class.stale]="!!instance().dns?.lastError">
-      {{ addr }}<span class="copy">⧉</span>
-    </button>
-  }
 
   @if (instance().operation && !instance().operation!.error) {
     <div class="panel">

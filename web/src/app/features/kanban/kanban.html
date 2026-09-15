@@ -42,11 +42,13 @@
                   (open)="open.emit($event)"
                   (act)="onAction($event)"
                   (remove)="askRemove($event)"
-                  (dragChange)="onDragChange($event)"
-                  (copied)="store.notify(t('common.copied', { text: $event }))" />
+                  (dragChange)="onDragChange($event)" />
               } @else {
                 <div class="group" [class.open]="item.open">
                   <button class="tile" (click)="toggleGroup(item.key)"
+                          draggable="true"
+                          (dragstart)="onGroupDragStart($event, item)"
+                          (dragend)="onGroupDragEnd()"
                           [attr.aria-expanded]="item.open"
                           [attr.aria-label]="item.open
                             ? t('kanban.group.close', { name: item.name })
@@ -78,8 +80,7 @@
                           (open)="open.emit($event)"
                           (act)="onAction($event)"
                           (remove)="askRemove($event)"
-                          (dragChange)="onDragChange($event)"
-                          (copied)="store.notify(t('common.copied', { text: $event }))" />
+                          (dragChange)="onDragChange($event)" />
                       }
                     </div>
                   }
@@ -123,7 +124,7 @@
     <label class="check">
       <input type="checkbox" [checked]="deleteData()"
              (change)="deleteData.set($any($event.target).checked)">
-      <span>{{ t('kanban.deleteWorldToo') }}<strong>{{ t('kanban.noUndo') }}</strong></span>
+      <span>{{ t('kanban.deleteDataToo') }}<strong>{{ t('kanban.noUndo') }}</strong></span>
     </label>
 
     <div class="confirm-actions">
@@ -131,7 +132,7 @@
         {{ t('common.cancel') }}
       </button>
       <button class="btn btn-danger" (click)="confirmRemove()" [disabled]="deleting()">
-        {{ deleteData() ? t('kanban.deleteAndWorld') : t('kanban.deleteKeepWorld') }}
+        {{ deleteData() ? t('kanban.deleteAndData') : t('kanban.deleteKeepData') }}
       </button>
     </div>
   </div>
@@ -141,22 +142,30 @@
   <div class="backdrop over" (click)="cancelAction()"></div>
   <div class="dialog ask" role="alertdialog">
     @if (pending.target === 'updating') {
-      <h3>{{ t('kanban.updateTitle', { name: pending.instance.name }) }}</h3>
-      <p>
-        {{ t('kanban.updateBodyPre') }} <span class="mono">{{ pending.instance.image }}</span>{{ t('kanban.updateBodyPost') }}
-      </p>
-      @if (pending.instance.state === 'running') {
+      <h3>{{ t('kanban.updateTitle', { name: pending.name }) }}</h3>
+      @if (pending.instances.length > 1) {
+        <p>{{ t('kanban.updateBodyStack') }}</p>
+      } @else {
+        <p>
+          {{ t('kanban.updateBodyPre') }} <span class="mono">{{ pending.instances[0].image }}</span>{{ t('kanban.updateBodyPost') }}
+        </p>
+      }
+      @if (anyRunning(pending.instances)) {
         <p class="warn">{{ t('kanban.updateWarnRunning') }}</p>
       }
     } @else if (pending.target === 'running') {
-      <h3>{{ t('kanban.startTitle', { name: pending.instance.name }) }}</h3>
+      <h3>{{ t('kanban.startTitle', { name: pending.name }) }}</h3>
       <p>{{ t('kanban.startBody') }}</p>
-    } @else if (pending.target === 'archived') {
-      <h3>{{ t('kanban.archiveTitle', { name: pending.instance.name }) }}</h3>
-      <p>{{ t('kanban.archiveBody') }} <span class="mono">{{ pending.instance.dir }}</span>.</p>
     } @else {
-      <h3>{{ t('kanban.stopTitle', { name: pending.instance.name }) }}</h3>
+      <h3>{{ t('kanban.stopTitle', { name: pending.name }) }}</h3>
       <p>{{ t('kanban.stopBody') }}</p>
+    }
+
+    @if (pending.instances.length > 1) {
+      <p class="stack-note">
+        {{ t('kanban.groupMembers', { count: pending.instances.length }) }}
+        <span class="mono">{{ memberNames(pending.instances) }}</span>
+      </p>
     }
 
     <div class="confirm-actions">

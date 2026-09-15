@@ -56,12 +56,6 @@ Some errors refine the reason inside `params.reason`: `invalid_root` uses
 | `docker_failed` | 409 | `docker compose` failed, `params.detail` carries the stderr |
 | `external_instance` | 409 | the action does not apply to a container the panel does not own, `params.name` says which |
 | `bad_request` | 400 | malformed body or unknown field |
-| `dns_rejected` | 422 | duckdns answered KO: wrong token or a domain outside the account |
-| `dns_unreachable` | 409 | duckdns did not answer, the server may have no way out to the internet |
-| `dns_token_missing` | 409 | no token saved yet |
-| `dns_taken` | 409 | another instance already uses that domain |
-| `dns_disabled` | 409 | the panel started with no DNS client |
-| `invalid_domain` | 422 | the name is not a valid subdomain |
 | `invalid_root` | 422 | the requested root does not work, the reason comes in `params.reason` |
 | `internal` | 500 | any unforeseen error |
 
@@ -261,8 +255,7 @@ Newest first, except `latest`, which always leads when it exists: an image
 that pushes a nightly every day buries it past the newest page, so it is asked
 for by name when the page does not carry it. This one does not go through the
 daemon: it is the Docker Hub
-API, called by the panel itself, which is its only outbound request besides
-duckdns. An image hosted anywhere else answers `409 tags_not_hub`, a Hub that
+API, called by the panel itself, which is its only outbound request. An image hosted anywhere else answers `409 tags_not_hub`, a Hub that
 did not answer is `409 registry_unreachable`, and a repository that does not
 exist is an empty list, not an error. A tag in `image` is ignored, only the
 repository part is used.
@@ -294,7 +287,7 @@ declare the variables its entrypoint reads, only build time leftovers like
 ```json
 {
   "instances": [ /* … */ ],
-  "states": ["stopped","provisioning","starting","running","updating","archived","error"]
+  "states": ["stopped","provisioning","starting","running","updating","error"]
 }
 ```
 
@@ -339,15 +332,6 @@ project the container belongs to, which the panel reads from the
 
 `env` includes the secrets: the API is local and the form needs them to edit.
 They are only kept out of `docker-compose.yml`.
-
-`dns` shows up when the instance has a dynamic DNS name linked:
-
-```json
-{"domain": "smp", "hostname": "smp.duckdns.org", "lastIp": "187.12.3.4", "lastSync": "…"}
-```
-
-It comes along with the instance because the name is only useful glued to the
-port: what the card shows for copying is `smp.duckdns.org:25565`.
 
 `operation` shows up while something is in flight:
 
@@ -425,8 +409,6 @@ purpose. `204`.
 
 `204 No Content`:
 
-- `POST /instances/{name}/archive`, takes it down and keeps the volumes
-- `POST /instances/{name}/unarchive`
 - `POST /instances/{name}/clear-error`, forgets a failed operation
 
 On an external container (`external: true` in the listing) only `start`, `stop`,
@@ -441,78 +423,6 @@ updating and deleting belong to the original compose.
 The YAML as it is on disk (`text/yaml`), which may differ from the generated one
 if someone edited it by hand.
 
-## Dynamic DNS
-
-A fixed name for a residential IP that changes, through
-[duckdns.org](https://www.duckdns.org). Two limitations of the service run
-through this whole contract:
-
-- **The duckdns API does not create subdomains.** The name is born on the site.
-  Here it is only possible to update the IP of one that exists, and that is what
-  doubles as verification: `OK` means that token controls that name.
-- **There is only name to IP.** There is no SRV, so there is no port in DNS.
-  Whoever joins needs `name:port`, and the port still depends on the router,
-  which the panel has no way to check.
-
-### `GET /dns`
-
-```json
-{
-  "token": "a1b2c3d4-…",
-  "suffix": ".duckdns.org",
-  "links": [
-    {"instance": "smp-family", "domain": "smp", "hostname": "smp.duckdns.org",
-     "lastIp": "187.12.3.4", "lastSync": "2026-08-21T12:00:00Z"}
-  ],
-  "domains": [
-    {"domain": "smp", "hostname": "smp.duckdns.org",
-     "lastIp": "187.12.3.4", "lastSync": "2026-08-21T12:00:00Z"}
-  ]
-}
-```
-
-`links` is the name of each instance; `domains` is the list of names in the
-account, registered on the settings screen, with or without an instance using
-each one. Linking a name to an instance also registers it.
-
-The token comes in the answer for the same reason `env` carries the secrets: the
-API is local and the form needs the value to edit. On disk it lives in
-`<boot root>/.okdock/dns.json`, with `0600`, and never enters any compose.
-`suffix` comes from here so the frontend does not repeat the rule.
-
-### `PUT /dns`
-
-`{"token": "…"}`. Returns the same body as the `GET`. Saving a new token fires a
-sync of the domains already linked.
-
-### `POST /dns/domains`
-
-`{"domain": "smp"}`, accepting `smp`, `SMP` or `smp.duckdns.org`. Registering
-**is** verifying, just like linking: the call updates the IP at duckdns and only
-saves if it answers `OK`. `200` with the registered name, or `422 dns_rejected`.
-
-### `DELETE /dns/domains/{domain}`
-
-Takes the name off the panel list. `204`. The subdomain keeps existing in the
-duckdns account, since their API does not delete names and only the site can do
-that, and an instance already using that name stays linked.
-
-### `PUT /instances/{name}/dns`
-
-`{"domain": "smp"}`, accepting `smp`, `SMP` or `smp.duckdns.org`, and keeping
-the label. Linking **is** verifying: the call updates the IP at duckdns and only
-saves if it answers `OK`. `200` with the link, or `422 dns_rejected`.
-
-### `DELETE /instances/{name}/dns`
-
-`204`. Undoes the link in the panel; the name keeps existing in the duckdns
-account, which only the site deletes.
-
-### `POST /dns/sync`
-
-`202`. Resends the IP of every domain now, without waiting for the 5 minute
-cycle. Deleting the instance also deletes the link.
-
 ## Streams
 
 Both are `text/event-stream`.
@@ -526,13 +436,11 @@ data: {"type":"instance.changed","instance":"smp-family"}
 
 Types: `instance.created`, `instance.changed`, `instance.deleted`,
 `instance.failed`, `instance.progress`, `instance.updated`,
-`instance.uptodate`, `dns.changed`. The event says something changed; the data
+`instance.uptodate`. The event says something changed; the data
 comes from `GET /instances`. The last two describe the outcome of an operation
 rather than a state that can be queried: the panel builds the sentence from the
 event type and the instance name, and the `message` coming along is the English
-version. `dns.changed` only goes out when the IP (or the failure) of some domain
-really changes, since publishing on every cycle would make the panel reload
-everything every 5 minutes with nothing having happened. A `: ping` comment
+version. A `: ping` comment
 every 25 s holds the connection.
 
 ### `GET /instances/{name}/logs?tail=300&follow=true`

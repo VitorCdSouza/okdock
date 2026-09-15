@@ -8,6 +8,7 @@ import {
   input,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -17,13 +18,12 @@ import { Events } from '../../core/events';
 import { Store } from '../../core/state';
 import { Instance, STATE_KEY, SpecRequest, State } from '../../core/models';
 import { I18n } from '../../core/i18n/i18n';
-import { TemplateForm } from '../../shared/template-form';
+import { InstanceForm, InstanceFormSeed } from '../../shared/instance-form';
 import { TemplateIcon, templateColors } from '../../shared/template-icon';
 import { InfoDot } from '../../shared/info-dot';
 import { bytes } from '../../core/format';
-import { copyText } from '../../core/clipboard';
 
-type Tab = 'config' | 'console' | 'compose' | 'recursos';
+type Tab = 'config' | 'console' | 'compose';
 
 const STATE_CHIP: Record<State, { bg: string; line: string; fg: string }> = {
   running: { bg: 'var(--ok-bg)', line: 'var(--ok-line)', fg: 'var(--ok)' },
@@ -32,12 +32,11 @@ const STATE_CHIP: Record<State, { bg: string; line: string; fg: string }> = {
   updating: { bg: 'var(--busy-bg)', line: 'var(--busy-line)', fg: 'var(--busy)' },
   stopped: { bg: 'var(--bg-toggle)', line: 'var(--line-strong)', fg: 'var(--fg-muted)' },
   error: { bg: 'var(--bad-bg)', line: 'var(--bad-line)', fg: 'var(--bad)' },
-  archived: { bg: 'var(--bg-sunken)', line: 'var(--line)', fg: 'var(--fg-faint)' },
 };
 
 @Component({
   selector: 'ok-instance-detail',
-  imports: [FormsModule, TemplateForm, TemplateIcon, InfoDot],
+  imports: [FormsModule, InstanceForm, TemplateIcon, InfoDot],
   templateUrl: './instance-detail.html',
   styleUrl: './instance-detail.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -55,12 +54,12 @@ export class InstanceDetail {
 
   readonly name = input.required<string>();
   readonly close = output<void>();
+  readonly renamed = output<string>();
+
+  readonly form = viewChild(InstanceForm);
 
   readonly tab = signal<Tab>('config');
-  readonly values = signal<Record<string, string>>({});
-  readonly memoryLimit = signal('');
-  readonly cpus = signal(0);
-  readonly hostPorts = signal<Record<string, number>>({});
+  readonly seed = signal<InstanceFormSeed | null>(null);
 
   readonly recreate = signal<string[]>([]);
   readonly rawCompose = signal('');
@@ -68,9 +67,6 @@ export class InstanceDetail {
   readonly busy = signal(false);
   readonly error = signal<OkDockError | null>(null);
 
-  readonly dnsDomain = signal('');
-  readonly dnsBusy = signal(false);
-  readonly dnsError = signal<string | null>(null);
 
   readonly instance = computed<Instance | undefined>(() =>
     this.store.instances().find((i) => i.name === this.name()),
@@ -93,6 +89,9 @@ export class InstanceDetail {
     const s = this.instance()?.state;
     return s === 'running' || s === 'starting' || s === 'updating' || s === 'provisioning';
   });
+
+  // the RAM this instance already holds is free again for the limit the form is typing
+  readonly committed = computed(() => (this.isUp() ? (this.instance()?.memoryLimit ?? '') : ''));
 
   readonly subtitle = computed(() => {
     const i = this.instance();
@@ -129,46 +128,26 @@ export class InstanceDetail {
     return i ? this.t('detail.createdAt', { when: this.i18n.since(i.createdAt) }) : '';
   });
 
-  portLabel(label: string | undefined): string {
-    if (!label) return this.t('detail.portFallbackLabel');
-    return this.i18n.maybe(`port.${label}`) ?? label;
-  }
-
-  readonly dnsSuffix = computed(() => this.store.dns()?.suffix ?? '.duckdns.org');
-  readonly hasToken = computed(() => !!this.store.dns()?.token);
-
-  readonly mainPort = computed(() => (this.instance()?.ports ?? [])[0]?.host ?? 0);
-
-  readonly dnsAddress = computed(() => {
-    const dns = this.instance()?.dns;
-    if (!dns) return '';
-    const port = this.mainPort();
-    return port ? `${dns.hostname}:${port}` : dns.hostname;
-  });
-
-  readonly dnsSyncLabel = computed(() => {
-    const at = this.instance()?.dns?.lastSync;
-    return at ? this.i18n.since(at) : this.t('detail.neverChecked');
-  });
-
   private loadedFor = '';
+  private previewTimer = 0;
 
   constructor() {
+    this.destroyRef.onDestroy(() => clearTimeout(this.previewTimer));
+
     effect(() => {
       const i = this.instance();
       if (!i || this.loadedFor === i.name) return;
       this.loadedFor = i.name;
-      if (this.tab() === 'config' && !this.template()) this.select('recursos');
-      this.values.set({ ...i.env });
-      this.memoryLimit.set(i.memoryLimit);
-      this.cpus.set(i.cpus);
-      this.hostPorts.set(
-        Object.fromEntries((i.ports ?? []).map((p) => [`${p.container}/${p.protocol}`, p.host])),
-      );
+      this.seed.set({
+        name: i.name,
+        image: i.image,
+        memoryLimit: i.memoryLimit,
+        cpus: i.cpus,
+        env: { ...i.env },
+        ports: i.ports ?? [],
+        mounts: i.mounts ?? [],
+      });
       this.error.set(null);
-      this.dnsDomain.set(i.dns?.domain ?? '');
-      this.dnsError.set(null);
-      this.refreshRecreate();
     });
   }
 
@@ -201,20 +180,19 @@ export class InstanceDetail {
     });
   }
 
+  // every keystroke of the form asks what would be recreated, and only the last one is worth asking
   refreshRecreate(): void {
+    clearTimeout(this.previewTimer);
+    this.previewTimer = setTimeout(() => this.preview(), 250);
+  }
+
+  private preview(): void {
     const req = this.request();
     if (!req) return;
-    this.api.previewCompose(req).subscribe({
+    this.api.previewCompose(req, this.name()).subscribe({
       next: (res) => this.recreate.set(res.recreate ?? []),
       error: () => {},
     });
-  }
-
-  setPort(container: number, protocol: string, raw: string): void {
-    const n = Number(raw);
-    if (!Number.isFinite(n)) return;
-    this.hostPorts.update((cur) => ({ ...cur, [`${container}/${protocol}`]: n }));
-    this.refreshRecreate();
   }
 
   save(): void {
@@ -223,9 +201,13 @@ export class InstanceDetail {
     this.busy.set(true);
     this.error.set(null);
     this.api.update(this.name(), req).subscribe({
-      next: () => {
+      next: (spec) => {
         this.busy.set(false);
         this.rawCompose.set('');
+        // the folder is still moving, and the screen follows the new name once the board has it
+        if (spec.name && spec.name !== this.name()) {
+          this.renamed.emit(spec.name);
+        }
         this.store.reload();
       },
       error: (err: OkDockError) => {
@@ -253,10 +235,6 @@ export class InstanceDetail {
     this.run(this.api.restart(this.name()));
   }
 
-  unarchive(): void {
-    this.run(this.api.unarchive(this.name()));
-  }
-
   clearError(): void {
     this.run(this.api.clearError(this.name()));
   }
@@ -276,77 +254,21 @@ export class InstanceDetail {
     });
   }
 
-  linkDns(): void {
-    const domain = this.dnsDomain().trim();
-    if (!domain) return;
-    this.dnsBusy.set(true);
-    this.dnsError.set(null);
-    this.api.linkDns(this.name(), domain).subscribe({
-      next: () => {
-        this.dnsBusy.set(false);
-        this.store.reload();
-      },
-      error: (err: OkDockError) => {
-        this.dnsError.set(err.message);
-        this.dnsBusy.set(false);
-      },
-    });
-  }
-
-  unlinkDns(): void {
-    this.dnsBusy.set(true);
-    this.dnsError.set(null);
-    this.api.unlinkDns(this.name()).subscribe({
-      next: () => {
-        this.dnsBusy.set(false);
-        this.dnsDomain.set('');
-        this.store.reload();
-      },
-      error: (err: OkDockError) => {
-        this.dnsError.set(err.message);
-        this.dnsBusy.set(false);
-      },
-    });
-  }
-
-  syncDns(): void {
-    this.api.syncDns().subscribe({
-      next: () => this.store.notify(this.t('detail.syncing')),
-      error: () => {},
-    });
-  }
-
-  copyAddress(): void {
-    const text = this.dnsAddress();
-    if (!text) return;
-    copyText(text);
-    this.store.notify(this.t('common.copied', { text }));
-  }
-
   private request(): SpecRequest | null {
     const i = this.instance();
-    if (!i) return null;
-    // what the template has no field for was added by hand, and rides apart or validation refuses it
-    const known = new Set((this.template()?.fields ?? []).map((f) => f.key));
-    const values: Record<string, string> = {};
-    const extraEnv: Record<string, string> = {};
-    for (const [key, value] of Object.entries(this.values())) {
-      (known.has(key) ? values : extraEnv)[key] = value;
-    }
+    const value = this.form()?.value();
+    if (!i || !value) return null;
+    // no template behind a container from outside, and what it sends is merged into the file it has
     return {
-      name: i.name,
+      name: value.name,
       templateId: i.templateId,
-      image: i.image,
-      values,
-      extraEnv,
-      ports: (i.ports ?? []).map((p) => ({
-        host: this.hostPorts()[`${p.container}/${p.protocol}`] ?? p.host,
-        container: p.container,
-        protocol: p.protocol,
-        label: p.label,
-      })),
-      memoryLimit: this.memoryLimit(),
-      cpus: this.cpus(),
+      image: value.image,
+      values: i.external ? { ...value.values, ...value.extraEnv } : value.values,
+      extraEnv: i.external ? {} : value.extraEnv,
+      ports: value.ports,
+      mounts: value.mounts,
+      memoryLimit: value.memoryLimit,
+      cpus: value.cpus,
       restart: i.restart,
     };
   }

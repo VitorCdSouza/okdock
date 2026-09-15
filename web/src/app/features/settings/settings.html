@@ -32,65 +32,6 @@
     </section>
 
     <section>
-      <div class="section-title">
-        {{ t('settings.duckdnsTitle') }}
-        <button class="btn btn-sm" (click)="openToken()">{{ t('settings.tokenButton') }}</button>
-        <button class="btn btn-sm" (click)="addName()" [disabled]="!hasToken()">
-          ＋ {{ t('settings.addDomain') }}
-        </button>
-        <ok-info [text]="t('settings.tokenTip')" />
-      </div>
-
-      @if (refused().length) {
-        <div class="alert bad">
-          <strong>{{ t('settings.tokenRefused') }}</strong>
-          <ul>
-            @for (d of refused(); track d.domain) {
-              <li class="mono">{{ d.hostname }}: {{ d.lastError }}</li>
-            }
-          </ul>
-        </div>
-      }
-
-      <div class="grid">
-        @for (name of names(); track $index) {
-          <div class="name-input"
-               [title]="instanceFor(name) ? t('settings.inUseBy', { instance: instanceFor(name) }) : ''">
-            <input class="mono" spellcheck="false" placeholder="smp"
-                   [value]="name" (input)="setName($index, $any($event.target).value)"
-                   (keydown.enter)="save()">
-            <span class="suffix mono">{{ suffix() }}</span>
-          </div>
-
-          @if (statusFor(name); as d) {
-            <span class="status" [class.bad]="!!d.lastError" [class.unknown]="!d.lastError && !d.lastIp"
-                  [title]="d.lastError || ''">
-              <span class="dot"></span>
-              {{ d.lastError ? t('settings.notMatching') : (d.lastIp || t('settings.noIpYet')) }}
-            </span>
-          } @else {
-            <span class="status new">{{ t('settings.newName') }}</span>
-          }
-
-          <button class="icon" (click)="dropName($index)"
-                  [attr.aria-label]="t('settings.removeAria', { name: name + suffix() })">✕</button>
-        }
-      </div>
-
-      @if (tokenError(); as e) { <div class="alert bad">{{ e }}</div> }
-      @if (tokenNote(); as n) { <div class="ok-note">{{ n }}</div> }
-
-      @if (domainError(); as e) { <div class="alert bad">{{ e }}</div> }
-
-      @if (domains().length) {
-        <button class="btn btn-sm" (click)="sync()">{{ t('settings.checkAll') }}</button>
-      } @else if (hasToken()) {
-        <p class="none">{{ t('settings.noNames') }}</p>
-      }
-
-    </section>
-
-    <section>
       <div class="section-title">{{ t('settings.metricsTitle') }}</div>
       <div class="checks">
         @for (m of metricOptions; track m.key) {
@@ -135,34 +76,3 @@
     </div>
   </footer>
 </div>
-
-@if (tokenOpen()) {
-  <div class="backdrop over" (click)="closeToken()"></div>
-
-  <div class="dialog ask" role="dialog" [attr.aria-label]="t('settings.tokenTitle')">
-    <header>
-      <h3>{{ t('settings.tokenTitle') }}</h3>
-      <button class="btn btn-sm" (click)="closeToken()" [attr.aria-label]="t('common.close')">✕</button>
-    </header>
-
-    <p>{{ hasToken() ? t('settings.tokenSet') : t('settings.tokenMissing') }}</p>
-
-    <input class="mono" type="text" autocomplete="off" spellcheck="false" autofocus
-           [placeholder]="t('settings.tokenPlaceholder')"
-           [ngModel]="tokenDraft()" (ngModelChange)="tokenDraft.set($event)"
-           (keydown.enter)="saveToken()">
-
-    @if (tokenError(); as e) { <div class="alert bad">{{ e }}</div> }
-
-    <footer>
-      <ok-info [text]="t('settings.tokenTip')" />
-      <div class="actions">
-        <button class="btn" (click)="closeToken()" [disabled]="tokenBusy()">{{ t('common.cancel') }}</button>
-        <button class="btn btn-primary" (click)="saveToken()"
-                [disabled]="tokenBusy() || !tokenDraft().trim()">
-          {{ tokenBusy() ? t('common.saving') : t('common.save') }}
-        </button>
-      </div>
-    </footer>
-  </div>
-}

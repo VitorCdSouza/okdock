@@ -53,7 +53,6 @@ describe('InstanceCard', () => {
 
     expect(external.portList()).toBe('-');
     expect(external.portCount()).toBe(0);
-    expect(external.address()).toBe('');
   });
 
   it('an external container with no readable compose only reaches the console', () => {
@@ -122,19 +121,8 @@ describe('InstanceCard', () => {
       .toBe('new_step');
   });
 
-  it('glues the DNS name to the port for copying', () => {
-    const c = card({ dns: { domain: 'smp', hostname: 'smp.duckdns.org' } });
-
-    expect(c.address()).toBe('smp.duckdns.org:25565');
-  });
-
-  it('invents no address without a linked DNS', () => {
-    expect(card().address()).toBe('');
-  });
-
   it('says how long it has been stopped when docker has no status', () => {
     expect(card({ state: 'stopped' }).meta()).toBe('parada há segundos');
-    expect(card({ state: 'archived', archived: true }).meta()).toBe('arquivada há segundos');
   });
 
   it('with no status, the error becomes the exit code', () => {
@@ -145,7 +133,7 @@ describe('InstanceCard', () => {
     expect(card({ state: 'stopped' }).action().verb).toBe('start');
     expect(card({ state: 'running' }).action().verb).toBe('stop');
     expect(card({ state: 'error' }).action().verb).toBe('fix');
-    expect(card({ state: 'archived' }).action().verb).toBe('unarchive');
+    expect(card({ state: 'updating' }).action().verb).toBe('logs');
   });
 
   it('formats the allocated RAM and says when there is no cap', () => {

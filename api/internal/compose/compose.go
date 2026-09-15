@@ -65,9 +65,6 @@ func labelsFor(spec instance.Spec) map[string]string {
 	if len(spec.SecretKeys) > 0 {
 		labels[Label+".secrets"] = strings.Join(spec.SecretKeys, ",")
 	}
-	if spec.Archived {
-		labels[Label+".archived"] = "true"
-	}
 	if !spec.CreatedAt.IsZero() {
 		labels[Label+".created"] = spec.CreatedAt.UTC().Format(time.RFC3339)
 	}

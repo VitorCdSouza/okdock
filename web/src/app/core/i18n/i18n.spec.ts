@@ -29,8 +29,8 @@ describe('I18n', () => {
   });
 
   it('picks singular or plural by the number', () => {
-    expect(i18n.plural('app.dns.names', 1)).toBe('duckdns 1 nome');
-    expect(i18n.plural('app.dns.names', 3)).toBe('duckdns 3 nomes');
+    expect(i18n.plural('card.port', 1)).toBe('Porta');
+    expect(i18n.plural('card.port', 3)).toBe('Portas');
   });
 
   it('saves the preference for the next session', () => {

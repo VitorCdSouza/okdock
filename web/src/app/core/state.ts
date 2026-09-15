@@ -6,7 +6,6 @@ import { I18n } from './i18n/i18n';
 import {
   COLUMN_OF,
   Category,
-  DnsStatus,
   Instance,
   State,
   SystemInfo,
@@ -24,7 +23,6 @@ export class Store {
   readonly templates = signal<Template[]>([]);
   readonly categories = signal<Category[]>([]);
   readonly system = signal<SystemInfo | null>(null);
-  readonly dns = signal<DnsStatus | null>(null);
   readonly loading = signal(true);
   readonly categoryFilter = signal<Category | null>(null);
   readonly search = signal('');
@@ -100,7 +98,6 @@ export class Store {
 
     this.reloadTemplates();
     this.reload();
-    this.reloadDns();
 
     this.events.stream().subscribe({
       next: (ev) => {
@@ -109,7 +106,6 @@ export class Store {
             this.i18n.maybe(`event.${ev.type}`, { name: ev.instance ?? '' }) ?? ev.message;
           if (text) this.notify(text);
         }
-        if (ev.type === 'dns.changed') this.reloadDns();
         this.scheduleReload();
       },
       error: () => setInterval(() => this.reload(), 5000),
@@ -137,13 +133,6 @@ export class Store {
         this.templates.set(templates);
         this.categories.set(categories);
       },
-      error: () => {},
-    });
-  }
-
-  reloadDns(): void {
-    this.api.dns().subscribe({
-      next: (d) => this.dns.set(d),
       error: () => {},
     });
   }

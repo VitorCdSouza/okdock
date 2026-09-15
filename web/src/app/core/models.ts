@@ -90,8 +90,7 @@ export type State =
   | 'starting'
   | 'running'
   | 'updating'
-  | 'error'
-  | 'archived';
+  | 'error';
 
 export interface PortBinding {
   host: number;
@@ -109,25 +108,6 @@ export interface Stats {
   cpuPercent: number;
   memoryBytes: number;
   memoryLimit: number;
-}
-
-export interface InstanceDNS {
-  domain: string;
-  hostname: string;
-  lastIp?: string;
-  lastSync?: string;
-  lastError?: string;
-}
-
-export interface DnsLink extends InstanceDNS {
-  instance: string;
-}
-
-export interface DnsStatus {
-  token: string;
-  suffix: string;
-  links: DnsLink[];
-  domains: InstanceDNS[];
 }
 
 export interface Operation {
@@ -152,7 +132,6 @@ export interface Instance {
   cpus: number;
   restart: string;
   stopGraceSeconds: number;
-  archived?: boolean;
   createdAt: string;
   updatedAt: string;
 
@@ -171,7 +150,6 @@ export interface Instance {
   editable?: boolean;
   composeFile?: string;
   readOnly?: string;
-  dns?: InstanceDNS;
 }
 
 export interface InstancesResponse {
@@ -257,7 +235,6 @@ export const STATE_DOT: Record<State, string> = {
   running: '#4fd99b',
   updating: '#9b8cf5',
   error: '#f08a8a',
-  archived: '#4e535d',
 };
 
 export const COLUMN_OF: Record<State, State> = {
@@ -267,7 +244,6 @@ export const COLUMN_OF: Record<State, State> = {
   running: 'running',
   updating: 'updating',
   error: 'error',
-  archived: 'archived',
 };
 
 export const STATE_KEY: Record<State, MessageKey> = {
@@ -277,5 +253,4 @@ export const STATE_KEY: Record<State, MessageKey> = {
   running: 'state.running',
   updating: 'state.updating',
   error: 'state.error',
-  archived: 'state.archived',
 };

@@ -16,16 +16,10 @@
   flex: none;
 }
 
-/* the wordmark is half drawn and half typed: OkD is the glyph, ock is the font */
-.brand { flex: none; font: 600 var(--fs-2xl) var(--sans); letter-spacing: -.01em; white-space: nowrap; }
-/* 12.8 is the cap height of the glyph inside its 16 tall viewBox, so scaling by
-   .72 of the font size lands it on the cap height of the text next to it */
+/* the mark stands alone, so it is sized off the header and not off a baseline */
+.brand { flex: none; display: flex; align-items: center; font-size: var(--fs-2xl); }
 .mark {
-  height: calc(16em * .72 / 12.8);
-  vertical-align: baseline;
-  position: relative;
-  top: calc(1.6em * .72 / 12.8);
-  margin-right: .04em;
+  height: 1.15em;
   fill: none;
   stroke: var(--accent);
   stroke-linecap: round;

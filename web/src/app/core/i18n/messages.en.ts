@@ -7,8 +7,6 @@ export const en: Record<MessageKey, string> = {
   'common.saving': 'Saving…',
   'common.discard': 'Discard',
   'common.loading': 'Loading…',
-  'common.checking': 'Checking…',
-  'common.copied': 'copied: {text}',
   'common.pick': 'Pick',
 
   'category.games': 'Games',
@@ -24,7 +22,6 @@ export const en: Record<MessageKey, string> = {
   'state.running': 'RUNNING',
   'state.updating': 'UPDATING',
   'state.error': 'ERROR',
-  'state.archived': 'ARCHIVED',
 
   'time.seconds': 'seconds ago',
   'time.minutes': '{n} min ago',
@@ -45,14 +42,7 @@ export const en: Record<MessageKey, string> = {
   'app.searchPlaceholder': 'filter by name, port, image…',
   'app.allCategories': 'All',
   'app.created': '{name} was created',
-  'app.dns.noToken': 'duckdns no token',
-  'app.dns.noNames': 'duckdns no names',
-  'app.dns.names.one': 'duckdns {n} name',
-  'app.dns.names.other': 'duckdns {n} names',
-  'app.dns.failing.one': 'duckdns {n} name failing',
-  'app.dns.failing.other': 'duckdns {n} names failing',
-  'app.dns.titleNoToken': 'no duckdns token configured',
-  'app.dns.titleNoNames': 'token configured, no names registered',
+  'app.renamed': 'it is called {name} now',
 
   'kanban.loading': 'loading instances…',
   'kanban.empty': 'No instances yet.',
@@ -63,7 +53,6 @@ export const en: Record<MessageKey, string> = {
   'kanban.dropToUpdate': 'drop to look for a newer image',
   'kanban.dropToStop': 'drop to stop',
   'kanban.dropToStart': 'drop to start',
-  'kanban.dropToArchive': 'drop to archive',
   'kanban.newInstance': 'New instance',
   'kanban.group.open': 'open the {name} group',
   'kanban.group.close': 'close the {name} group',
@@ -71,29 +60,28 @@ export const en: Record<MessageKey, string> = {
   'kanban.confirmDeleteAria': 'Confirm deletion',
   'kanban.deleteTitle': 'Delete {name}?',
   'kanban.deleteBody':
-    'Tears down the container and deletes docker-compose.yml. The world stays on disk, at',
-  'kanban.deleteWorldToo': 'delete the world too: ',
+    'Tears down the container and deletes docker-compose.yml. The data stays on disk, at',
+  'kanban.deleteDataToo': 'delete the data too: ',
   'kanban.noUndo': 'there is no undo',
-  'kanban.deleteAndWorld': 'Delete and erase the world',
-  'kanban.deleteKeepWorld': 'Delete, keep the world',
+  'kanban.deleteAndData': 'Delete and erase the data',
+  'kanban.deleteKeepData': 'Delete, keep the data',
   'kanban.updateTitle': 'Update {name}?',
   'kanban.updateBodyPre': 'Looks for a newer image of',
   'kanban.updateBodyPost':
-    '. The container is recreated only if there is one, and the world in the volumes is preserved.',
-  'kanban.updateWarnRunning': 'The instance is up: recreating drops whoever is playing.',
+    '. The container is recreated only if there is one, and the data in the volumes is preserved.',
+  'kanban.updateBodyStack':
+    'Looks for a newer image of every container of the stack. Each one is recreated only if there is one, and the data in the volumes is preserved.',
+  'kanban.updateWarnRunning': 'The instance is up: recreating drops whoever is connected.',
   'kanban.doUpdate': 'Look for an update',
   'kanban.stopTitle': 'Stop {name}?',
   'kanban.stopBody':
-    'Tears down the container. The volumes stay, so the world is preserved and it can come back up later.',
+    'Tears down the container. The volumes stay, so the data is preserved and it can come back up later.',
   'kanban.doStop': 'Stop',
   'kanban.startTitle': 'Start {name}?',
   'kanban.startBody':
     'Brings the container up with the compose file on disk. If the free RAM does not cover the instance limit, the panel refuses.',
   'kanban.doStart': 'Start',
-  'kanban.archiveTitle': 'Archive {name}?',
-  'kanban.archiveBody':
-    'Tears down the container and takes the instance off the board, keeping the volumes. The world stays in',
-  'kanban.doArchive': 'Archive',
+  'kanban.groupMembers': 'It goes to the {count} containers of the stack:',
 
   'images.version': 'version',
   'images.image': 'image',
@@ -113,7 +101,6 @@ export const en: Record<MessageKey, string> = {
   'card.port.one': 'Port',
   'card.port.other': 'Ports',
   'card.ramAllocated': 'RAM allocated',
-  'card.copyAddress': 'copy {address}',
   'card.inUse': 'In use',
   'card.cpu': 'CPU',
   'card.memory': 'RAM',
@@ -123,21 +110,16 @@ export const en: Record<MessageKey, string> = {
   'card.action.stop': '■ Stop',
   'card.action.logs': 'Logs',
   'card.action.fix': 'Fix',
-  'card.action.restore': 'Restore',
   'card.action.details': 'Details',
   'card.exited': 'exited with code {code}',
-  'card.archivedSince': 'archived {when}',
   'card.stoppedSince': 'stopped {when}',
 
   'detail.aria': 'Instance {name}',
   'detail.stats': '{cpu}% CPU · {used} of {total}',
   'detail.clearError': 'Clear error',
-  'detail.restore': 'Restore',
   'detail.restart': '↻ Restart',
   'detail.tab.config': 'Settings',
-  'detail.tab.resources': 'Resources & network',
   'detail.tab.console': 'Console',
-  'detail.templateFields': 'TEMPLATE FIELDS',
   'detail.templateGone':
     'Template {id} is no longer in the catalog. Edit it through docker-compose.yml.',
   'detail.externalNote':
@@ -154,33 +136,13 @@ export const en: Record<MessageKey, string> = {
     'Container of the {project} compose project. What you save here is written to {file}, to this service only, and only it comes back up. The other services of the stack stay as they are.',
   'detail.noPublishedPorts': 'no port published on the host',
   'detail.resourcesTitle': 'RESOURCES & NETWORK',
-  'detail.ramLimit': 'RAM limit',
-  'detail.ramLimitTip': 'The container ceiling. The JVM heap goes in the template fields.',
-  'detail.hostPort': 'Host port ({label})',
-  'detail.portFallbackLabel': 'service',
-  'detail.inContainer': 'Inside the container: {port}/{protocol}',
-  'detail.volumes': 'VOLUMES',
-  'detail.inviteTitle': 'ADDRESS TO INVITE PEOPLE',
-  'detail.dnsNoToken':
-    'The duckdns account token is missing. There is a single one for the whole panel: it lives in Settings, the gear next to + New instance.',
-  'detail.copyAddressTitle': 'copy address',
-  'detail.checkNow': 'Check now',
-  'detail.unlink': 'Unlink',
-  'detail.dnsTip':
-    'The name resolves to the IP of this house, and the panel resends it every 5 minutes. Port {port} still has to be open on the router, and that part the panel cannot check from here.',
-  'detail.pointsTo': 'points to {ip} · checked {when}',
-  'detail.neverChecked': 'not checked yet',
-  'detail.verifyAndLink': 'Check and link',
-  'detail.linkTip':
-    'The subdomain has to exist in your account already: the DuckDNS API does not create names, it only updates the IP of one that exists. Create it at duckdns.org and come back: checking is the panel itself trying to update it.',
-  'detail.syncing': 'checking the address on duckdns…',
   'detail.consoleEmpty': 'no output yet, the instance has to be up.',
   'detail.composeLead':
     'This is the file as it is on disk. Editing it by hand works, the panel rereads it. But Save and recreate overwrites it.',
   'detail.recreate.one':
-    'change requires recreating the container. The world in the volumes is preserved.',
+    'change requires recreating the container. The data in the volumes is preserved.',
   'detail.recreate.other':
-    'changes require recreating the container. The world in the volumes is preserved.',
+    'changes require recreating the container. The data in the volumes is preserved.',
   'detail.saveAndRecreate': 'Save and recreate',
   'detail.createdAt': 'created {when}',
 
@@ -189,6 +151,8 @@ export const en: Record<MessageKey, string> = {
   'new.step2': '2 image & config',
   'new.templateMeta': '{fields} fields · minimum RAM {memory}',
   'new.name': 'Instance name',
+  'new.renameTip':
+    'Renaming moves the folder, the compose project and the container. The instance goes down and comes back under the new name.',
   'new.nameTip':
     'It becomes the directory, the compose project name and the container name, always the same text in all three.',
   'new.nameInvalid':
@@ -224,14 +188,6 @@ export const en: Record<MessageKey, string> = {
   'picker.nothingPicked': 'no folder picked',
   'picker.expand': 'expand',
   'picker.collapse': 'collapse',
-  'new.dns': 'Name to invite people with',
-  'new.dnsTip':
-    'Links one of the names already registered in the settings; the link keeps the IP up to date on its own. What you pass along is always name:port, because duckdns does not store a port, and forwarding it on the router is still manual.',
-  'new.dnsNone': 'no name, by IP only',
-  'new.dnsAllTaken':
-    'every registered name already belongs to another instance; register another one in the settings',
-  'new.dnsNoToken': 'set the duckdns token in the settings to link a name here',
-  'new.dnsLinkFailed': '{name} was created, but I could not link {domain}: {error}',
   'new.budgetWarning':
     'This instance asks for {want}, but only {free} GB are free in the budget. You can create it stopped and start it later.',
   'new.namePlaceholder': '<name>',
@@ -311,27 +267,6 @@ export const en: Record<MessageKey, string> = {
   'settings.templatesTitle': 'TEMPLATES FOLDER',
   'settings.templatesTip':
     'Absolute path where the templates written in the panel live, one .json each. With nothing chosen it is the folder the panel was started with, /templates inside the container. Changing it moves no file: what was on the old folder stays there and shows up again if it comes back. A template that ships with the panel is in the binary and shows up either way.',
-  'settings.duckdnsTitle': 'DUCKDNS',
-  'settings.tokenPlaceholder': 'token from your duckdns.org account',
-  'settings.tokenButton': 'Token',
-  'settings.tokenTitle': 'Duckdns token',
-  'settings.tokenSet': 'A token is already saved. Saving replaces it with what you write here.',
-  'settings.tokenMissing': 'No token saved yet. It is on the duckdns.org home page, once you are signed in.',
-  'settings.tokenRefused': 'Duckdns refused these names:',
-  'settings.tokenTip':
-    'The token is for the whole panel and lives in a 0600 file, outside any docker-compose.yml. It is what proves each name in the list below: the duckdns API only answers OK for a name that already exists in that account.',
-  'settings.tokenSavedChecking': 'token saved; checking the names in the list…',
-  'settings.tokenSavedPending': 'token saved; it will be checked on the first name in the list',
-  'settings.inUseBy': 'in use by {instance}',
-  'settings.notMatching': 'does not check out',
-  'settings.noIpYet': 'no IP yet',
-  'settings.removeAria': 'Remove {name}',
-  'settings.newName': 'new name',
-  'settings.addDomain': 'Add domain',
-  'settings.checkAll': 'Check all now',
-  'settings.noNames':
-    'No names yet. The subdomain is born on the duckdns.org site: here it is checked and kept with the IP up to date.',
-  'settings.syncing': 'checking the addresses on duckdns…',
   'settings.metricsTitle': 'WHAT SHOWS IN THE BAR',
   'settings.metric.cpu': 'CPU',
   'settings.metric.memory': 'RAM',
@@ -366,14 +301,6 @@ export const en: Record<MessageKey, string> = {
   'error.memory_budget':
     '{instance} asks for {requested}, but only {free} are free in the {budget} budget: instances already up take {committed}.',
   'error.port_taken': 'port {port}/{proto} already belongs to {owner}',
-  'error.invalid_domain':
-    'invalid name: lowercase letters, digits and hyphen only, the part before {suffix}',
-  'error.dns_rejected':
-    'duckdns refused it: check that the token is right and that the name is in your account',
-  'error.dns_unreachable': 'could not reach duckdns.org ({detail})',
-  'error.dns_token_missing': 'the duckdns token has not been set yet',
-  'error.dns_disabled': 'this panel started with no DNS client',
-  'error.dns_taken': '{domain} is already linked to {instance}',
   'error.docker_failed': 'docker refused the command: {detail}',
   'error.external_instance':
     '{name} is an external container and the panel found no compose file it can write: it starts, stops and shows the console, the rest stays in the terminal.',
@@ -400,12 +327,13 @@ export const en: Record<MessageKey, string> = {
   'op.recreating': 'recreating container',
   'op.checking_update': 'looking for an update',
   'op.recreating_new_image': 'recreating with the new image',
+  'op.renaming': 'renaming',
   'op.starting_new_config': 'starting with the new config',
 
   'port.game': 'Game',
 
   'event.instance.uptodate': '{name} is already on the newest image',
-  'event.instance.updated': '{name} was updated; the world in the volumes was preserved',
+  'event.instance.updated': '{name} was updated; the data in the volumes was preserved',
 
 
   'field.minecraft-java.EULA.help': 'The image does not start without this accepted.',

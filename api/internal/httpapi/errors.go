@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/VitorCdSouza/okdock/api/internal/dockerx"
-	"github.com/VitorCdSouza/okdock/api/internal/duckdns"
 	"github.com/VitorCdSouza/okdock/api/internal/hostfs"
 	"github.com/VitorCdSouza/okdock/api/internal/instance"
 	"github.com/VitorCdSouza/okdock/api/internal/manager"
@@ -45,8 +44,6 @@ func writeError(w http.ResponseWriter, err error) {
 		budget      *manager.ErrBudget
 		external    *manager.ExternalError
 		port        *manager.ErrPortTaken
-		dnsTaken    *manager.DNSTakenError
-		unreachable *duckdns.UnreachableError
 		dockerErr   *dockerx.Error
 	)
 
@@ -129,41 +126,10 @@ func writeError(w http.ResponseWriter, err error) {
 				"owner": port.Owner,
 			},
 		})
-	case errors.Is(err, duckdns.ErrInvalidDomain):
-		writeJSON(w, http.StatusUnprocessableEntity, apiError{
-			Error:   "invalid_domain",
-			Message: err.Error(),
-			Params:  map[string]any{"suffix": duckdns.Suffix},
-		})
 	case errors.Is(err, registry.ErrNotHub):
 		writeJSON(w, http.StatusConflict, apiError{Error: "tags_not_hub", Message: err.Error()})
 	case errors.Is(err, registry.ErrUnreachable):
 		writeJSON(w, http.StatusConflict, apiError{Error: "registry_unreachable", Message: err.Error()})
-	case errors.Is(err, duckdns.ErrRejected):
-		writeJSON(w, http.StatusUnprocessableEntity, apiError{Error: "dns_rejected", Message: err.Error()})
-	case errors.As(err, &unreachable):
-		writeJSON(w, http.StatusConflict, apiError{
-			Error:   "dns_unreachable",
-			Message: err.Error(),
-			Params:  map[string]any{"detail": unreachable.Detail},
-		})
-	case errors.Is(err, duckdns.ErrUnreachable):
-		writeJSON(w, http.StatusConflict, apiError{Error: "dns_unreachable", Message: err.Error()})
-	case errors.Is(err, manager.ErrNoToken):
-		writeJSON(w, http.StatusConflict, apiError{Error: "dns_token_missing", Message: err.Error()})
-	case errors.Is(err, manager.ErrDNSDisabled):
-		writeJSON(w, http.StatusConflict, apiError{Error: "dns_disabled", Message: err.Error()})
-	case errors.As(err, &dnsTaken):
-		writeJSON(w, http.StatusConflict, apiError{
-			Error:   "dns_taken",
-			Message: err.Error(),
-			Params: map[string]any{
-				"domain":   dnsTaken.Hostname,
-				"instance": dnsTaken.Instance,
-			},
-		})
-	case errors.Is(err, manager.ErrDNSTaken):
-		writeJSON(w, http.StatusConflict, apiError{Error: "dns_taken", Message: err.Error()})
 	case errors.As(err, &dockerErr):
 		writeJSON(w, http.StatusConflict, apiError{
 			Error:   "docker_failed",

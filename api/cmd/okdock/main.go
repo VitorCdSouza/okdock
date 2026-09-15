@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/VitorCdSouza/okdock/api/internal/dockerx"
-	"github.com/VitorCdSouza/okdock/api/internal/duckdns"
 	"github.com/VitorCdSouza/okdock/api/internal/httpapi"
 	"github.com/VitorCdSouza/okdock/api/internal/instance"
 	"github.com/VitorCdSouza/okdock/api/internal/manager"
@@ -74,14 +73,9 @@ func run() error {
 		Templates:     templates,
 		Docker:        docker,
 		System:        &system.ProcReader{},
-		DNS:           duckdns.HTTP{},
 		Registry:      registry.Hub{},
 		MemoryReserve: reserve,
 	})
-
-	dnsCtx, stopDNS := context.WithCancel(context.Background())
-	defer stopDNS()
-	go mgr.SyncDNSEvery(dnsCtx, manager.SyncInterval)
 
 	var web fs.FS
 	if webui.Placeholder() {

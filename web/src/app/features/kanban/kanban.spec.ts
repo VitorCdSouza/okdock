@@ -57,7 +57,8 @@ describe('Kanban: dragging a card into a column', () => {
 
     const pending = kanban.pendingAction();
     expect(pending).withContext('the confirmation did not open').not.toBeNull();
-    expect(pending!.instance.name).toBe('smp');
+    expect(pending!.name).toBe('smp');
+    expect(pending!.instances.map((i) => i.name)).toEqual(['smp']);
     expect(pending!.target).toBe('updating');
     expect(store.dragging()).withContext('the drag state should have been cleared').toBeNull();
   });
@@ -114,33 +115,7 @@ describe('Kanban: dragging a card into a column', () => {
     http.expectOne('/api/v1/system').flush({});
   });
 
-  it('archives on a drop into ARCHIVED, wherever the instance comes from', () => {
-    store.instances.set([instance()]);
-    store.dragging.set('smp');
-    kanban.onDrop(dragEvent(), 'archived');
-
-    expect(kanban.pendingAction()?.target).toBe('archived');
-
-    kanban.confirmAction();
-
-    const req = http.expectOne('/api/v1/instances/smp/archive');
-    expect(req.request.method).toBe('POST');
-    req.flush(null, { status: 202, statusText: 'Accepted' });
-
-    http.expectOne('/api/v1/instances').flush({ instances: [], states: [] });
-    http.expectOne('/api/v1/system').flush({});
-  });
-
-  it('refuses on ARCHIVED an instance that is already archived', () => {
-    store.instances.set([instance({ state: 'archived', archived: true })]);
-    store.dragging.set('smp');
-
-    kanban.onDrop(dragEvent(), 'archived');
-
-    expect(kanban.pendingAction()).toBeNull();
-  });
-
-  it('an external container takes neither update nor archive, but takes stop', () => {
+  it('an external container takes no update, but takes stop', () => {
     store.instances.set([instance({ external: true, project: 'media' })]);
     store.dragging.set('smp');
 
@@ -148,12 +123,54 @@ describe('Kanban: dragging a card into a column', () => {
     expect(kanban.pendingAction()).withContext('an external container has no image to update').toBeNull();
 
     store.dragging.set('smp');
-    kanban.onDrop(dragEvent(), 'archived');
-    expect(kanban.pendingAction()).withContext('an external container is not archived').toBeNull();
-
-    store.dragging.set('smp');
     kanban.onDrop(dragEvent(), 'stopped');
     expect(kanban.pendingAction()?.target).toBe('stopped');
+  });
+
+  it('a stack dropped on a column takes every member the column accepts', () => {
+    store.states.set(['running']);
+    store.instances.set([
+      instance({ name: 'nextcloud', external: true, project: 'nextcloud' }),
+      instance({ name: 'nextcloud-db', external: true, project: 'nextcloud' }),
+      instance({ name: 'jellyfin', external: true, project: 'media' }),
+    ]);
+    const group = kanban.columns()[0].items[0];
+    if (group.kind !== 'group') throw new Error('the stack did not collapse into a tile');
+
+    kanban.onGroupDragStart(new DragEvent('dragstart', { dataTransfer: new DataTransfer() }), group);
+    expect(kanban.canDrop('stopped')).withContext('a stack that is up can be stopped').toBeTrue();
+    expect(kanban.canDrop('updating')).withContext('an external container has no image to update').toBeFalse();
+
+    kanban.onDrop(dragEvent(), 'stopped');
+
+    const pending = kanban.pendingAction();
+    expect(pending!.name).withContext('the dialog is about the stack').toBe('nextcloud');
+    expect(pending!.instances.map((i) => i.name)).toEqual(['nextcloud', 'nextcloud-db']);
+
+    kanban.confirmAction();
+
+    http.expectOne('/api/v1/instances/nextcloud/stop').flush(null, { status: 202, statusText: 'Accepted' });
+    http.expectOne('/api/v1/instances/nextcloud-db/stop').flush(null, { status: 202, statusText: 'Accepted' });
+    expect(kanban.pendingAction()).toBeNull();
+    http.expectOne('/api/v1/instances').flush({ instances: [], states: [] });
+    http.expectOne('/api/v1/system').flush({});
+  });
+
+  it('a stack leaves behind the member the column refuses', () => {
+    store.states.set(['running']);
+    store.instances.set([
+      instance({ name: 'nextcloud', external: true, project: 'nextcloud', editable: true }),
+      instance({ name: 'nextcloud-db', external: true, project: 'nextcloud' }),
+    ]);
+    const group = kanban.columns()[0].items[0];
+    if (group.kind !== 'group') throw new Error('the stack did not collapse into a tile');
+    kanban.onGroupDragStart(new DragEvent('dragstart', { dataTransfer: new DataTransfer() }), group);
+
+    kanban.onDrop(dragEvent(), 'updating');
+
+    expect(kanban.pendingAction()!.instances.map((i) => i.name))
+      .withContext('the member with no compose file the panel can read stays out')
+      .toEqual(['nextcloud']);
   });
 
   it('ignores the drop when the action would do nothing', () => {
@@ -161,15 +178,6 @@ describe('Kanban: dragging a card into a column', () => {
     store.dragging.set('smp');
 
     kanban.onDrop(dragEvent(), 'stopped');
-
-    expect(kanban.pendingAction()).toBeNull();
-  });
-
-  it('refuses an archived instance on UPDATING', () => {
-    store.instances.set([instance({ state: 'archived', archived: true })]);
-    store.dragging.set('smp');
-
-    kanban.onDrop(dragEvent(), 'updating');
 
     expect(kanban.pendingAction()).toBeNull();
   });
@@ -265,48 +273,26 @@ describe('Kanban: dragging a card into a column', () => {
     expect(open.get('stopped')).withContext('the stopped half stays closed').toEqual([false]);
   });
 
-  it('opening a group does not resize the column', () => {
-    store.states.set(['running', 'stopped']);
+  it('stopped and running keep the width of two cards, full or empty', () => {
+    store.states.set(['stopped', 'running', 'updating', 'error']);
     store.instances.set(
       Array.from({ length: 12 }, (_, i) =>
         instance({ name: `media-${i}`, external: true, project: 'media' }),
       ),
     );
 
-    const closed = kanban.columns().find((c) => c.state === 'running')!.grow;
-    kanban.toggleGroup('running:media');
-    const open = kanban.columns().find((c) => c.state === 'running')!.grow;
-
-    expect(closed).toBe(2);
-    expect(open).withContext('the width comes from the containers, not from what is open').toBe(closed);
-  });
-
-  it('the full column ends up wider than the empty one', () => {
-    store.states.set(['running', 'stopped']);
-    store.instances.set(
-      Array.from({ length: 12 }, (_, i) => instance({ name: `smp-${i}` })),
-    );
-
     const grow = new Map(kanban.columns().map((c) => [c.state, c.grow]));
+    expect(grow.get('running')).toBe(2);
+    expect(grow.get('stopped')).withContext('an empty stopped column is just as wide').toBe(2);
+    expect(grow.get('updating')).toBe(1);
+    expect(grow.get('error')).toBe(1);
 
-    expect(grow.get('running')).withContext('more than one container takes two card columns').toBe(2);
-    expect(grow.get('stopped')).toBe(1);
-  });
-
-  it('filtering a column down to one card does not resize it', () => {
-    store.states.set(['running', 'stopped']);
-    store.instances.set([
-      instance({ name: 'smp', category: 'games' }),
-      instance({ name: 'router', category: 'network' }),
-    ]);
-
-    const wide = kanban.columns().find((c) => c.state === 'running')!.grow;
+    kanban.toggleGroup('running:media');
     store.categoryFilter.set('network');
-    const narrowed = kanban.columns().find((c) => c.state === 'running')!;
 
-    expect(wide).toBe(2);
-    expect(narrowed.cards.length).withContext('the filter did hide a card').toBe(1);
-    expect(narrowed.grow).withContext('one card left, the column keeps the width of two').toBe(wide);
+    const after = new Map(kanban.columns().map((c) => [c.state, c.grow]));
+    expect(after.get('running')).withContext('neither an open group nor a filter resizes it').toBe(2);
+    expect(after.get('stopped')).toBe(2);
   });
 
   it('confirming fires the right call and closes the dialog', () => {

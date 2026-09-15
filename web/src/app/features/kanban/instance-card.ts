@@ -3,11 +3,10 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output, si
 import { Instance, STATE_DOT } from '../../core/models';
 import { I18n } from '../../core/i18n/i18n';
 import { bytes } from '../../core/format';
-import { copyText } from '../../core/clipboard';
 import { TemplateIcon, templateColors } from '../../shared/template-icon';
 
 type Action = { label: string; kind: 'go' | 'bad' | 'flat'; verb: ActionVerb };
-export type ActionVerb = 'start' | 'stop' | 'restart' | 'logs' | 'fix' | 'unarchive' | 'cancel';
+export type ActionVerb = 'start' | 'stop' | 'restart' | 'logs' | 'fix' | 'cancel';
 
 @Component({
   selector: 'ok-instance-card',
@@ -29,7 +28,6 @@ export class InstanceCard {
   readonly inStack = input(false);
 
   readonly open = output<Instance>();
-  readonly copied = output<string>();
   readonly act = output<{ instance: Instance; verb: ActionVerb }>();
   readonly remove = output<Instance>();
   readonly dragChange = output<string | null>();
@@ -42,21 +40,6 @@ export class InstanceCard {
     if (!i.external || this.inStack()) return false;
     return i.project !== i.name;
   });
-
-  readonly address = computed(() => {
-    const i = this.instance();
-    const port = (i.ports ?? [])[0]?.host;
-    if (!i.dns || !port) return i.dns?.hostname ?? '';
-    return `${i.dns.hostname}:${port}`;
-  });
-
-  copyAddress(event: Event): void {
-    event.stopPropagation();
-    const addr = this.address();
-    if (!addr) return;
-    copyText(addr);
-    this.copied.emit(addr);
-  }
 
   toggleMenu(event: Event): void {
     event.stopPropagation();
@@ -112,8 +95,6 @@ export class InstanceCard {
         return { label: this.t('card.action.logs'), kind: 'flat', verb: 'logs' };
       case 'error':
         return { label: this.t('card.action.fix'), kind: 'bad', verb: 'fix' };
-      case 'archived':
-        return { label: this.t('card.action.restore'), kind: 'flat', verb: 'unarchive' };
       default:
         return { label: this.t('card.action.details'), kind: 'flat', verb: 'logs' };
     }
@@ -125,7 +106,6 @@ export class InstanceCard {
     if (i.state === 'error') return i.status || this.t('card.exited', { code: i.exitCode ?? '?' });
     if (i.status) return i.status;
     const when = this.i18n.since(i.updatedAt);
-    if (i.state === 'archived') return this.t('card.archivedSince', { when });
     return this.t('card.stoppedSince', { when });
   });
 

@@ -10,7 +10,6 @@ cmd/okdock          flags, logger, HTTP server, graceful shutdown
               ├── store     disk persistence (compose, .env, metadata)
               │     └── compose   YAML and .env generation
               ├── dockerx   `docker compose` behind an interface
-              ├── duckdns   dynamic DNS behind an interface
               ├── template  templates and field schema
               └── system    host RAM, CPU and disk
 ```
@@ -26,8 +25,6 @@ it knows HTTP. `httpapi` turns a domain error into a status:
 | `template.ErrNotFound`, `ErrBuiltin` | 404 and 409 in the template CRUD |
 | `manager.ErrBudget`, `ErrPortTaken` | 409 |
 | `dockerx.Error` | 409, docker failed over something the user can fix |
-| `duckdns.ErrRejected` | 422, the service answered and the user is the one who fixes it |
-| `duckdns.ErrUnreachable`, `manager.ErrNoToken`, `ErrDNSTaken` | 409 |
 
 ## Decisions that are not an accident
 
@@ -45,8 +42,7 @@ so editing the YAML by hand is a supported way to change an instance.
 What the compose schema has no field for goes into `okdock.*` labels of the
 service: which template it came from, its category, which keys are secret
 (`okdock.secrets`, the names, never the values, which live in the `.env`), what
-each port is called (`okdock.port.25565.tcp`), whether it is archived and when
-it was created. `updatedAt` is the mtime of the file itself. That is what makes
+each port is called (`okdock.port.25565.tcp`) and when it was created. `updatedAt` is the mtime of the file itself. That is what makes
 a folder holding a compose file and nothing else a complete instance, and it is
 why moving one between servers is a copy of the folder.
 
@@ -99,30 +95,6 @@ saved does not start leaking if the schema changes later.
 Non-secret fields stay inline in `environment:`, because being able to read the
 configuration from the terminal is half the reason to generate a compose at all.
 
-### The DNS link does not belong to the instance
-
-The duckdns domain does not change a single line of `docker-compose.yml`. If it
-lived in the `Spec`, it would enter the body of `PUT /instances`, the
-`preview-compose` and the logic that decides whether the container has to be
-born again: a field with no effect crossing exactly the machinery that exists to
-answer "does this need a recreate?".
-
-So it lives in `<boot root>/.okdock/dns.json`, next to the token, with `0600`.
-On the root the process started with, not the current instance root, because it
-is the neighbouring `config.json` in that same folder that says where the root
-was moved to. One file, one lock, and the instance directory stays being only
-what docker reads. The price is clearing the link when the instance is deleted,
-and skipping on read whatever points at an instance that no longer exists.
-
-Linking and checking are the same call because the duckdns API does not create
-subdomains: it only updates a name that already exists, and an `OK` from it is
-the proof that the token controls that name.
-
-And what reaches the screen is always `name:port`, never the name alone. Duckdns
-maps name to IP only, there is no SRV, so half the road is still the port
-forwarding on the router, which the panel cannot check from inside the LAN and
-therefore warns about instead of promising.
-
 ### The RAM budget is checked first
 
 `manager.checkBudget` adds up the memory cap of the **running** instances and
@@ -140,10 +112,6 @@ operation registry, and that is what fills the progress bar on the card.
 
 Accepted consequence: restarting the panel forgets the operations in flight. The
 real state comes back on the next `docker compose ps`.
-
-The DNS sync follows the same rule, on a 5 minute ticker with the process
-context: keeping the name pointing here cannot depend on a tab being open. With
-no token configured it never goes to the network.
 
 ### SSE announces, it does not carry data
 
@@ -199,11 +167,6 @@ the API on the same origin: one container, one port, no CORS. In development
 - **Authentication.** The panel controls `docker.sock`; whoever reaches port
   8080 controls the server. Today that depends on it not being exposed outside
   the LAN. Before any exposure, it needs a login.
-
-  Dynamic DNS does not change that by itself, since a name opens no port and
-  only the forwarded ones answer, but from then on there is a public name
-  pointing at the house. Forwarding 8080 along with an instance port would hand
-  `docker.sock` to the whole internet.
 - **World upload and file browser**: the tab exists in the design.
 - **Backups**: the tab exists in the design.
 - **Interactive console**: today the log is read only, sending a command (RCON

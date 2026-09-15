@@ -158,3 +158,23 @@ func TestReachableAllowsEverythingWithNoMount(t *testing.T) {
 		t.Errorf("with nothing mounted the panel is out of a container: %v", err)
 	}
 }
+
+func TestARootInsideAnotherRootIsDropped(t *testing.T) {
+	root := t.TempDir()
+	inner := filepath.Join(root, "instances")
+	if err := os.Mkdir(inner, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	listing, err := browserFor(t, inner, root).List("")
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	if len(listing.Roots) != 1 || listing.Roots[0] != root {
+		t.Fatalf("roots = %v", listing.Roots)
+	}
+	if err := browserFor(t, inner, root).Reachable(inner); err != nil {
+		t.Fatalf("Reachable(%q): %v", inner, err)
+	}
+}

@@ -171,7 +171,12 @@ func (s *Server) previewCompose(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp := previewComposeResponse{Compose: string(yml)}
-	if old, err := s.mgr.Store().Get(req.Name); err == nil {
+	// while a rename is being typed the instance still answers by the name in the query
+	current := r.URL.Query().Get("current")
+	if current == "" {
+		current = req.Name
+	}
+	if old, err := s.mgr.Store().Get(current); err == nil {
 		if next, err := s.mgr.BuildSpec(req); err == nil {
 			resp.Recreate = manager.RecreateFields(old, next)
 		}
@@ -237,16 +242,6 @@ func (s *Server) action(fn func(context.Context, string) error) http.HandlerFunc
 	}
 }
 
-func (s *Server) setArchived(archived bool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := s.mgr.SetArchived(r.Context(), r.PathValue("name"), archived); err != nil {
-			writeError(w, err)
-			return
-		}
-		w.WriteHeader(http.StatusNoContent)
-	}
-}
-
 func (s *Server) clearError(w http.ResponseWriter, r *http.Request) {
 	s.mgr.ClearError(r.PathValue("name"))
 	w.WriteHeader(http.StatusNoContent)
@@ -302,82 +297,6 @@ func (s *Server) makeDir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]string{"path": dir})
-}
-
-func (s *Server) getDNS(w http.ResponseWriter, _ *http.Request) {
-	status := s.mgr.DNS()
-	if status.Links == nil {
-		status.Links = []manager.DNSLink{}
-	}
-	if status.Domains == nil {
-		status.Domains = []instance.DNS{}
-	}
-	writeJSON(w, http.StatusOK, status)
-}
-
-func (s *Server) setDNSToken(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Token string `json:"token"`
-	}
-	if !decodeJSON(w, r, &req) {
-		return
-	}
-	if err := s.mgr.SetDNSToken(r.Context(), strings.TrimSpace(req.Token)); err != nil {
-		writeError(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, s.mgr.DNS())
-}
-
-func (s *Server) addDNSDomain(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Domain string `json:"domain"`
-	}
-	if !decodeJSON(w, r, &req) {
-		return
-	}
-	entry, err := s.mgr.AddDNSDomain(r.Context(), req.Domain)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, entry)
-}
-
-func (s *Server) removeDNSDomain(w http.ResponseWriter, r *http.Request) {
-	if err := s.mgr.RemoveDNSDomain(r.PathValue("domain")); err != nil {
-		writeError(w, err)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (s *Server) syncDNS(w http.ResponseWriter, _ *http.Request) {
-	go s.mgr.SyncDNS(context.Background())
-	w.WriteHeader(http.StatusAccepted)
-}
-
-func (s *Server) linkDNS(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Domain string `json:"domain"`
-	}
-	if !decodeJSON(w, r, &req) {
-		return
-	}
-	link, err := s.mgr.LinkDNS(r.Context(), r.PathValue("name"), req.Domain)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, link)
-}
-
-func (s *Server) unlinkDNS(w http.ResponseWriter, r *http.Request) {
-	if err := s.mgr.UnlinkDNS(r.PathValue("name")); err != nil {
-		writeError(w, err)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *Server) getLogs(w http.ResponseWriter, r *http.Request) {

@@ -436,23 +436,6 @@ func TestDeleteRemovesInstance(t *testing.T) {
 	}
 }
 
-func TestArchivedInstanceRefusesToStart(t *testing.T) {
-	m, _ := newManager(t, 16*gb)
-	if _, err := m.Create(context.Background(), req("smp", "4g")); err != nil {
-		t.Fatalf("Create: %v", err)
-	}
-	if err := m.SetArchived(context.Background(), "smp", true); err != nil {
-		t.Fatalf("SetArchived: %v", err)
-	}
-	inst, _ := m.Get(context.Background(), "smp")
-	if inst.State != instance.StateArchived {
-		t.Errorf("state = %q, wanted archived", inst.State)
-	}
-	if err := m.Start(context.Background(), "smp"); err == nil {
-		t.Error("an archived instance must not start before being restored")
-	}
-}
-
 func TestSystemReportsCommittedMemory(t *testing.T) {
 	m, _ := newManager(t, 16*gb)
 	r := req("smp", "4g")
@@ -622,19 +605,6 @@ func TestUpdateImagePublishesWhatHappened(t *testing.T) {
 		case <-deadline:
 			t.Fatal("no event saying it was already up to date")
 		}
-	}
-}
-
-func TestUpdateImageRefusesArchived(t *testing.T) {
-	m, _ := newManager(t, 16*gb)
-	if _, err := m.Create(context.Background(), req("smp", "4g")); err != nil {
-		t.Fatalf("Create: %v", err)
-	}
-	if err := m.SetArchived(context.Background(), "smp", true); err != nil {
-		t.Fatalf("SetArchived: %v", err)
-	}
-	if err := m.UpdateImage(context.Background(), "smp"); err == nil {
-		t.Error("an archived instance must not be updated before being restored")
 	}
 }
 
@@ -820,9 +790,6 @@ func TestEditingAnExternalContainerIsRefused(t *testing.T) {
 	}
 	if err := m.Delete(ctx, "jellyfin", true); !errors.Is(err, ErrExternal) {
 		t.Errorf("Delete = %v, wanted ErrExternal", err)
-	}
-	if err := m.SetArchived(ctx, "jellyfin", true); !errors.Is(err, ErrExternal) {
-		t.Errorf("SetArchived = %v, wanted ErrExternal", err)
 	}
 	if err := m.UpdateImage(ctx, "jellyfin"); !errors.Is(err, ErrExternal) {
 		t.Errorf("UpdateImage = %v, wanted ErrExternal", err)
@@ -1257,5 +1224,78 @@ func TestTheInstanceFolderIsNotThePanelOwn(t *testing.T) {
 	}
 	if err := m.SetRoot(m.store.DefaultTemplatesDir()); !errors.As(err, &bad) || bad.Reason != "panel_folder" {
 		t.Errorf("SetRoot on the templates folder = %v", err)
+	}
+}
+
+func TestUpdateRenamesFolderAndBringsItBackUp(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	r := req("smp", "4g")
+	r.Start = true
+	if _, err := m.Create(context.Background(), r); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	waitFor(t, "it to come up", func() bool {
+		i, _ := m.Get(context.Background(), "smp")
+		return i.State == instance.StateRunning
+	})
+	before := len(fake.Calls)
+
+	next := req("familia", "4g")
+	spec, err := m.Update(context.Background(), "smp", next)
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if spec.Name != "familia" {
+		t.Errorf("the answer must carry the new name, got %q", spec.Name)
+	}
+	waitFor(t, "the new name to come up", func() bool {
+		i, err := m.Get(context.Background(), "familia")
+		return err == nil && i.State == instance.StateRunning
+	})
+
+	if m.Store().Exists("smp") {
+		t.Error("the old folder is still there")
+	}
+	if !slices.Contains(fake.Calls, "down:"+filepath.Join(m.Store().Root(), "smp")) {
+		t.Errorf("the old project must come down first, calls: %v", fake.Calls[before:])
+	}
+	if !slices.Contains(fake.Calls, "up:"+m.Store().Dir("familia")) {
+		t.Errorf("the new project must come up, calls: %v", fake.Calls[before:])
+	}
+}
+
+func TestUpdateRenameKeepsTheInstanceDownWhenItWasDown(t *testing.T) {
+	m, fake := newManager(t, 16*gb)
+	if _, err := m.Create(context.Background(), req("smp", "4g")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if _, err := m.Update(context.Background(), "smp", req("familia", "4g")); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	waitFor(t, "the folder to move", func() bool { return m.Store().Exists("familia") })
+
+	for _, c := range fake.Calls {
+		if strings.HasPrefix(c, "up:") {
+			t.Errorf("a stopped instance must not come up on a rename, calls: %v", fake.Calls)
+		}
+	}
+}
+
+func TestUpdateRefusesANameThatIsTaken(t *testing.T) {
+	m, _ := newManager(t, 16*gb)
+	if _, err := m.Create(context.Background(), req("smp", "4g")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if _, err := m.Create(context.Background(), req("familia", "4g")); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	_, err := m.Update(context.Background(), "smp", req("familia", "4g"))
+	if !errors.Is(err, store.ErrExists) {
+		t.Errorf("renaming onto a name that exists must be refused, got %v", err)
+	}
+	if !m.Store().Exists("smp") {
+		t.Error("the refused rename moved the folder anyway")
 	}
 }

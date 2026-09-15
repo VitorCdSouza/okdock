@@ -164,7 +164,6 @@ func (s Service) Spec() instance.Spec {
 			}
 		}
 	}
-	spec.Archived = s.Labels[Label+".archived"] == "true"
 	if at, err := time.Parse(time.RFC3339, s.Labels[Label+".created"]); err == nil {
 		spec.CreatedAt = at
 	}

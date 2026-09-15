@@ -166,7 +166,6 @@ func TestRenderIsDeterministic(t *testing.T) {
 
 func TestTheLabelsCarryWhatTheSchemaHasNoFieldFor(t *testing.T) {
 	spec := spec()
-	spec.Archived = true
 	spec.CreatedAt = time.Date(2026, 8, 21, 12, 0, 0, 0, time.UTC)
 
 	raw, err := Render(spec)
@@ -185,9 +184,6 @@ func TestTheLabelsCarryWhatTheSchemaHasNoFieldFor(t *testing.T) {
 	got := svc.Spec()
 	if len(got.SecretKeys) != 1 || got.SecretKeys[0] != "RCON_SENHA" {
 		t.Errorf("secretKeys = %v", got.SecretKeys)
-	}
-	if !got.Archived {
-		t.Error("archived was lost")
 	}
 	if !got.CreatedAt.Equal(spec.CreatedAt) {
 		t.Errorf("createdAt = %v, wanted %v", got.CreatedAt, spec.CreatedAt)

@@ -1,13 +1,14 @@
 <header class="topbar">
   <div class="brand" role="img" aria-label="OkDock">
-    <!-- the same mark the favicon draws, cropped to the glyph, and ock finishes the word -->
+    <!-- the same mark the favicon draws, cropped to the glyph -->
     <svg class="mark" viewBox="1.5 8 29.3 16">
       <circle cx="9.5" cy="16" r="6.8" stroke-width="2.3" />
       <path d="M7.7 13.2v5.6" stroke-width="1.95" />
       <path d="m11.2 14.6-3.5 2.8" stroke-width="1.95" />
       <path d="m9.15 16.18 2.05 2.62" stroke-width="1.95" />
       <path d="M20.4 22.4V9.6h2.8a6.4 6.4 0 0 1 0 12.8Z" stroke-width="2.3" />
-    </svg>ock</div>
+    </svg>
+  </div>
 
   <div class="metrics mono">
     @if (system(); as s) {
@@ -28,9 +29,6 @@
           <span class="bar"><span class="fill" [style.width.%]="budgetPct()" [style.background]="budgetColor()"></span></span>
         </span>
       }
-
-      <span [class.ok]="dnsState() === 'ok'" [class.bad]="dnsState() === 'bad'"
-            [title]="dnsTitle()">● {{ dnsLabel() }}</span>
     }
   </div>
 
@@ -78,7 +76,8 @@
 }
 
 @if (detailFor(); as name) {
-  <ok-instance-detail [name]="name" (close)="detailFor.set(null)" />
+  <ok-instance-detail [name]="name" (close)="closeDetail()"
+                      (renamed)="onRenamed($event)" />
 }
 
 @if (settingsOpen()) {

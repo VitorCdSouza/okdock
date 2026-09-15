@@ -18,12 +18,11 @@ const (
 	StateRunning      State = "running"
 	StateUpdating     State = "updating"
 	StateError        State = "error"
-	StateArchived     State = "archived"
 )
 
 var AllStates = []State{
 	StateStopped, StateProvisioning, StateStarting,
-	StateRunning, StateUpdating, StateArchived, StateError,
+	StateRunning, StateUpdating, StateError,
 }
 
 type PortBinding struct {
@@ -56,7 +55,6 @@ type Spec struct {
 	CPUs             float64           `json:"cpus"`
 	Restart          string            `json:"restart"`
 	StopGraceSeconds int               `json:"stopGraceSeconds"`
-	Archived         bool              `json:"archived,omitempty"`
 	CreatedAt        time.Time         `json:"createdAt"`
 	UpdatedAt        time.Time         `json:"updatedAt"`
 
@@ -84,14 +82,6 @@ func (s *Spec) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
-type DNS struct {
-	Domain    string    `json:"domain"`
-	Hostname  string    `json:"hostname"`
-	LastIP    string    `json:"lastIp,omitempty"`
-	LastSync  time.Time `json:"lastSync,omitempty"`
-	LastError string    `json:"lastError,omitempty"`
-}
-
 type Stats struct {
 	CPUPercent  float64 `json:"cpuPercent"`
 	MemoryBytes int64   `json:"memoryBytes"`
@@ -107,7 +97,6 @@ type Instance struct {
 	ExitCode  *int       `json:"exitCode,omitempty"`
 	Stats     *Stats     `json:"stats,omitempty"`
 	Operation *Operation `json:"operation,omitempty"`
-	DNS       *DNS       `json:"dns,omitempty"`
 
 	Networks []string `json:"networks,omitempty"`
 

@@ -333,9 +333,6 @@ func merge(meta, fromFile instance.Spec) instance.Spec {
 	if len(out.SecretKeys) == 0 {
 		out.SecretKeys = meta.SecretKeys
 	}
-	if !out.Archived {
-		out.Archived = meta.Archived
-	}
 	if out.CreatedAt.IsZero() {
 		out.CreatedAt = meta.CreatedAt
 	}
@@ -406,6 +403,23 @@ func (s *Store) Update(spec instance.Spec) error {
 	spec.CreatedAt = old.CreatedAt
 	spec.UpdatedAt = time.Now().UTC()
 	return s.write(spec)
+}
+
+// the folder is the name of the compose project, so a rename moves it and the caller rewrites what is inside
+func (s *Store) Rename(old, name string) error {
+	if err := s.haveRoot(); err != nil {
+		return err
+	}
+	if err := instance.ValidateName(name); err != nil {
+		return err
+	}
+	if !s.Exists(old) {
+		return &NotFoundError{Name: old}
+	}
+	if s.Exists(name) {
+		return &ExistsError{Name: name}
+	}
+	return os.Rename(s.Dir(old), s.Dir(name))
 }
 
 func (s *Store) write(spec instance.Spec) error {

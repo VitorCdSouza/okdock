@@ -5,8 +5,6 @@ export const pt = {
   'common.saving': 'Salvando…',
   'common.discard': 'Descartar',
   'common.loading': 'Carregando…',
-  'common.checking': 'Verificando…',
-  'common.copied': 'copiado: {text}',
   'common.pick': 'Escolher',
 
   'category.games': 'Jogos',
@@ -22,7 +20,6 @@ export const pt = {
   'state.running': 'RODANDO',
   'state.updating': 'ATUALIZANDO',
   'state.error': 'ERRO',
-  'state.archived': 'ARQUIVADO',
 
   'time.seconds': 'há segundos',
   'time.minutes': 'há {n} min',
@@ -43,14 +40,7 @@ export const pt = {
   'app.searchPlaceholder': 'filtrar por nome, porta, imagem…',
   'app.allCategories': 'Todos',
   'app.created': '{name} foi criada',
-  'app.dns.noToken': 'duckdns sem token',
-  'app.dns.noNames': 'duckdns sem nome',
-  'app.dns.names.one': 'duckdns {n} nome',
-  'app.dns.names.other': 'duckdns {n} nomes',
-  'app.dns.failing.one': 'duckdns {n} nome com erro',
-  'app.dns.failing.other': 'duckdns {n} nomes com erro',
-  'app.dns.titleNoToken': 'nenhum token do duckdns configurado',
-  'app.dns.titleNoNames': 'token configurado, nenhum nome cadastrado',
+  'app.renamed': 'agora se chama {name}',
 
   'kanban.loading': 'carregando instâncias…',
   'kanban.empty': 'Nenhuma instância ainda.',
@@ -61,36 +51,34 @@ export const pt = {
   'kanban.dropToUpdate': 'soltar para procurar imagem nova',
   'kanban.dropToStop': 'soltar para parar',
   'kanban.dropToStart': 'soltar para iniciar',
-  'kanban.dropToArchive': 'soltar para arquivar',
   'kanban.newInstance': 'Nova instância',
   'kanban.group.open': 'abrir o grupo {name}',
   'kanban.group.close': 'fechar o grupo {name}',
   'kanban.showHidden': 'mostrar a coluna {name}',
   'kanban.confirmDeleteAria': 'Confirmar exclusão',
   'kanban.deleteTitle': 'Excluir {name}?',
-  'kanban.deleteBody': 'Derruba o container e apaga o docker-compose.yml. O mundo continua no disco, em',
-  'kanban.deleteWorldToo': 'apagar também o mundo: ',
+  'kanban.deleteBody': 'Derruba o container e apaga o docker-compose.yml. Os dados continuam no disco, em',
+  'kanban.deleteDataToo': 'apagar também os dados: ',
   'kanban.noUndo': 'isto não tem volta',
-  'kanban.deleteAndWorld': 'Excluir e apagar o mundo',
-  'kanban.deleteKeepWorld': 'Excluir, manter o mundo',
+  'kanban.deleteAndData': 'Excluir e apagar os dados',
+  'kanban.deleteKeepData': 'Excluir, manter os dados',
   'kanban.updateTitle': 'Atualizar {name}?',
   'kanban.updateBodyPre': 'Procura uma imagem mais nova de',
   'kanban.updateBodyPost':
-    '. O container só é recriado se houver, e o mundo nos volumes é preservado.',
-  'kanban.updateWarnRunning': 'A instância está de pé: recriar derruba quem estiver jogando.',
+    '. O container só é recriado se houver, e os dados nos volumes são preservados.',
+  'kanban.updateBodyStack':
+    'Procura uma imagem mais nova de cada container do agrupamento. Cada um só é recriado se houver, e os dados nos volumes são preservados.',
+  'kanban.updateWarnRunning': 'A instância está de pé: recriar derruba quem estiver conectado.',
   'kanban.doUpdate': 'Procurar atualização',
   'kanban.stopTitle': 'Parar {name}?',
   'kanban.stopBody':
-    'Derruba o container. Os volumes ficam, então o mundo é preservado e ela pode subir de novo depois.',
+    'Derruba o container. Os volumes ficam, então os dados são preservados e ela pode subir de novo depois.',
   'kanban.doStop': 'Parar',
   'kanban.startTitle': 'Iniciar {name}?',
   'kanban.startBody':
     'Sobe o container com o compose que está no disco. Se a RAM livre não cobrir o limite da instância, o painel recusa.',
   'kanban.doStart': 'Iniciar',
-  'kanban.archiveTitle': 'Arquivar {name}?',
-  'kanban.archiveBody':
-    'Derruba o container e tira a instância do quadro, mantendo os volumes. O mundo continua em',
-  'kanban.doArchive': 'Arquivar',
+  'kanban.groupMembers': 'Vale para os {count} containers do agrupamento:',
 
   'images.version': 'versão',
   'images.image': 'imagem',
@@ -110,7 +98,6 @@ export const pt = {
   'card.port.one': 'Porta',
   'card.port.other': 'Portas',
   'card.ramAllocated': 'RAM alocada',
-  'card.copyAddress': 'copiar {address}',
   'card.inUse': 'Em uso',
   'card.cpu': 'CPU',
   'card.memory': 'RAM',
@@ -120,21 +107,16 @@ export const pt = {
   'card.action.stop': '■ Parar',
   'card.action.logs': 'Logs',
   'card.action.fix': 'Corrigir',
-  'card.action.restore': 'Restaurar',
   'card.action.details': 'Detalhes',
   'card.exited': 'saiu com código {code}',
-  'card.archivedSince': 'arquivada {when}',
   'card.stoppedSince': 'parada {when}',
 
   'detail.aria': 'Instância {name}',
   'detail.stats': '{cpu}% CPU · {used} de {total}',
   'detail.clearError': 'Limpar erro',
-  'detail.restore': 'Restaurar',
   'detail.restart': '↻ Reiniciar',
   'detail.tab.config': 'Configurações',
-  'detail.tab.resources': 'Recursos e rede',
   'detail.tab.console': 'Console',
-  'detail.templateFields': 'CAMPOS DO TEMPLATE',
   'detail.templateGone':
     'O template {id} não está mais no catálogo. Edite pelo docker-compose.yml.',
   'detail.externalNote':
@@ -151,31 +133,11 @@ export const pt = {
     'Container do projeto compose {project}. O que você salvar aqui é escrito em {file}, só neste serviço, e só ele sobe de novo. Os outros serviços do stack ficam como estão.',
   'detail.noPublishedPorts': 'nenhuma porta publicada no host',
   'detail.resourcesTitle': 'RECURSOS E REDE',
-  'detail.ramLimit': 'Limite de RAM',
-  'detail.ramLimitTip': 'Teto do container. O heap da JVM vai nos campos do template.',
-  'detail.hostPort': 'Porta host ({label})',
-  'detail.portFallbackLabel': 'serviço',
-  'detail.inContainer': 'Dentro do container: {port}/{protocol}',
-  'detail.volumes': 'VOLUMES',
-  'detail.inviteTitle': 'ENDEREÇO PARA CONVIDAR',
-  'detail.dnsNoToken':
-    'Falta o token da conta do duckdns. Ele é um só para o painel inteiro: fica em Configurações, na engrenagem ao lado de + Nova instância.',
-  'detail.copyAddressTitle': 'copiar endereço',
-  'detail.checkNow': 'Conferir agora',
-  'detail.unlink': 'Desvincular',
-  'detail.dnsTip':
-    'O nome resolve para o IP desta casa, e o painel o reenvia de 5 em 5 minutos. A porta {port} ainda precisa estar liberada no roteador, e isso o painel não tem como conferir daqui.',
-  'detail.pointsTo': 'aponta para {ip} · conferido {when}',
-  'detail.neverChecked': 'ainda não conferido',
-  'detail.verifyAndLink': 'Verificar e vincular',
-  'detail.linkTip':
-    'O subdomínio precisa já existir na sua conta: a API do DuckDNS não cria nome, só atualiza o IP de um que existe. Crie em duckdns.org e volte aqui: verificar é o próprio painel tentando atualizá-lo.',
-  'detail.syncing': 'conferindo o endereço no duckdns…',
   'detail.consoleEmpty': 'sem saída ainda, a instância precisa estar de pé.',
   'detail.composeLead':
     'Este é o arquivo como está no disco. Editar à mão funciona, o painel relê. Mas Salvar e recriar sobrescreve.',
-  'detail.recreate.one': 'mudança exige recriar o container. O mundo nos volumes é preservado.',
-  'detail.recreate.other': 'mudanças exigem recriar o container. O mundo nos volumes é preservado.',
+  'detail.recreate.one': 'mudança exige recriar o container. Os dados nos volumes são preservados.',
+  'detail.recreate.other': 'mudanças exigem recriar o container. Os dados nos volumes são preservados.',
   'detail.saveAndRecreate': 'Salvar e recriar',
   'detail.createdAt': 'criada {when}',
 
@@ -184,6 +146,8 @@ export const pt = {
   'new.step2': '2 imagem & config',
   'new.templateMeta': '{fields} campos · RAM mínima {memory}',
   'new.name': 'Nome da instância',
+  'new.renameTip':
+    'Trocar o nome move a pasta, o projeto do compose e o container. A instância cai e volta com o nome novo.',
   'new.nameTip':
     'Vira o diretório, o nome do projeto no compose e o nome do container, os três sempre o mesmo texto.',
   'new.nameInvalid': 'minúsculas, dígitos, - e _; 2 a 39 caracteres, começando por letra ou dígito',
@@ -218,14 +182,6 @@ export const pt = {
   'picker.nothingPicked': 'nenhuma pasta escolhida',
   'picker.expand': 'abrir',
   'picker.collapse': 'fechar',
-  'new.dns': 'Nome para convidar',
-  'new.dnsTip':
-    'Vincula um dos nomes já cadastrados nas configurações; o vínculo mantém o IP em dia sozinho. O que se passa adiante é sempre nome:porta, porque o duckdns não guarda porta, e encaminhá-la no roteador continua sendo manual.',
-  'new.dnsNone': 'sem nome, só pelo IP',
-  'new.dnsAllTaken':
-    'todos os nomes cadastrados já são de outra instância; cadastre outro nas configurações',
-  'new.dnsNoToken': 'configure o token do duckdns nas configurações para vincular um nome aqui',
-  'new.dnsLinkFailed': '{name} foi criada, mas não consegui vincular {domain}: {error}',
   'new.budgetWarning':
     'Esta instância pede {want}, mas só há {free} GB livres no orçamento. Dá para criar parada e subir depois.',
   'new.namePlaceholder': '<nome>',
@@ -305,27 +261,6 @@ export const pt = {
   'settings.templatesTitle': 'PASTA DOS TEMPLATES',
   'settings.templatesTip':
     'Caminho absoluto onde ficam os templates escritos no painel, um .json por template. Sem escolher nada, é a pasta que o painel recebeu ao subir, /templates dentro do container. Trocar não move arquivo: o que estava na pasta antiga fica lá e volta a aparecer se ela voltar. Template de fábrica vem no binário e aparece de qualquer jeito.',
-  'settings.duckdnsTitle': 'DUCKDNS',
-  'settings.tokenPlaceholder': 'token da sua conta no duckdns.org',
-  'settings.tokenButton': 'Token',
-  'settings.tokenTitle': 'Token do duckdns',
-  'settings.tokenSet': 'Já há um token gravado. Salvar troca pelo que você escrever aqui.',
-  'settings.tokenMissing': 'Nenhum token gravado ainda. Ele está na página inicial do duckdns.org, depois de entrar na conta.',
-  'settings.tokenRefused': 'O duckdns recusou estes nomes:',
-  'settings.tokenTip':
-    'O token vale para o painel inteiro e fica num arquivo 0600, fora de qualquer docker-compose.yml. É ele que prova cada nome da lista abaixo: a API do duckdns só responde OK para um nome que já existe naquela conta.',
-  'settings.tokenSavedChecking': 'token gravado; conferindo os nomes da lista…',
-  'settings.tokenSavedPending': 'token gravado; será conferido no primeiro nome da lista',
-  'settings.inUseBy': 'em uso por {instance}',
-  'settings.notMatching': 'não confere',
-  'settings.noIpYet': 'sem IP ainda',
-  'settings.removeAria': 'Remover {name}',
-  'settings.newName': 'nome novo',
-  'settings.addDomain': 'Adicionar domínio',
-  'settings.checkAll': 'Conferir todos agora',
-  'settings.noNames':
-    'Nenhum nome ainda. O subdomínio nasce no site do duckdns.org: aqui ele é conferido e mantido com o IP em dia.',
-  'settings.syncing': 'conferindo os endereços no duckdns…',
   'settings.metricsTitle': 'O QUE APARECE NA BARRA',
   'settings.metric.cpu': 'CPU',
   'settings.metric.memory': 'RAM',
@@ -361,14 +296,6 @@ export const pt = {
   'error.memory_budget':
     '{instance} pede {requested}, mas só há {free} livres no orçamento de {budget}: as instâncias de pé já usam {committed}.',
   'error.port_taken': 'a porta {port}/{proto} já é de {owner}',
-  'error.invalid_domain':
-    'nome inválido: use só letras minúsculas, dígitos e hífen, o que vem antes de {suffix}',
-  'error.dns_rejected':
-    'o duckdns recusou: confira se o token está certo e se esse nome é da sua conta',
-  'error.dns_unreachable': 'não consegui falar com o duckdns.org ({detail})',
-  'error.dns_token_missing': 'o token do duckdns ainda não foi configurado',
-  'error.dns_disabled': 'este painel subiu sem cliente de DNS',
-  'error.dns_taken': '{domain} já está vinculado a {instance}',
   'error.docker_failed': 'o docker recusou o comando: {detail}',
   'error.external_instance':
     '{name} é um container externo e o painel não achou um compose que saiba escrever: sobe, para e mostra o console, o resto continua no terminal.',
@@ -395,12 +322,13 @@ export const pt = {
   'op.recreating': 'recriando container',
   'op.checking_update': 'procurando atualização',
   'op.recreating_new_image': 'recriando com a imagem nova',
+  'op.renaming': 'renomeando',
   'op.starting_new_config': 'subindo com a config nova',
 
   'port.game': 'Jogo',
 
   'event.instance.uptodate': '{name} já está na imagem mais nova',
-  'event.instance.updated': '{name} foi atualizada; o mundo nos volumes foi preservado',
+  'event.instance.updated': '{name} foi atualizada; os dados nos volumes foram preservados',
 
 
   'field.minecraft-java.EULA.help': 'A imagem não sobe sem isto aceito.',
