@@ -6,6 +6,7 @@ DIST  := $(API)/internal/webui/dist
 IMAGE := ghcr.io/vitorcdsouza/okdock:latest
 SERVER      ?= vitorcds@192.168.0.100
 SERVER_DIR  ?= servidor/okdock
+LOCAL_DIR   ?= /mnt/dados/servidor/okdock
 
 .DEFAULT_GOAL := help
 
@@ -76,6 +77,14 @@ deploy: ## build here, hand the image to the server, recreate the container
 	scp -q docker-compose.yml $(SERVER):$(SERVER_DIR)/docker-compose.yml
 	ssh $(SERVER) 'cd $(SERVER_DIR) && docker compose up -d --pull never'
 	@ssh $(SERVER) 'curl -fs http://localhost:8090/api/v1/health' && echo
+
+.PHONY: deploy-local
+deploy-local: ## the same deploy, on this machine instead of the server
+	docker build -t $(IMAGE) .
+	mkdir -p $(LOCAL_DIR)
+	cp docker-compose.yml $(LOCAL_DIR)/docker-compose.yml
+	cd $(LOCAL_DIR) && docker compose up -d --pull never
+	@for i in 1 2 3 4 5; do curl -fs http://localhost:8090/api/v1/health && echo && exit 0; sleep 1; done; exit 1
 
 .PHONY: clean
 clean: ## Remove build artifacts

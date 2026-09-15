@@ -17,5 +17,7 @@ services:
     environment:
       OKDOCK_CONFIG: ${PWD}/config
       OKDOCK_TEMPLATES: ${PWD}/templates
+      # the folder mounted above, which holds this one: the deploys live there
+      OKDOCK_ROOT: ${PWD}/..
       OKDOCK_MEMORY_RESERVE: 2g
       OKDOCK_LOG_LEVEL: info
