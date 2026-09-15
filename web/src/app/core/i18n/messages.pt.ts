@@ -6,6 +6,8 @@ export const pt = {
   'common.discard': 'Descartar',
   'common.loading': 'Carregando…',
   'common.pick': 'Escolher',
+  'common.copy': 'Copiar',
+  'common.copied': 'Copiado',
 
   'category.games': 'Jogos',
   'category.media': 'Mídia',

@@ -8,6 +8,8 @@ export const en: Record<MessageKey, string> = {
   'common.discard': 'Discard',
   'common.loading': 'Loading…',
   'common.pick': 'Pick',
+  'common.copy': 'Copy',
+  'common.copied': 'Copied',
 
   'category.games': 'Games',
   'category.media': 'Media',

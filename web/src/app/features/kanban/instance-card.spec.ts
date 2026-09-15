@@ -151,4 +151,18 @@ describe('InstanceCard', () => {
 
     expect(c.portList()).toBe('25565, 19132/udp');
   });
+
+  it('the error block copies the whole text, not only what fits in the card', () => {
+    const status = "pull access denied for promo-radar, repository does not exist or may require 'docker login'";
+    const fixture = TestBed.createComponent(InstanceCard);
+    fixture.componentRef.setInput('instance', instance({ state: 'error', status }));
+    fixture.detectChanges();
+    const write = spyOn(navigator.clipboard, 'writeText').and.returnValue(Promise.resolve());
+
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.log ok-copy button');
+    expect(button).withContext('no copy button on the error block').not.toBeNull();
+    button!.click();
+
+    expect(write).toHaveBeenCalledWith(status);
+  });
 });

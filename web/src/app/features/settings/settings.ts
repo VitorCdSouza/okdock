@@ -10,10 +10,11 @@ import { Select } from '../../shared/select';
 import { MessageKey } from '../../core/i18n/messages.pt';
 import { InfoDot } from '../../shared/info-dot';
 import { PickDir } from '../../shared/pick-dir';
+import { CopyButton } from '../../shared/copy-button';
 
 @Component({
   selector: 'ok-settings',
-  imports: [FormsModule, PickDir, InfoDot, Select],
+  imports: [FormsModule, PickDir, InfoDot, Select, CopyButton],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

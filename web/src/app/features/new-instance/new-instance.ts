@@ -15,12 +15,13 @@ import { I18n } from '../../core/i18n/i18n';
 import { InstanceForm } from '../../shared/instance-form';
 import { TemplateIcon } from '../../shared/template-icon';
 import { InfoDot } from '../../shared/info-dot';
+import { CopyButton } from '../../shared/copy-button';
 
 type Step = 1 | 2;
 
 @Component({
   selector: 'ok-new-instance',
-  imports: [InstanceForm, TemplateIcon, InfoDot],
+  imports: [InstanceForm, TemplateIcon, InfoDot, CopyButton],
   templateUrl: './new-instance.html',
   styleUrl: './new-instance.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,6 +34,7 @@ export class NewInstance {
   private readonly i18n = inject(I18n);
   readonly t = this.i18n.t;
   readonly problem = this.i18n.problem;
+  readonly errorText = this.i18n.errorText;
 
   readonly close = output<void>();
   readonly created = output<string>();

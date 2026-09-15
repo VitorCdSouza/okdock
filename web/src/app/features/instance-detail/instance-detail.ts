@@ -22,6 +22,7 @@ import { InstanceForm, InstanceFormSeed } from '../../shared/instance-form';
 import { TemplateIcon, templateColors } from '../../shared/template-icon';
 import { InfoDot } from '../../shared/info-dot';
 import { bytes } from '../../core/format';
+import { CopyButton } from '../../shared/copy-button';
 
 type Tab = 'config' | 'console' | 'compose';
 
@@ -36,7 +37,7 @@ const STATE_CHIP: Record<State, { bg: string; line: string; fg: string }> = {
 
 @Component({
   selector: 'ok-instance-detail',
-  imports: [FormsModule, InstanceForm, TemplateIcon, InfoDot],
+  imports: [FormsModule, InstanceForm, TemplateIcon, InfoDot, CopyButton],
   templateUrl: './instance-detail.html',
   styleUrl: './instance-detail.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -51,6 +52,7 @@ export class InstanceDetail {
 
   readonly t = this.i18n.t;
   readonly problem = this.i18n.problem;
+  readonly errorText = this.i18n.errorText;
 
   readonly name = input.required<string>();
   readonly close = output<void>();

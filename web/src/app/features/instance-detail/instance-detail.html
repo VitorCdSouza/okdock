@@ -55,7 +55,8 @@
     </nav>
 
     @if (error(); as err) {
-      <div class="alert bad">
+      <div class="alert bad copyable">
+        <ok-copy [text]="errorText(err)" />
         <strong>{{ err.message }}</strong>
         @if (err.problems.length) {
           <ul>@for (p of err.problems; track p.field + p.code) { <li class="mono">{{ problem(p) }}</li> }</ul>

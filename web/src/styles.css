@@ -270,6 +270,7 @@ select {
 .alert.warn { background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn-fg); }
 .alert ul { margin: 8px 0 0; padding-left: 18px; }
 .alert li { font-size: var(--fs-xs); }
+.copyable { position: relative; padding-right: 34px; }
 
 .mono { font-family: var(--mono); }
 

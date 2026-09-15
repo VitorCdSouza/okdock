@@ -16,7 +16,7 @@
                (keydown.enter)="save()">
         <ok-info [text]="t('settings.rootTip')" />
       </div>
-      @if (rootError(); as e) { <div class="alert bad">{{ e }}</div> }
+      @if (rootError(); as e) { <div class="alert bad copyable">{{ e }}<ok-copy [text]="e" /></div> }
     </section>
 
     <section>
@@ -28,7 +28,7 @@
                (keydown.enter)="save()">
         <ok-info [text]="t('settings.templatesTip')" />
       </div>
-      @if (templatesError(); as e) { <div class="alert bad">{{ e }}</div> }
+      @if (templatesError(); as e) { <div class="alert bad copyable">{{ e }}<ok-copy [text]="e" /></div> }
     </section>
 
     <section>

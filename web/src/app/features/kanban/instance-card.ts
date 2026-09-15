@@ -4,13 +4,14 @@ import { Instance, STATE_DOT } from '../../core/models';
 import { I18n } from '../../core/i18n/i18n';
 import { bytes } from '../../core/format';
 import { TemplateIcon, templateColors } from '../../shared/template-icon';
+import { CopyButton } from '../../shared/copy-button';
 
 type Action = { label: string; kind: 'go' | 'bad' | 'flat'; verb: ActionVerb };
 export type ActionVerb = 'start' | 'stop' | 'restart' | 'logs' | 'fix' | 'cancel';
 
 @Component({
   selector: 'ok-instance-card',
-  imports: [TemplateIcon],
+  imports: [TemplateIcon, CopyButton],
   templateUrl: './instance-card.html',
   styleUrl: './instance-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -58,7 +58,7 @@
   }
 
   @if (instance().state === 'error' && instance().status) {
-    <div class="panel log mono">{{ instance().status }}</div>
+    <div class="panel log mono copyable">{{ instance().status }}<ok-copy [text]="instance().status ?? ''" /></div>
   }
 
   @if (instance().stats) {

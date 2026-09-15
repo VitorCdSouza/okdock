@@ -55,6 +55,9 @@ export class I18n {
     return `${p.field}: ${text}`;
   };
 
+  readonly errorText = (err: { message: string; problems: ApiProblem[] }): string =>
+    [err.message, ...err.problems.map(this.problem)].join('\n');
+
   readonly plural = (
     key: PluralKey,
     n: number,

@@ -16,6 +16,7 @@ import { TemplateIcon } from '../../shared/template-icon';
 import { InfoDot } from '../../shared/info-dot';
 import { ImageSearch } from '../../shared/image-search';
 import { Select } from '../../shared/select';
+import { CopyButton } from '../../shared/copy-button';
 
 const FIELD_TYPES: FieldType[] = ['text', 'password', 'int', 'float', 'bool', 'enum'];
 
@@ -53,7 +54,7 @@ function blank(): Template {
 
 @Component({
   selector: 'ok-templates',
-  imports: [FormsModule, TemplateIcon, InfoDot, ImageSearch, Select],
+  imports: [FormsModule, TemplateIcon, InfoDot, ImageSearch, Select, CopyButton],
   templateUrl: './templates.html',
   styleUrl: './templates.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -66,6 +67,7 @@ export class Templates {
 
   readonly t = this.i18n.t;
   readonly problem = this.i18n.problem;
+  readonly errorText = this.i18n.errorText;
 
   readonly close = output<void>();
 
