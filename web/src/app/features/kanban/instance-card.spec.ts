@@ -55,32 +55,23 @@ describe('InstanceCard', () => {
     expect(external.portCount()).toBe(0);
   });
 
-  it('an external container with no readable compose only reaches the console', () => {
+  function tools(over: Partial<Instance>): HTMLButtonElement[] {
     const fixture = TestBed.createComponent(InstanceCard);
-    fixture.componentRef.setInput(
-      'instance',
-      instance({ external: true, editable: false, project: 'media', state: 'running' }),
-    );
-    fixture.componentInstance.menuOpen.set(true);
+    fixture.componentRef.setInput('instance', instance(over));
     fixture.detectChanges();
+    return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.tools button'));
+  }
 
-    const itens: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('.menu button'));
+  it('an external container with no readable compose only reaches the console', () => {
+    const buttons = tools({ external: true, editable: false, project: 'media', state: 'running' });
 
-    expect(itens.map((b) => b.textContent!.trim())).toEqual(['Detalhes']);
+    expect(buttons.map((b) => b.title)).toEqual(['Detalhes']);
   });
 
   it('an external container whose compose was read is edited, but still not deleted', () => {
-    const fixture = TestBed.createComponent(InstanceCard);
-    fixture.componentRef.setInput(
-      'instance',
-      instance({ external: true, editable: true, project: 'media', state: 'running' }),
-    );
-    fixture.componentInstance.menuOpen.set(true);
-    fixture.detectChanges();
+    const buttons = tools({ external: true, editable: true, project: 'media', state: 'running' });
 
-    const itens: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('.menu button'));
-
-    expect(itens.map((b) => b.textContent!.trim())).toEqual(['Editar']);
+    expect(buttons.map((b) => b.title)).toEqual(['Editar']);
   });
 
   it('the project chip only shows what the name does not already say', () => {
@@ -94,15 +85,27 @@ describe('InstanceCard', () => {
     expect(fixture.componentInstance.showProject()).toBeFalse();
   });
 
-  it('a panel instance keeps edit and delete', () => {
+  it('a panel instance keeps edit and delete, the pencil and the trash', () => {
     const fixture = TestBed.createComponent(InstanceCard);
     fixture.componentRef.setInput('instance', instance());
-    fixture.componentInstance.menuOpen.set(true);
     fixture.detectChanges();
+    const opened = spyOn(fixture.componentInstance.open, 'emit');
+    const removed = spyOn(fixture.componentInstance.remove, 'emit');
+    const [edit, del] = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.tools button'),
+    );
 
-    const itens: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('.menu button'));
+    expect(edit.getAttribute('aria-label')).toBe('Editar smp');
+    expect(del.classList).toContain('delete');
+    edit.click();
+    del.click();
 
-    expect(itens.map((b) => b.textContent!.trim())).toEqual(['Editar', 'Excluir']);
+    expect(opened).toHaveBeenCalled();
+    expect(removed).toHaveBeenCalled();
+  });
+
+  it('the stop button is grey, not red', () => {
+    expect(card({ state: 'running' }).action().kind).toBe('flat');
   });
 
   it('translates the operation step that came as a code', () => {

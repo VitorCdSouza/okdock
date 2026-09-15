@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
 import { Instance, STATE_DOT } from '../../core/models';
 import { I18n } from '../../core/i18n/i18n';
@@ -15,10 +15,6 @@ export type ActionVerb = 'start' | 'stop' | 'restart' | 'logs' | 'fix' | 'cancel
   templateUrl: './instance-card.html',
   styleUrl: './instance-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    '(document:click)': 'menuOpen.set(false)',
-    '(document:keydown.escape)': 'menuOpen.set(false)',
-  },
 })
 export class InstanceCard {
   private readonly i18n = inject(I18n);
@@ -33,31 +29,12 @@ export class InstanceCard {
   readonly remove = output<Instance>();
   readonly dragChange = output<string | null>();
 
-  readonly menuOpen = signal(false);
-
   // inside a stack the project is the group title, and one named after the container says nothing
   readonly showProject = computed(() => {
     const i = this.instance();
     if (!i.external || this.inStack()) return false;
     return i.project !== i.name;
   });
-
-  toggleMenu(event: Event): void {
-    event.stopPropagation();
-    this.menuOpen.update((v) => !v);
-  }
-
-  pickRemove(event: Event): void {
-    event.stopPropagation();
-    this.menuOpen.set(false);
-    this.remove.emit(this.instance());
-  }
-
-  pickEdit(event: Event): void {
-    event.stopPropagation();
-    this.menuOpen.set(false);
-    this.open.emit(this.instance());
-  }
 
   onDragStart(event: DragEvent): void {
     event.dataTransfer?.setData('text/plain', this.instance().name);
@@ -91,7 +68,7 @@ export class InstanceCard {
       case 'stopped':
         return { label: this.t('card.action.start'), kind: 'go', verb: 'start' };
       case 'running':
-        return { label: this.t('card.action.stop'), kind: 'bad', verb: 'stop' };
+        return { label: this.t('card.action.stop'), kind: 'flat', verb: 'stop' };
       case 'starting':
         return { label: this.t('card.action.logs'), kind: 'flat', verb: 'logs' };
       case 'error':

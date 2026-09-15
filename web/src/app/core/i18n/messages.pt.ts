@@ -100,7 +100,9 @@ export const pt = {
   'card.self': 'este painel',
   'card.selfTip':
     'O container onde o próprio OkDock roda. Reiniciar, atualizar ou editar derruba o painel por alguns segundos e a página reconecta sozinha; parado, ele só volta pelo terminal.',
-  'card.optionsAria': 'Opções de {name}',
+  'card.editAria': 'Editar {name}',
+  'card.detailsAria': 'Detalhes de {name}',
+  'card.deleteAria': 'Excluir {name}',
   'card.edit': 'Editar',
   'card.delete': 'Excluir',
   'card.port.one': 'Porta',

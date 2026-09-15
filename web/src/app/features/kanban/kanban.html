@@ -177,7 +177,6 @@
       <button class="btn"
               [class.btn-primary]="pending.target === 'updating'"
               [class.btn-go]="pending.target === 'running'"
-              [class.btn-danger]="pending.target === 'stopped'"
               (click)="confirmAction()" [disabled]="acting()">
         {{ confirmLabel(pending.target) }}
       </button>

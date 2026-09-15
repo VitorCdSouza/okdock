@@ -103,7 +103,9 @@ export const en: Record<MessageKey, string> = {
   'card.self': 'this panel',
   'card.selfTip':
     'The container OkDock itself runs in. Restarting, updating or editing it takes the panel down for a few seconds and the page reconnects on its own; once stopped, it only comes back from the terminal.',
-  'card.optionsAria': 'Options for {name}',
+  'card.editAria': 'Edit {name}',
+  'card.detailsAria': 'Details of {name}',
+  'card.deleteAria': 'Delete {name}',
   'card.edit': 'Edit',
   'card.delete': 'Delete',
   'card.port.one': 'Port',
