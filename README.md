@@ -2,7 +2,7 @@
   <h1>🐳 OkDock</h1>
   <p><b>A lightweight, resilient panel to manage and run Docker containers on your home server.</b></p>
   
-  [![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go&logoColor=white)](#)
+  [![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go&logoColor=white)](#)
   [![Angular](https://img.shields.io/badge/Angular-20-DD0031?logo=angular&logoColor=white)](#)
   [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](#)
 </div>
@@ -20,7 +20,6 @@
 - 🗂 **Smart Stacking:** Containers from the same compose project collapse into a single tile, keeping your board clean.
 - 📦 **Template Engine:** Start new instances in seconds. Ships with built-in templates (games, media, databases, network) and allows custom ones.
 - 🧠 **RAM Budget Management:** OkDock calculates the memory cap of running instances before spinning up new ones, preventing OOM errors.
-- 🌍 **DuckDNS Integration:** Easily link instances to your `duckdns.org` subdomains. The panel keeps your IPs automatically updated.
 - 🔍 **Live Console & Compose Viewer:** Read logs in real-time and inspect the actual `docker-compose.yml` generated on disk.
 - 🤝 **Adopts Existing Containers:** Already running containers automatically show up on the board and can be managed seamlessly.
 - 🔒 **Secure by Default:** Passwords never go into the compose file; they are securely stored in a `.env` file (`0600` permissions).
@@ -35,3 +34,4 @@ Create a `docker-compose.yml` file and run:
 
 ```bash
 docker compose up -d
+```
